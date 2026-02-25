@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Activity, PanelLeftClose, PanelLeftOpen, Github } from 'lucide-react';
 
 const Header = ({ isSidebarOpen, onToggleSidebar }) => {
   return (
@@ -15,8 +15,19 @@ const Header = ({ isSidebarOpen, onToggleSidebar }) => {
         <div className="flex items-center gap-2">
           <Activity className="w-7 h-7 text-indigo-600" />
           <h1 className="text-2xl font-black text-gray-900">EDA 算法评估器</h1>
-          <span className="text-sm text-gray-500 font-medium">v1.0</span>
+          <span className="text-sm text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">v1.1</span>
         </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <a
+          href="https://github.com/DuanxiangLiu/evaluator"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-bold transition-colors border border-gray-200"
+        >
+          <Github className="w-4 h-4" />
+          GitHub
+        </a>
       </div>
     </div>
   );
