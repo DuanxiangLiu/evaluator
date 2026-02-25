@@ -11,6 +11,7 @@ import BoxPlotChart from './components/charts/BoxPlotChart';
 import CorrelationChart from './components/charts/CorrelationChart';
 import ParetoChart from './components/charts/ParetoChart';
 import RadarChart from './components/charts/RadarChart';
+import QoRSimulator from './components/charts/QoRSimulator';
 import { generateAIInsights, renderMarkdownText } from './services/aiService.jsx';
 import { exportToCSV } from './services/dataService';
 import { 
@@ -27,6 +28,7 @@ const AppContent = () => {
     activeTab, setActiveTab, baseAlgo, setBaseAlgo, compareAlgo, setCompareAlgo,
     tableFilter, setTableFilter, corrX, setCorrX, corrY, setCorrY,
     paretoX, setParetoX, paretoY, setParetoY, paretoZ, setParetoZ,
+    qorWeights, setQorWeights,
     selectedCases, sortConfig, tooltipState, setTooltipState,
     deepDiveCase, setDeepDiveCase, hoveredCase, setHoveredCase,
     isAnalyzing, setIsAnalyzing, aiInsights, setAiInsights,
@@ -39,6 +41,22 @@ const AppContent = () => {
   useEffect(() => {
     runAnalysis();
   }, []);
+
+  useEffect(() => {
+    if (availableMetrics.length > 0 && !corrX) {
+      // 自动选择第一个可用的元数据列作为 X 轴
+      if (metaColumns.length > 0) {
+        setCorrX(metaColumns[0]);
+      } else {
+        // 如果没有元数据列，选择第一个指标
+        setCorrX(availableMetrics[0]);
+      }
+    }
+    if (availableMetrics.length > 0 && !corrY) {
+      // 自动选择第一个指标作为 Y 轴
+      setCorrY(availableMetrics[0]);
+    }
+  }, [availableMetrics, metaColumns, corrX, corrY, setCorrX, setCorrY]);
 
   useEffect(() => {
     if (!isAnalyzing && aiInsights && activeTab === 'ai_analysis') {
@@ -134,7 +152,21 @@ const AppContent = () => {
                 <div className={`p-4 rounded-xl border relative group transition-colors ${stats.geomeanImp > 0 ? 'bg-emerald-50 border-emerald-200 shadow-sm' : (stats.geomeanImp < 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200')}`}>
                   <div className={`text-xs font-bold mb-1 flex items-center ${stats.geomeanImp > 0 ? 'text-emerald-800' : (stats.geomeanImp < 0 ? 'text-red-800' : 'text-gray-600')}`}>
                     Geomean 改进
-                    <HelpIcon content={<div className="space-y-1"><b>公式:</b> <code>exp(Σln(Ratio)/n)</code><br/><b>意义:</b> 工业界评估算法整体改进比例的绝对标准，能有效抵消极端异常值的拉偏效应。</div>} position="bottom-right" />
+                    <HelpIcon 
+                      content={
+                        <div className="space-y-2">
+                          <p className="font-bold text-indigo-600">几何平均改进率</p>
+                          <div className="space-y-1 text-xs">
+                            <p><b>计算公式：</b>exp(Σln(Ratio)/n)</p>
+                            <p><b>工业意义：</b>评估算法整体改进比例的绝对标准</p>
+                            <p><b>优势：</b>能有效抵消极端异常值的拉偏效应</p>
+                            <p><b>解读：</b>正值表示整体优化，负值表示整体退化</p>
+                          </div>
+                        </div>
+                      } 
+                      position="bottom-right" 
+                      tooltipWidth="w-72"
+                    />
                   </div>
                   <div className={`text-2xl font-black ${stats.geomeanImp > 0 ? 'text-emerald-600' : (stats.geomeanImp < 0 ? 'text-red-600' : 'text-gray-700')}`}>
                     {stats.geomeanImp > 0 ? '+' : ''}{stats.geomeanImp.toFixed(2)}%
@@ -144,7 +176,21 @@ const AppContent = () => {
                 <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative group">
                   <div className="text-xs text-gray-500 font-bold mb-1 flex items-center">
                     Arith Mean (算术)
-                    <HelpIcon content={<div className="space-y-1"><b>公式:</b> <code>Σ(改进率)/n</code><br/><b>意义:</b> 直观算术均值。若该值远大于 Geomean，说明个别测试集的表现被异常放大（如基线分母极小）。</div>} position="bottom-right" />
+                    <HelpIcon 
+                      content={
+                        <div className="space-y-2">
+                          <p className="font-bold text-indigo-600">算术平均改进率</p>
+                          <div className="space-y-1 text-xs">
+                            <p><b>计算公式：</b>Σ(改进率)/n</p>
+                            <p><b>工业意义：</b>直观的算术平均值</p>
+                            <p><b>注意：</b>若远大于 Geomean，说明个别测试集表现被异常放大</p>
+                            <p><b>示例：</b>基线分母极小导致改进率虚高</p>
+                          </div>
+                        </div>
+                      } 
+                      position="bottom-right" 
+                      tooltipWidth="w-72"
+                    />
                   </div>
                   <div className={`text-2xl font-black ${stats.meanImp > 0 ? 'text-emerald-600' : (stats.meanImp < 0 ? 'text-red-600' : 'text-gray-700')}`}>
                     {stats.meanImp > 0 ? '+' : ''}{stats.meanImp.toFixed(2)}%
@@ -155,7 +201,22 @@ const AppContent = () => {
                   <div className={`text-xs font-bold mb-1 flex justify-between items-center ${stats.pValue < 0.05 ? 'text-emerald-800' : 'text-orange-800'}`}>
                     <div className="flex items-center">
                       P-Value
-                      <HelpIcon content={<div className="space-y-1"><b>方法:</b> 非参数 Wilcoxon 符号秩检验<br/><b>意义:</b> 判断数据分布的改变是否真实有效。P &lt; 0.05 亮绿灯，证明整体提升具有统计学显著性，而非随机测试噪声。</div>} position="bottom-right" />
+                      <HelpIcon 
+                        content={
+                          <div className="space-y-2">
+                            <p className="font-bold text-indigo-600">Wilcoxon 符号秩检验</p>
+                            <div className="space-y-1 text-xs">
+                              <p><b>检验方法：</b>非参数统计检验，不依赖数据分布</p>
+                              <p><b>工业意义：</b>判断数据分布的改变是否真实有效</p>
+                              <p><b>判断标准：</b>P &lt; 0.05 表示提升具有统计学显著性</p>
+                              <p><b>绿色显示：</b>证明整体提升非随机测试噪声</p>
+                              <p><b>橙色显示：</b>可能存在随机波动，需要更多样本</p>
+                            </div>
+                          </div>
+                        } 
+                        position="bottom-right" 
+                        tooltipWidth="w-80"
+                      />
                     </div>
                   </div>
                   <div className={`text-2xl font-black flex items-baseline gap-1 ${stats.pValue < 0.05 ? 'text-emerald-600' : 'text-orange-600'}`}>
@@ -168,10 +229,24 @@ const AppContent = () => {
                   </div>
                 </div>
                 
-                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative group flex flex-col justify-between">
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative group flex flex-col justify-between">
                   <div className="text-xs text-gray-500 font-bold mb-1 flex items-center">
                     95% 置信区间
-                    <HelpIcon content={<div className="space-y-1"><b>意义:</b> 评估算法表现波动的 95% 上下限预测。如果下限 &gt; 0%，说明该算法极为稳健，几乎在全场景下均有正向收益。</div>} position="bottom-left" />
+                    <HelpIcon 
+                      content={
+                        <div className="space-y-2">
+                          <p className="font-bold text-indigo-600">95% 置信区间</p>
+                          <div className="space-y-1 text-xs">
+                            <p><b>统计含义：</b>评估算法表现波动的 95% 上下限预测</p>
+                            <p><b>下限 &gt; 0%：</b>说明该算法极为稳健</p>
+                            <p><b>工业应用：</b>几乎在全场景下均有正向收益</p>
+                            <p><b>区间越窄：</b>表示算法表现越稳定</p>
+                          </div>
+                        </div>
+                      } 
+                      position="bottom-left" 
+                      tooltipWidth="w-72"
+                    />
                   </div>
                   <div className="text-sm xl:text-base font-black text-gray-700 tracking-tighter bg-gray-50 p-1.5 rounded text-center border border-gray-100">[{stats.ciLower.toFixed(1)}%, {stats.ciUpper.toFixed(1)}%]</div>
                 </div>
@@ -179,7 +254,22 @@ const AppContent = () => {
                 <div className={`p-4 rounded-xl border shadow-sm flex flex-col justify-between ${stats.degradedCount > 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
                   <div className={`text-xs font-bold mb-1 flex items-center ${stats.degradedCount > 0 ? 'text-red-800' : 'text-emerald-800'}`}>
                     退化案例数 
-                    <HelpIcon content={<div className="space-y-1"><b>意义:</b> 在参与计算的有效样本中，改进率 &lt; 0% 的案例总数。工业界通常对退化数量有极其严格的容忍度红线。</div>} position="bottom-left" />
+                    <HelpIcon 
+                      content={
+                        <div className="space-y-2">
+                          <p className="font-bold text-indigo-600">退化案例数</p>
+                          <div className="space-y-1 text-xs">
+                            <p><b>定义：</b>改进率 &lt; 0% 的案例总数</p>
+                            <p><b>统计范围：</b>参与计算的有效样本</p>
+                            <p><b>工业标准：</b>通常有极其严格的容忍度红线</p>
+                            <p><b>绿色显示：</b>无退化案例，表现优秀</p>
+                            <p><b>红色显示：</b>存在退化，需要重点关注</p>
+                          </div>
+                        </div>
+                      } 
+                      position="bottom-left" 
+                      tooltipWidth="w-72"
+                    />
                   </div>
                   <div className={`text-2xl font-black ${stats.degradedCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{stats.degradedCount}</div>
                 </div>
@@ -187,7 +277,22 @@ const AppContent = () => {
                 <div className={`p-4 rounded-xl border shadow-sm transition-colors ${stats.minImp < 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
                   <div className={`text-xs font-bold mb-1 flex items-center ${stats.minImp < 0 ? 'text-red-800' : 'text-emerald-800'}`}>
                     最大退化幅度
-                    <HelpIcon content={<div className="space-y-1"><b>意义:</b> WNS (Worst Case) 思想，即"最坏能有多坏"。严重跌破底线（最大退化幅度过大）的算法改动通常会被直接驳回。</div>} position="bottom-left" />
+                    <HelpIcon 
+                      content={
+                        <div className="space-y-2">
+                          <p className="font-bold text-indigo-600">最大退化幅度 (WNS)</p>
+                          <div className="space-y-1 text-xs">
+                            <p><b>WNS 思想：</b>Worst Case 分析，即"最坏能有多坏"</p>
+                            <p><b>工业意义：</b>评估算法在最差情况下的表现</p>
+                            <p><b>判断标准：</b>严重跌破底线的算法改动通常会被直接驳回</p>
+                            <p><b>绿色显示：</b>无退化或退化幅度可控</p>
+                            <p><b>红色显示：</b>存在严重退化，需要分析原因</p>
+                          </div>
+                        </div>
+                      } 
+                      position="bottom-left" 
+                      tooltipWidth="w-72"
+                    />
                   </div>
                   <div className={`text-2xl font-black ${stats.minImp < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{stats.minImp < 0 ? stats.minImp.toFixed(2) + '%' : '无'}</div>
                 </div>
@@ -216,7 +321,6 @@ const AppContent = () => {
                 <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'all_metrics' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('all_metrics')}><Radar className="w-4 h-4" /> 全局多维雷达</button>
                 <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'ai_analysis' ? 'border-purple-600 text-purple-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('ai_analysis')}><Bot className="w-4 h-4" /> AI 智能诊断</button>
                 <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'qor_simulator' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('qor_simulator')}><Scale className="w-4 h-4" /> QoR 模拟器</button>
-                <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'trend_tracking' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('trend_tracking')}><TrendingUp className="w-4 h-4" /> 演进趋势</button>
               </div>
 
               <div className="bg-white flex-1 overflow-y-auto custom-scrollbar relative z-0">
@@ -226,7 +330,23 @@ const AppContent = () => {
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="text-sm font-bold text-indigo-800 flex items-center gap-1">
                           明细数据目标: <span className="bg-indigo-100 px-2 py-0.5 rounded text-indigo-700 shadow-inner ml-1">{activeMetric}</span>
-                          <HelpIcon content="详细数据表格包含所有的底层明细。支持按行勾选(剔除脏数据)、按列头点击排序。若存在Instance属性列，系统默认按大到小排序。系统自动使用 IQR (四分位距) 法则标注出离群异常值(Outliers)。点击最右侧 🔍 图标可进行个例深度雷达透视。" tooltipWidth="w-72" position="right-center"/>
+                          <HelpIcon 
+                            content={
+                              <div className="space-y-2">
+                                <p className="font-bold text-indigo-600">详细数据表格说明</p>
+                                <div className="space-y-1 text-xs">
+                                  <p><b>数据内容：</b>包含所有底层明细数据</p>
+                                  <p><b>行选择：</b>支持按行勾选，可剔除脏数据</p>
+                                  <p><b>列排序：</b>点击列头可进行升序/降序排序</p>
+                                  <p><b>默认排序：</b>若存在 Instance 属性列，系统默认按大到小排序</p>
+                                  <p><b>异常标注：</b>系统自动使用 IQR (四分位距) 法则标注离群异常值</p>
+                                  <p><b>深度透视：</b>点击最右侧 🔍 图标可进行个例深度雷达透视</p>
+                                </div>
+                              </div>
+                            } 
+                            tooltipWidth="w-80" 
+                            position="right-center"
+                          />
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-3 items-center w-full md:w-auto">
@@ -257,7 +377,21 @@ const AppContent = () => {
                             <th className="px-4 py-3 font-bold text-right border-l border-gray-300 cursor-pointer hover:bg-indigo-100 bg-indigo-50/60" onClick={() => handleSort('imp')}>
                               <div className="flex justify-end items-center text-indigo-900">
                                 改进率 % 
-                                <HelpIcon text="计算公式：((Base - Compare) / Base) * 100。正数(绿色)代表新算法优化，负数(红色)代表新算法退化。" className="w-3.5 h-3.5 ml-1 text-indigo-500" position="bottom-left"/>
+                                <HelpIcon 
+                                  content={
+                                    <div className="space-y-2">
+                                      <p className="font-bold text-indigo-600">改进率计算</p>
+                                      <div className="space-y-1 text-xs">
+                                        <p><b>计算公式：</b>((Base - Compare) / Base) × 100</p>
+                                        <p><b>正值(绿色)：</b>新算法优化，性能提升</p>
+                                        <p><b>负值(红色)：</b>新算法退化，性能下降</p>
+                                        <p><b>零值：</b>两种算法表现相同</p>
+                                      </div>
+                                    </div>
+                                  }
+                                  position="bottom-left"
+                                  tooltipWidth="w-64"
+                                />
                                 <SortIcon config={sortConfig} columnKey="imp"/>
                               </div>
                             </th>
@@ -382,6 +516,7 @@ const AppContent = () => {
                 {activeTab === 'all_metrics' && allMetricsStats.length > 0 && (
                   <RadarChart 
                     allMetricsStats={allMetricsStats} 
+                    availableAlgos={availableAlgos}
                     baseAlgo={baseAlgo} 
                     compareAlgo={compareAlgo} 
                   />
@@ -439,17 +574,19 @@ const AppContent = () => {
                   </div>
                 )}
 
-                {activeTab === 'qor_simulator' && availableMetrics.length > 0 && (
-                  <div className="p-6 h-full flex items-center justify-center">
-                    <div className="text-gray-400 font-bold">QoR 综合模拟器视图</div>
-                  </div>
+                {activeTab === 'qor_simulator' && (
+                  <QoRSimulator 
+                    allMetricsStats={allMetricsStats}
+                    availableMetrics={availableMetrics}
+                    availableAlgos={availableAlgos}
+                    baseAlgo={baseAlgo}
+                    compareAlgo={compareAlgo}
+                    qorWeights={qorWeights}
+                    setQorWeights={setQorWeights}
+                  />
                 )}
 
-                {activeTab === 'trend_tracking' && (
-                  <div className="p-6 h-full flex items-center justify-center">
-                    <div className="text-gray-400 font-bold">演进趋势视图</div>
-                  </div>
-                )}
+
               </div>
             </div>
           </div>

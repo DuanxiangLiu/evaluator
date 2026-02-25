@@ -12,22 +12,11 @@ const Header = ({ isSidebarOpen, onToggleSidebar }) => {
         >
           {isSidebarOpen ? <PanelLeftClose className="w-5 h-5" /> : <PanelLeftOpen className="w-5 h-5" />}
         </button>
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-            <Activity className="w-7 h-7 text-indigo-600" />
-            EDA 算法评估器
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">专业版 v1.0 - 多维度对比分析与智能诊断</p>
+        <div className="flex items-center gap-2">
+          <Activity className="w-7 h-7 text-indigo-600" />
+          <h1 className="text-2xl font-black text-gray-900">EDA 算法评估器</h1>
+          <span className="text-sm text-gray-500 font-medium">v1.0</span>
         </div>
-      </div>
-      
-      <div className="flex items-center gap-2 text-xs text-gray-400">
-        <span className="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full font-bold border border-indigo-100">
-          React + Vite
-        </span>
-        <span className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-full font-bold">
-          本地运行
-        </span>
       </div>
     </div>
   );
