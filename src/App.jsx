@@ -549,7 +549,7 @@ const AppContent = () => {
                         <div className="flex flex-col items-center justify-center h-full text-purple-400 space-y-4">
                           <Loader2 className="w-12 h-12 animate-spin" />
                           <p className="font-bold animate-pulse">正在深度分析 {baseAlgo} vs {compareAlgo} ...</p>
-                          <p className="text-sm text-gray-400">AI 正在生成专业诊断报告，请稍候...</p>
+                          <p className="text-sm text-gray-400">AI 正在生成诊断报告，请稍候...</p>
                         </div>
                       ) : aiError ? (
                         <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-xl flex gap-3 text-sm max-w-2xl mx-auto">
