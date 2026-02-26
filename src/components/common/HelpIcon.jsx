@@ -5,7 +5,7 @@ const HelpIcon = ({
   text, 
   content, 
   className = "w-3.5 h-3.5 text-gray-400 hover:text-indigo-500 transition-colors", 
-  tooltipWidth = "w-80", 
+  tooltipWidth = "w-64", 
   position = "bottom-right" 
 }) => {
   const iconRef = useRef(null);
@@ -20,9 +20,8 @@ const HelpIcon = ({
       
       const tooltipWidthEstimate = tooltipWidth === "w-64" ? 256 : 
                                   tooltipWidth === "w-72" ? 288 : 
-                                  tooltipWidth === "w-80" ? 320 : 
-                                  tooltipWidth === "w-96" ? 384 : 320;
-      const tooltipHeightEstimate = 250;
+                                  tooltipWidth === "w-80" ? 320 : 256;
+      const tooltipHeightEstimate = 200;
 
       let newPosition = position;
 
@@ -89,18 +88,18 @@ const HelpIcon = ({
 
   return (
     <div 
-      className="group/help relative inline-flex items-center ml-1 cursor-help z-[100]"
+      className="group/help relative inline-flex items-center ml-1 cursor-help z-50"
       ref={iconRef}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <HelpCircle className={className} />
       <div 
-        className={`absolute ${isRightPosition ? posClass : (isLeftPosition ? posClass : (isTopPosition ? 'bottom-full mb-2' : 'top-full mt-2'))} hidden group-hover/help:block ${tooltipWidth} p-4 bg-gray-900/98 backdrop-blur-md text-gray-100 text-sm rounded-xl shadow-2xl normal-case font-normal text-left pointer-events-none border border-gray-600 ${!isRightPosition && !isLeftPosition ? posClass : ''} max-w-[85vw] max-h-[75vh] overflow-y-auto custom-scrollbar leading-relaxed`}
+        className={`absolute ${isRightPosition ? posClass : (isLeftPosition ? posClass : (isTopPosition ? 'bottom-full mb-2' : 'top-full mt-2'))} hidden group-hover/help:block ${tooltipWidth} p-3 bg-gray-900/95 backdrop-blur-sm text-gray-100 text-xs rounded-lg shadow-xl normal-case font-normal text-left pointer-events-none border border-gray-700 ${!isRightPosition && !isLeftPosition ? posClass : ''} max-w-[90vw] max-h-[70vh] overflow-y-auto custom-scrollbar`}
       >
         {!isRightPosition && !isLeftPosition && (
           <div 
-            className={`absolute ${isTopPosition ? 'top-full mt-0' : 'bottom-full mb-0'} ${arrowClass} border-4 border-transparent ${isTopPosition ? 'border-t-gray-700' : 'border-b-gray-700'}`}
+            className={`absolute ${isTopPosition ? 'top-full mt-0' : 'bottom-full mb-0'} ${arrowClass} border-4 border-transparent ${isTopPosition ? 'border-t-gray-800' : 'border-b-gray-800'}`}
           ></div>
         )}
         {isRightPosition && (
@@ -109,9 +108,7 @@ const HelpIcon = ({
         {isLeftPosition && (
           <div className={`absolute ${arrowClass} border-4`}></div>
         )}
-        <div className="space-y-2">
-          {content || text}
-        </div>
+        {content || text}
       </div>
     </div>
   );
