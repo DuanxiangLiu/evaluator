@@ -3,7 +3,7 @@ const random = (min, max) => Math.random() * (max - min) + min;
 const randomInt = (min, max) => Math.floor(random(min, max));
 
 // 生成单个case的数据
-const generateCaseData = (caseName, instances, nets, baseAlgo, algo1, algo2) => {
+const generateCaseData = (caseName, instances, nets, macros, modules, baseAlgo, algo1, algo2) => {
   const baseHPWL = random(5000, 100000);
   // TNS通常为负数，表示时序违规的总和
   // 负数越大越好（比如-100比-1000好）
@@ -36,7 +36,7 @@ const generateCaseData = (caseName, instances, nets, baseAlgo, algo1, algo2) => 
   // 随机生成一些NaN值（约10%的概率）
   const addNaN = (value) => Math.random() < 0.1 ? 'NaN' : value.toFixed(0);
 
-  return `${caseName},${instances},${nets},${baseHPWL.toFixed(0)},${addNaN(algo1HPWL)},${addNaN(algo2HPWL)},${baseTNS.toFixed(0)},${addNaN(algo1TNS)},${addNaN(algo2TNS)},${basePower.toFixed(1)},${addNaN(algo1Power)},${addNaN(algo2Power)},${baseRuntime.toFixed(0)},${addNaN(algo1Runtime)},${addNaN(algo2Runtime)},${baseHbCount},${addNaN(algo1HbCount)},${addNaN(algo2HbCount)}`;
+  return `${caseName},${instances},${nets},${macros},${modules},${baseHPWL.toFixed(0)},${addNaN(algo1HPWL)},${addNaN(algo2HPWL)},${baseTNS.toFixed(0)},${addNaN(algo1TNS)},${addNaN(algo2TNS)},${basePower.toFixed(1)},${addNaN(algo1Power)},${addNaN(algo2Power)},${baseRuntime.toFixed(0)},${addNaN(algo1Runtime)},${addNaN(algo2Runtime)},${baseHbCount},${addNaN(algo1HbCount)},${addNaN(algo2HbCount)}`;
 };
 
 // 生成默认数据集（综合设计）
@@ -51,10 +51,12 @@ export const generateDefaultDataset = () => {
     const caseName = `${design}_${i}`;
     const instances = randomInt(50000, 5000000);
     const nets = randomInt(instances * 0.9, instances * 1.2);
-    cases.push(generateCaseData(caseName, instances, nets));
+    const macros = randomInt(instances * 0.05, instances * 0.15);
+    const modules = randomInt(instances * 0.02, instances * 0.08);
+    cases.push(generateCaseData(caseName, instances, nets, macros, modules));
   }
   
-  return `Case,Instances,Nets,m_Base_HPWL,m_Algo1_HPWL,m_Algo2_HPWL,m_Base_TNS,m_Algo1_TNS,m_Algo2_TNS,m_Base_Power,m_Algo1_Power,m_Algo2_Power,m_Base_Runtime,m_Algo1_Runtime,m_Algo2_Runtime,m_Base_Hb_Count,m_Algo1_Hb_Count,m_Algo2_Hb_Count
+  return `Case,#Inst,#Net,#Macro,#Module,m_Base_HPWL,m_Algo1_HPWL,m_Algo2_HPWL,m_Base_TNS,m_Algo1_TNS,m_Algo2_TNS,m_Base_Power,m_Algo1_Power,m_Algo2_Power,m_Base_Runtime,m_Algo1_Runtime,m_Algo2_Runtime,m_Base_HB,m_Algo1_HB,m_Algo2_HB
 ${cases.join('\n')}`;
 };
 
@@ -66,6 +68,8 @@ export const generateSmallDataset = () => {
     const caseName = `core_${i.toString().padStart(2, '0')}`;
     const instances = randomInt(5000, 100000);
     const nets = randomInt(instances * 0.8, instances * 1.5);
+    const macros = randomInt(instances * 0.03, instances * 0.1);
+    const modules = randomInt(instances * 0.02, instances * 0.06);
     
     const baseHPWL = random(500, 5000);
     const baseTNS = random(-500, -10);
@@ -81,10 +85,10 @@ export const generateSmallDataset = () => {
     const algo1Power = basePower * (1 - algo1Imp * 0.8);
     const algo2Power = basePower * (1 - algo2Imp * 0.8);
     
-    cases.push(`${caseName},${instances},${nets},${baseHPWL.toFixed(0)},${algo1HPWL.toFixed(0)},${algo2HPWL.toFixed(0)},${baseTNS.toFixed(0)},${algo1TNS.toFixed(0)},${algo2TNS.toFixed(0)},${basePower.toFixed(1)},${algo1Power.toFixed(1)},${algo2Power.toFixed(1)}`);
+    cases.push(`${caseName},${instances},${nets},${macros},${modules},${baseHPWL.toFixed(0)},${algo1HPWL.toFixed(0)},${algo2HPWL.toFixed(0)},${baseTNS.toFixed(0)},${algo1TNS.toFixed(0)},${algo2TNS.toFixed(0)},${basePower.toFixed(1)},${algo1Power.toFixed(1)},${algo2Power.toFixed(1)}`);
   }
   
-  return `Case,Instances,Nets,m_Base_HPWL,m_Algo1_HPWL,m_Algo2_HPWL,m_Base_TNS,m_Algo1_TNS,m_Algo2_TNS,m_Base_Power,m_Algo1_Power,m_Algo2_Power
+  return `Case,#Inst,#Net,#Macro,#Module,m_Base_HPWL,m_Algo1_HPWL,m_Algo2_HPWL,m_Base_TNS,m_Algo1_TNS,m_Algo2_TNS,m_Base_Power,m_Algo1_Power,m_Algo2_Power
 ${cases.join('\n')}`;
 };
 
@@ -96,6 +100,8 @@ export const generateLargeDataset = () => {
     const caseName = `chip_${i.toString().padStart(2, '0')}`;
     const instances = randomInt(3000000, 10000000);
     const nets = randomInt(instances * 0.9, instances * 1.3);
+    const macros = randomInt(instances * 0.04, instances * 0.12);
+    const modules = randomInt(instances * 0.03, instances * 0.1);
     
     const baseHPWL = random(50000, 200000);
     const baseTNS = random(-20000, -1000);
@@ -114,10 +120,10 @@ export const generateLargeDataset = () => {
     const algo1Runtime = baseRuntime * (1 - algo1Imp * 0.5);
     const algo2Runtime = baseRuntime * (1 - algo2Imp * 0.5);
     
-    cases.push(`${caseName},${instances},${nets},${baseHPWL.toFixed(0)},${algo1HPWL.toFixed(0)},${algo2HPWL.toFixed(0)},${baseTNS.toFixed(0)},${algo1TNS.toFixed(0)},${algo2TNS.toFixed(0)},${basePower.toFixed(1)},${algo1Power.toFixed(1)},${algo2Power.toFixed(1)},${baseRuntime.toFixed(0)},${algo1Runtime.toFixed(0)},${algo2Runtime.toFixed(0)}`);
+    cases.push(`${caseName},${instances},${nets},${macros},${modules},${baseHPWL.toFixed(0)},${algo1HPWL.toFixed(0)},${algo2HPWL.toFixed(0)},${baseTNS.toFixed(0)},${algo1TNS.toFixed(0)},${algo2TNS.toFixed(0)},${basePower.toFixed(1)},${algo1Power.toFixed(1)},${algo2Power.toFixed(1)},${baseRuntime.toFixed(0)},${algo1Runtime.toFixed(0)},${algo2Runtime.toFixed(0)}`);
   }
   
-  return `Case,Instances,Nets,m_Base_HPWL,m_Algo1_HPWL,m_Algo2_HPWL,m_Base_TNS,m_Algo1_TNS,m_Algo2_TNS,m_Base_Power,m_Algo1_Power,m_Algo2_Power,m_Base_Runtime,m_Algo1_Runtime,m_Algo2_Runtime
+  return `Case,#Inst,#Net,#Macro,#Module,m_Base_HPWL,m_Algo1_HPWL,m_Algo2_HPWL,m_Base_TNS,m_Algo1_TNS,m_Algo2_TNS,m_Base_Power,m_Algo1_Power,m_Algo2_Power,m_Base_Runtime,m_Algo1_Runtime,m_Algo2_Runtime
 ${cases.join('\n')}`;
 };
 
@@ -129,6 +135,8 @@ export const generatePowerDataset = () => {
     const caseName = `power_test_${i.toString().padStart(2, '0')}`;
     const instances = randomInt(50000, 800000);
     const nets = randomInt(instances * 0.85, instances * 1.2);
+    const macros = randomInt(instances * 0.06, instances * 0.15);
+    const modules = randomInt(instances * 0.04, instances * 0.1);
     
     const baseHPWL = random(3000, 30000);
     const basePower = random(50, 600);
@@ -144,10 +152,10 @@ export const generatePowerDataset = () => {
     const algo1Leakage = baseLeakage * (1 - algo1Imp * 1.5);
     const algo2Leakage = baseLeakage * (1 - algo2Imp * 1.5);
     
-    cases.push(`${caseName},${instances},${nets},${baseHPWL.toFixed(0)},${algo1HPWL.toFixed(0)},${algo2HPWL.toFixed(0)},${basePower.toFixed(1)},${algo1Power.toFixed(1)},${algo2Power.toFixed(1)},${baseLeakage.toFixed(1)},${algo1Leakage.toFixed(1)},${algo2Leakage.toFixed(1)}`);
+    cases.push(`${caseName},${instances},${nets},${macros},${modules},${baseHPWL.toFixed(0)},${algo1HPWL.toFixed(0)},${algo2HPWL.toFixed(0)},${basePower.toFixed(1)},${algo1Power.toFixed(1)},${algo2Power.toFixed(1)},${baseLeakage.toFixed(1)},${algo1Leakage.toFixed(1)},${algo2Leakage.toFixed(1)}`);
   }
   
-  return `Case,Instances,Nets,m_Base_HPWL,m_Algo1_HPWL,m_Algo2_HPWL,m_Base_Power,m_Algo1_Power,m_Algo2_Power,m_Base_Leakage,m_Algo1_Leakage,m_Algo2_Leakage
+  return `Case,#Inst,#Net,#Macro,#Module,m_Base_HPWL,m_Algo1_HPWL,m_Algo2_HPWL,m_Base_Power,m_Algo1_Power,m_Algo2_Power,m_Base_Leakage,m_Algo1_Leakage,m_Algo2_Leakage
 ${cases.join('\n')}`;
 };
 
@@ -159,6 +167,8 @@ export const generateTimingDataset = () => {
     const caseName = `timing_test_${i.toString().padStart(2, '0')}`;
     const instances = randomInt(100000, 1000000);
     const nets = randomInt(instances * 0.9, instances * 1.3);
+    const macros = randomInt(instances * 0.05, instances * 0.15);
+    const modules = randomInt(instances * 0.04, instances * 0.12);
     
     // TNS为负数，表示时序违规
     const baseTNS = random(-10000, -200);
@@ -177,9 +187,9 @@ export const generateTimingDataset = () => {
     const algo1HPWL = baseHPWL * (1 - algo1Imp * 0.6);
     const algo2HPWL = baseHPWL * (1 - algo2Imp * 0.6);
     
-    cases.push(`${caseName},${instances},${nets},${baseTNS.toFixed(0)},${algo1TNS.toFixed(0)},${algo2TNS.toFixed(0)},${baseWNS.toFixed(0)},${algo1WNS.toFixed(0)},${algo2WNS.toFixed(0)},${baseHPWL.toFixed(0)},${algo1HPWL.toFixed(0)},${algo2HPWL.toFixed(0)}`);
+    cases.push(`${caseName},${instances},${nets},${macros},${modules},${baseTNS.toFixed(0)},${algo1TNS.toFixed(0)},${algo2TNS.toFixed(0)},${baseWNS.toFixed(0)},${algo1WNS.toFixed(0)},${algo2WNS.toFixed(0)},${baseHPWL.toFixed(0)},${algo1HPWL.toFixed(0)},${algo2HPWL.toFixed(0)}`);
   }
   
-  return `Case,Instances,Nets,m_Base_TNS,m_Algo1_TNS,m_Algo2_TNS,m_Base_WNS,m_Algo1_WNS,m_Algo2_WNS,m_Base_HPWL,m_Algo1_HPWL,m_Algo2_HPWL
+  return `Case,#Inst,#Net,#Macro,#Module,m_Base_TNS,m_Algo1_TNS,m_Algo2_TNS,m_Base_WNS,m_Algo1_WNS,m_Algo2_WNS,m_Base_HPWL,m_Algo1_HPWL,m_Algo2_HPWL
 ${cases.join('\n')}`;
 };

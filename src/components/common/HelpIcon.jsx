@@ -1,116 +1,82 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, X } from 'lucide-react';
 
 const HelpIcon = ({ 
   text, 
   content, 
   className = "w-3.5 h-3.5 text-gray-400 hover:text-indigo-500 transition-colors", 
-  tooltipWidth = "w-64", 
+  tooltipWidth = "w-80", 
   position = "bottom-right" 
 }) => {
   const iconRef = useRef(null);
-  const [adjustedPosition, setAdjustedPosition] = useState(position);
-  const [isHovered, setIsHovered] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    setShowModal(true);
+  };
+
+  const handleClose = () => {
+    setShowModal(false);
+  };
 
   useEffect(() => {
-    if (isHovered && iconRef.current) {
-      const iconRect = iconRef.current.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      
-      const tooltipWidthEstimate = tooltipWidth === "w-64" ? 256 : 
-                                  tooltipWidth === "w-72" ? 288 : 
-                                  tooltipWidth === "w-80" ? 320 : 256;
-      const tooltipHeightEstimate = 200;
-
-      let newPosition = position;
-
-      if (position === "right-center") {
-        if (iconRect.right + tooltipWidthEstimate > viewportWidth - 20) {
-          newPosition = "left-center";
-        }
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        setShowModal(false);
       }
+    };
 
-      if (position === "bottom-right" || position === "bottom-center" || position === "bottom-left") {
-        if (iconRect.bottom + tooltipHeightEstimate > viewportHeight - 20) {
-          newPosition = position.replace("bottom", "top");
-        }
-      }
-
-      if (position === "left-center") {
-        if (iconRect.left - tooltipWidthEstimate < 20) {
-          newPosition = "right-center";
-        }
-      }
-
-      if (position === "top-right" || position === "top-center" || position === "top-left") {
-        if (iconRect.top - tooltipHeightEstimate < 20) {
-          newPosition = position.replace("top", "bottom");
-        }
-      }
-
-      setAdjustedPosition(newPosition);
+    if (showModal) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
     }
-  }, [isHovered, position, tooltipWidth]);
 
-  let posClass = "left-1/2 -translate-x-1/2";
-  let arrowClass = "left-1/2 -translate-x-1/2";
-  
-  if (adjustedPosition === "bottom-right") { 
-    posClass = "left-0"; 
-    arrowClass = "left-2"; 
-  } else if (adjustedPosition === "bottom-left") { 
-    posClass = "right-0"; 
-    arrowClass = "right-2"; 
-  } else if (adjustedPosition === "bottom-center") {
-    posClass = "left-1/2 -translate-x-1/2";
-    arrowClass = "left-1/2 -translate-x-1/2";
-  } else if (adjustedPosition === "top-right") {
-    posClass = "left-0";
-    arrowClass = "left-2";
-  } else if (adjustedPosition === "top-left") {
-    posClass = "right-0";
-    arrowClass = "right-2";
-  } else if (adjustedPosition === "top-center") {
-    posClass = "left-1/2 -translate-x-1/2";
-    arrowClass = "left-1/2 -translate-x-1/2";
-  } else if (adjustedPosition === "right-center") { 
-    posClass = "left-full top-1/2 -translate-y-1/2 ml-2"; 
-    arrowClass = "right-full top-1/2 -translate-y-1/2 border-r-gray-800 border-b-transparent border-t-transparent border-l-transparent"; 
-  } else if (adjustedPosition === "left-center") {
-    posClass = "right-full top-1/2 -translate-y-1/2 mr-2";
-    arrowClass = "left-full top-1/2 -translate-y-1/2 border-l-gray-800 border-b-transparent border-t-transparent border-r-transparent";
-  }
-
-  const isTopPosition = adjustedPosition.startsWith("top");
-  const isLeftPosition = adjustedPosition === "left-center";
-  const isRightPosition = adjustedPosition === "right-center";
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [showModal]);
 
   return (
-    <div 
-      className="group/help relative inline-flex items-center ml-1 cursor-help z-50"
-      ref={iconRef}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <HelpCircle className={className} />
+    <>
       <div 
-        className={`absolute ${isRightPosition ? posClass : (isLeftPosition ? posClass : (isTopPosition ? 'bottom-full mb-2' : 'top-full mt-2'))} hidden group-hover/help:block ${tooltipWidth} p-3 bg-gray-900/95 backdrop-blur-sm text-gray-100 text-xs rounded-lg shadow-xl normal-case font-normal text-left pointer-events-none border border-gray-700 ${!isRightPosition && !isLeftPosition ? posClass : ''} max-w-[90vw] max-h-[70vh] overflow-y-auto custom-scrollbar`}
+        className="relative inline-flex items-center ml-1 cursor-help"
+        ref={iconRef}
+        onClick={handleClick}
       >
-        {!isRightPosition && !isLeftPosition && (
-          <div 
-            className={`absolute ${isTopPosition ? 'top-full mt-0' : 'bottom-full mb-0'} ${arrowClass} border-4 border-transparent ${isTopPosition ? 'border-t-gray-800' : 'border-b-gray-800'}`}
-          ></div>
-        )}
-        {isRightPosition && (
-          <div className={`absolute ${arrowClass} border-4`}></div>
-        )}
-        {isLeftPosition && (
-          <div className={`absolute ${arrowClass} border-4`}></div>
-        )}
-        {content || text}
+        <HelpCircle className={className} />
       </div>
-    </div>
+
+      {showModal && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          onClick={handleClose}
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+          <div 
+            className={`relative ${tooltipWidth} max-w-[90vw] max-h-[85vh] bg-gray-900/98 backdrop-blur-md text-gray-100 rounded-2xl shadow-2xl border border-gray-600 overflow-hidden animate-in fade-in zoom-in duration-200`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700 bg-gray-800/50">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-indigo-400" />
+                <span className="text-base font-bold text-white">说明</span>
+              </div>
+              <button 
+                onClick={handleClose}
+                className="p-1.5 rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-400 hover:text-white" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto max-h-[calc(85vh-60px)] custom-scrollbar text-sm leading-relaxed">
+              {content || text}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
