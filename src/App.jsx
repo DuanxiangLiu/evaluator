@@ -132,6 +132,12 @@ const AppContent = () => {
           onCompareAlgoChange={setCompareAlgo}
         />
 
+        <CsvDataSource
+          csvInput={csvInput}
+          onCsvChange={setCsvInput}
+          onRunAnalysis={runAnalysis}
+        />
+
         <div className="flex justify-between items-end px-1 mt-1">
           <div className="text-sm font-bold text-gray-700 flex items-center gap-1">
             核心统计指征 ({activeMetric})
@@ -580,12 +586,6 @@ const AppContent = () => {
 
           </div>
         </div>
-
-        <CsvDataSource
-          csvInput={csvInput}
-          onCsvChange={setCsvInput}
-          onRunAnalysis={runAnalysis}
-        />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { HelpCircle } from 'lucide-react';
 
 const HelpIcon = ({ 
@@ -8,28 +8,104 @@ const HelpIcon = ({
   tooltipWidth = "w-64", 
   position = "bottom-right" 
 }) => {
+  const iconRef = useRef(null);
+  const [adjustedPosition, setAdjustedPosition] = useState(position);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (isHovered && iconRef.current) {
+      const iconRect = iconRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      const tooltipWidthEstimate = tooltipWidth === "w-64" ? 256 : 
+                                  tooltipWidth === "w-72" ? 288 : 
+                                  tooltipWidth === "w-80" ? 320 : 256;
+      const tooltipHeightEstimate = 200;
+
+      let newPosition = position;
+
+      if (position === "right-center") {
+        if (iconRect.right + tooltipWidthEstimate > viewportWidth - 20) {
+          newPosition = "left-center";
+        }
+      }
+
+      if (position === "bottom-right" || position === "bottom-center" || position === "bottom-left") {
+        if (iconRect.bottom + tooltipHeightEstimate > viewportHeight - 20) {
+          newPosition = position.replace("bottom", "top");
+        }
+      }
+
+      if (position === "left-center") {
+        if (iconRect.left - tooltipWidthEstimate < 20) {
+          newPosition = "right-center";
+        }
+      }
+
+      if (position === "top-right" || position === "top-center" || position === "top-left") {
+        if (iconRect.top - tooltipHeightEstimate < 20) {
+          newPosition = position.replace("top", "bottom");
+        }
+      }
+
+      setAdjustedPosition(newPosition);
+    }
+  }, [isHovered, position, tooltipWidth]);
+
   let posClass = "left-1/2 -translate-x-1/2";
   let arrowClass = "left-1/2 -translate-x-1/2";
   
-  if (position === "bottom-right") { 
+  if (adjustedPosition === "bottom-right") { 
     posClass = "left-0"; 
     arrowClass = "left-2"; 
-  } else if (position === "bottom-left") { 
+  } else if (adjustedPosition === "bottom-left") { 
     posClass = "right-0"; 
     arrowClass = "right-2"; 
-  } else if (position === "right-center") { 
+  } else if (adjustedPosition === "bottom-center") {
+    posClass = "left-1/2 -translate-x-1/2";
+    arrowClass = "left-1/2 -translate-x-1/2";
+  } else if (adjustedPosition === "top-right") {
+    posClass = "left-0";
+    arrowClass = "left-2";
+  } else if (adjustedPosition === "top-left") {
+    posClass = "right-0";
+    arrowClass = "right-2";
+  } else if (adjustedPosition === "top-center") {
+    posClass = "left-1/2 -translate-x-1/2";
+    arrowClass = "left-1/2 -translate-x-1/2";
+  } else if (adjustedPosition === "right-center") { 
     posClass = "left-full top-1/2 -translate-y-1/2 ml-2"; 
     arrowClass = "right-full top-1/2 -translate-y-1/2 border-r-gray-800 border-b-transparent border-t-transparent border-l-transparent"; 
+  } else if (adjustedPosition === "left-center") {
+    posClass = "right-full top-1/2 -translate-y-1/2 mr-2";
+    arrowClass = "left-full top-1/2 -translate-y-1/2 border-l-gray-800 border-b-transparent border-t-transparent border-r-transparent";
   }
-  
+
+  const isTopPosition = adjustedPosition.startsWith("top");
+  const isLeftPosition = adjustedPosition === "left-center";
+  const isRightPosition = adjustedPosition === "right-center";
+
   return (
-    <div className="group/help relative inline-flex items-center ml-1 cursor-help z-50">
+    <div 
+      className="group/help relative inline-flex items-center ml-1 cursor-help z-50"
+      ref={iconRef}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <HelpCircle className={className} />
-      <div className={`absolute ${position === "right-center" ? posClass : 'top-full mt-2'} hidden group-hover/help:block ${tooltipWidth} p-3 bg-gray-900/95 backdrop-blur-sm text-gray-100 text-xs rounded-lg shadow-xl normal-case font-normal text-left pointer-events-none border border-gray-700 ${position !== "right-center" ? posClass : ''}`}>
-        {position !== "right-center" && (
-          <div className={`absolute bottom-full mb-0 ${arrowClass} border-4 border-transparent border-b-gray-800`}></div>
+      <div 
+        className={`absolute ${isRightPosition ? posClass : (isLeftPosition ? posClass : (isTopPosition ? 'bottom-full mb-2' : 'top-full mt-2'))} hidden group-hover/help:block ${tooltipWidth} p-3 bg-gray-900/95 backdrop-blur-sm text-gray-100 text-xs rounded-lg shadow-xl normal-case font-normal text-left pointer-events-none border border-gray-700 ${!isRightPosition && !isLeftPosition ? posClass : ''} max-w-[90vw] max-h-[70vh] overflow-y-auto custom-scrollbar`}
+      >
+        {!isRightPosition && !isLeftPosition && (
+          <div 
+            className={`absolute ${isTopPosition ? 'top-full mt-0' : 'bottom-full mb-0'} ${arrowClass} border-4 border-transparent ${isTopPosition ? 'border-t-gray-800' : 'border-b-gray-800'}`}
+          ></div>
         )}
-        {position === "right-center" && (
+        {isRightPosition && (
+          <div className={`absolute ${arrowClass} border-4`}></div>
+        )}
+        {isLeftPosition && (
           <div className={`absolute ${arrowClass} border-4`}></div>
         )}
         {content || text}

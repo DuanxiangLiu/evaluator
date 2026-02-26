@@ -5,7 +5,9 @@ const randomInt = (min, max) => Math.floor(random(min, max));
 // 生成单个case的数据
 const generateCaseData = (caseName, instances, nets, baseAlgo, algo1, algo2) => {
   const baseHPWL = random(5000, 100000);
-  const baseTNS = random(0, 5000);
+  // TNS通常为负数，表示时序违规的总和
+  // 负数越大越好（比如-100比-1000好）
+  const baseTNS = random(-10000, -100);
   const basePower = random(50, 1500);
   const baseRuntime = random(1000, 30000);
   const baseHbCount = random(10, 1000);
@@ -17,6 +19,8 @@ const generateCaseData = (caseName, instances, nets, baseAlgo, algo1, algo2) => 
   const algo1HPWL = baseHPWL * (1 - algo1Imp * random(0.8, 1.2));
   const algo2HPWL = baseHPWL * (1 - algo2Imp * random(0.8, 1.2));
   
+  // TNS改进：改进率越大，TNS值越大（越接近0或为正数）
+  // 例如：基线TNS=-5000，改进20%，则新TNS=-5000*(1-0.2)=-4000（更好）
   const algo1TNS = baseTNS * (1 - algo1Imp * random(0.5, 1.5));
   const algo2TNS = baseTNS * (1 - algo2Imp * random(0.5, 1.5));
   
@@ -64,7 +68,7 @@ export const generateSmallDataset = () => {
     const nets = randomInt(instances * 0.8, instances * 1.5);
     
     const baseHPWL = random(500, 5000);
-    const baseTNS = random(0, 200);
+    const baseTNS = random(-500, -10);
     const basePower = random(5, 50);
     
     const algo1Imp = random(-0.05, 0.15);
@@ -94,7 +98,7 @@ export const generateLargeDataset = () => {
     const nets = randomInt(instances * 0.9, instances * 1.3);
     
     const baseHPWL = random(50000, 200000);
-    const baseTNS = random(1000, 10000);
+    const baseTNS = random(-20000, -1000);
     const basePower = random(500, 2000);
     const baseRuntime = random(10000, 50000);
     
@@ -156,17 +160,20 @@ export const generateTimingDataset = () => {
     const instances = randomInt(100000, 1000000);
     const nets = randomInt(instances * 0.9, instances * 1.3);
     
-    const baseTNS = random(100, 5000);
-    const baseWNS = random(-500, 0);
+    // TNS为负数，表示时序违规
+    const baseTNS = random(-10000, -200);
+    // WNS为负数，表示最坏的时序违规
+    const baseWNS = random(-500, -10);
     const baseHPWL = random(10000, 80000);
     
     const algo1Imp = random(-0.05, 0.20);
     const algo2Imp = random(-0.03, 0.25);
     
+    // 改进率越大，TNS和WNS越大（越接近0）
     const algo1TNS = baseTNS * (1 - algo1Imp * 1.3);
     const algo2TNS = baseTNS * (1 - algo2Imp * 1.3);
-    const algo1WNS = baseWNS * (1 + algo1Imp * 0.8);
-    const algo2WNS = baseWNS * (1 + algo2Imp * 0.8);
+    const algo1WNS = baseWNS * (1 - algo1Imp * 0.8);
+    const algo2WNS = baseWNS * (1 - algo2Imp * 0.8);
     const algo1HPWL = baseHPWL * (1 - algo1Imp * 0.6);
     const algo2HPWL = baseHPWL * (1 - algo2Imp * 0.6);
     
