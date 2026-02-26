@@ -133,7 +133,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
       >
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-indigo-500" />
-          <h2 className="text-sm font-bold text-gray-700">CSV 数据源配置</h2>
+          <h2 className="text-sm font-bold text-gray-700">数据源管理</h2>
           <span className="text-xs text-gray-400">({rows.length} 条数据)</span>
         </div>
         <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
                 <p className="font-bold text-indigo-600">CSV 数据格式说明</p>
                 <div className="space-y-1 text-xs">
                   <p><b>第一列：</b>Case 名称（测试用例标识）</p>
-                  <p><b>元数据列：</b>如 Instances、Nets 等设计属性</p>
+                  <p><b>元数据列：</b>#Inst（实例数）、#Net（网线数）、#Macro（宏单元数）、#Module（模块数）</p>
                   <p><b>指标列格式：</b>m_算法名_指标名</p>
                   <p><b>示例：</b>m_Base_HPWL, m_Algo1_HPWL</p>
                   <p><b>支持算法：</b>Base（基线）、Algo1、Algo2 等</p>
