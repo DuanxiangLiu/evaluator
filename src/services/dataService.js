@@ -1,5 +1,5 @@
 import { calculateImprovement, calculateRatio, quantile, calculateWilcoxonPValue } from '../utils/statistics';
-import { validateCSVStructure, VALIDATION_CODES, VALIDATION_SEVERITY } from '../utils/validationUtils';
+import { validateCSVStructure, VALIDATION_CODES, VALIDATION_SEVERITY, detectDelimiter } from '../utils/validationUtils';
 
 export const EDA_METRICS_CONFIG = {
   // 物理设计指标
@@ -42,7 +42,8 @@ export const parseCSV = (csvString) => {
   const lines = csvString.trim().split('\n');
   if (lines.length < 2) return { data: [], algos: [], metrics: [], metaColumns: [] };
   
-  const headers = lines[0].split(',').map(h => h.trim());
+  const delimiter = detectDelimiter(csvString);
+  const headers = lines[0].split(delimiter).map(h => h.trim());
   
   const algosSet = new Set();
   const metricsSet = new Set();
@@ -66,7 +67,7 @@ export const parseCSV = (csvString) => {
   const metricsList = Array.from(metricsSet);
   
   const data = lines.slice(1).map(line => {
-    const parts = line.split(',');
+    const parts = line.split(delimiter);
     const row = { Case: parts[0]?.trim(), raw: {}, meta: {} };
     const rowMap = {};
     

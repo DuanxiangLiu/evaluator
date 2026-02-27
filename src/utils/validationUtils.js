@@ -80,6 +80,17 @@ export const validateFileSize = (file, maxSizeMB = 10) => {
   return { valid: true, errors: [] };
 };
 
+export const detectDelimiter = (csvString) => {
+  const firstLine = csvString.trim().split('\n')[0] || '';
+  const tabCount = (firstLine.match(/\t/g) || []).length;
+  const commaCount = (firstLine.match(/,/g) || []).length;
+  
+  if (tabCount > commaCount) {
+    return '\t';
+  }
+  return ',';
+};
+
 export const validateCSVStructure = (csvString) => {
   const errors = [];
   const warnings = [];
@@ -97,6 +108,7 @@ export const validateCSVStructure = (csvString) => {
     };
   }
   
+  const delimiter = detectDelimiter(csvString);
   const lines = csvString.trim().split('\n');
   
   if (lines.length < 2) {
@@ -112,7 +124,7 @@ export const validateCSVStructure = (csvString) => {
     };
   }
   
-  const headers = lines[0].split(',').map(h => h.trim());
+  const headers = lines[0].split(delimiter).map(h => h.trim());
   const headerCount = headers.length;
   
   const hasCaseColumn = headers[0]?.toLowerCase() === 'case';
@@ -184,7 +196,7 @@ export const validateCSVStructure = (csvString) => {
   
   dataRows.forEach((line, idx) => {
     const rowNum = idx + 2;
-    const values = line.split(',').map(v => v.trim());
+    const values = line.split(delimiter).map(v => v.trim());
     
     if (values.length !== headerCount) {
       inconsistentRows.push({
@@ -308,7 +320,8 @@ export const validateCSVQuick = (csvString) => {
     return { valid: false, message: '数据行数不足' };
   }
   
-  const headers = lines[0].split(',').map(h => h.trim());
+  const delimiter = detectDelimiter(csvString);
+  const headers = lines[0].split(delimiter).map(h => h.trim());
   const hasCase = headers[0]?.toLowerCase() === 'case';
   const hasMetrics = headers.some(h => h.startsWith('m_'));
   

@@ -8,7 +8,7 @@ import HelpIcon from '../common/HelpIcon';
 import ValidationResultPanel, { CompactValidationStatus } from '../common/ValidationResultPanel';
 import { useInputValidation, useFileUpload, INPUT_STATUS } from '../../hooks/useInputValidation';
 import { useToast } from '../common/Toast';
-import { getValidationSuggestions } from '../../utils/validationUtils';
+import { getValidationSuggestions, detectDelimiter } from '../../utils/validationUtils';
 import { 
   generateDefaultDataset, 
   generateSmallDataset, 
@@ -25,6 +25,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const [showPasteArea, setShowPasteArea] = useState(false);
   const [showValidationPanel, setShowValidationPanel] = useState(false);
   const rowsPerPage = 20;
+  const isUserActionRef = useRef(false);
 
   const toast = useToast();
 
@@ -39,16 +40,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
     validateImmediate,
     clearValidation
   } = useInputValidation({
-    debounceMs: 500,
-    onValidationComplete: (result) => {
-      if (result.valid) {
-        if (result.warnings.length > 0) {
-          toast.warning('数据验证通过', `发现 ${result.warnings.length} 个警告`);
-        } else {
-          toast.success('数据验证通过', `成功解析 ${result.stats?.totalRows || 0} 行数据`);
-        }
-      }
-    }
+    debounceMs: 500
   });
 
   const {
@@ -72,6 +64,14 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
       const result = validateImmediate(content);
       if (result.valid) {
         onRunAnalysis(content);
+        if (result.warnings.length > 0) {
+          toast.warning('数据验证通过', `发现 ${result.warnings.length} 个警告`);
+        } else {
+          toast.success('文件上传成功', `成功解析 ${result.stats?.totalRows || 0} 行数据`);
+        }
+      } else {
+        toast.error('数据验证失败', '请检查数据格式');
+        setShowValidationPanel(true);
       }
       setCurrentPage(1);
     },
@@ -117,9 +117,12 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
       const result = validateImmediate(data);
       if (result.valid) {
         onRunAnalysis(data);
+        toast.success('数据加载成功', `已加载 ${defaultDataSources[selectedDataSource].name}`);
+      } else {
+        toast.error('数据验证失败', '请检查数据格式');
+        setShowValidationPanel(true);
       }
       setCurrentPage(1);
-      toast.success('数据加载成功', `已加载 ${defaultDataSources[selectedDataSource].name}`);
     }
   };
 
@@ -133,7 +136,6 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const handlePaste = () => {
     navigator.clipboard.readText().then(text => {
       setPastedData(text);
-      toast.info('粘贴成功', '数据已从剪贴板读取');
     }).catch(err => {
       toast.error('粘贴失败', '无法读取剪贴板内容');
     });
@@ -145,6 +147,14 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
       const result = validateImmediate(pastedData);
       if (result.valid) {
         onRunAnalysis(pastedData);
+        if (result.warnings.length > 0) {
+          toast.warning('数据验证通过', `发现 ${result.warnings.length} 个警告`);
+        } else {
+          toast.success('数据应用成功', `成功解析 ${result.stats?.totalRows || 0} 行数据`);
+        }
+      } else {
+        toast.error('数据验证失败', '请检查数据格式');
+        setShowValidationPanel(true);
       }
       setPastedData('');
       setShowPasteArea(false);
@@ -175,9 +185,10 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
     const lines = csv.trim().split('\n');
     if (lines.length === 0) return { headers: [], rows: [] };
     
-    const headers = lines[0].split(',').map(h => h.trim());
+    const delimiter = detectDelimiter(csv);
+    const headers = lines[0].split(delimiter).map(h => h.trim());
     const rows = lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim());
+      const values = line.split(delimiter).map(v => v.trim());
       return values;
     });
     
