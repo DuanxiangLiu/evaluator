@@ -527,10 +527,20 @@ const AppContent = () => {
                         onClick={() => {
                           if (!showExportMenu && exportMenuRef.current) {
                             const rect = exportMenuRef.current.getBoundingClientRect();
-                            setExportMenuPosition({
-                              top: rect.bottom + 8,
-                              left: rect.right - 200
-                            });
+                            const menuWidth = 220;
+                            const menuHeight = 200;
+                            let left = rect.right - menuWidth;
+                            let top = rect.bottom + 8;
+                            
+                            if (left < 10) left = 10;
+                            if (left + menuWidth > window.innerWidth - 10) {
+                              left = window.innerWidth - menuWidth - 10;
+                            }
+                            if (top + menuHeight > window.innerHeight - 10) {
+                              top = rect.top - menuHeight - 8;
+                            }
+                            
+                            setExportMenuPosition({ top, left });
                           }
                           setShowExportMenu(!showExportMenu);
                         }} 
@@ -543,43 +553,65 @@ const AppContent = () => {
                         <div 
                           className="fixed bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 z-[9999] overflow-hidden animate-scaleIn"
                           style={{
-                            top: exportMenuPosition.top,
-                            left: exportMenuPosition.left,
-                            minWidth: '200px'
+                            top: `${exportMenuPosition.top}px`,
+                            left: `${exportMenuPosition.left}px`,
+                            minWidth: '220px'
                           }}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <div className="px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-violet-50">
+                          <div className="px-4 py-2.5 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-violet-50">
                             <span className="text-xs font-semibold text-gray-600">选择导出格式</span>
                           </div>
-                          <button 
-                            onClick={() => { exportToCSV(filteredTableData, activeMetric, baseAlgo, compareAlgo, metaColumns, stats); setShowExportMenu(false); toast.success('导出成功', 'CSV文件已下载'); }}
-                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
-                          >
-                            <Download className="w-4 h-4 text-indigo-500" />
-                            导出当前视图 (CSV)
-                          </button>
-                          <button 
-                            onClick={() => { exportFullDataToCSV(parsedData, availableAlgos, availableMetrics, metaColumns); setShowExportMenu(false); toast.success('导出成功', '完整CSV文件已下载'); }}
-                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
-                          >
-                            <FileSpreadsheet className="w-4 h-4 text-green-500" />
-                            导出完整数据 (CSV)
-                          </button>
-                          <button 
-                            onClick={() => { exportToExcel(filteredTableData, availableAlgos, availableMetrics, metaColumns, activeMetric, baseAlgo, compareAlgo, stats); setShowExportMenu(false); toast.success('导出成功', 'TSV文件已下载，可直接粘贴到Excel'); }}
-                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
-                          >
-                            <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
-                            导出为Excel格式 (TSV)
-                          </button>
-                          <button 
-                            onClick={() => { exportToJSON(parsedData, availableAlgos, availableMetrics, metaColumns); setShowExportMenu(false); toast.success('导出成功', 'JSON文件已下载'); }}
-                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
-                          >
-                            <FileJson className="w-4 h-4 text-amber-500" />
-                            导出为JSON格式
-                          </button>
+                          <div className="py-1">
+                            <button 
+                              onClick={(e) => { 
+                                e.stopPropagation();
+                                exportToCSV(filteredTableData, activeMetric, baseAlgo, compareAlgo, metaColumns, stats); 
+                                setShowExportMenu(false); 
+                                toast.success('导出成功', 'CSV文件已下载'); 
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
+                            >
+                              <Download className="w-4 h-4 text-indigo-500" />
+                              导出当前视图 (CSV)
+                            </button>
+                            <button 
+                              onClick={(e) => { 
+                                e.stopPropagation();
+                                exportFullDataToCSV(parsedData, availableAlgos, availableMetrics, metaColumns); 
+                                setShowExportMenu(false); 
+                                toast.success('导出成功', '完整CSV文件已下载'); 
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
+                            >
+                              <FileSpreadsheet className="w-4 h-4 text-green-500" />
+                              导出完整数据 (CSV)
+                            </button>
+                            <button 
+                              onClick={(e) => { 
+                                e.stopPropagation();
+                                exportToExcel(filteredTableData, availableAlgos, availableMetrics, metaColumns, activeMetric, baseAlgo, compareAlgo, stats); 
+                                setShowExportMenu(false); 
+                                toast.success('导出成功', 'TSV文件已下载'); 
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
+                            >
+                              <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+                              导出为Excel格式 (TSV)
+                            </button>
+                            <button 
+                              onClick={(e) => { 
+                                e.stopPropagation();
+                                exportToJSON(parsedData, availableAlgos, availableMetrics, metaColumns); 
+                                setShowExportMenu(false); 
+                                toast.success('导出成功', 'JSON文件已下载'); 
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
+                            >
+                              <FileJson className="w-4 h-4 text-amber-500" />
+                              导出为JSON格式
+                            </button>
+                          </div>
                         </div>,
                         document.body
                       )}
