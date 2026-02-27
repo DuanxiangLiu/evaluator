@@ -1,11 +1,20 @@
 import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { parseCSV, computeStatistics } from '../services/dataService';
-import { generateDefaultDataset } from '../utils/dataGenerator';
 
 const AppContext = createContext(null);
 
-const DEFAULT_CSV = generateDefaultDataset();
+const DEFAULT_CSV = `Case,Instances,Nets,m_Base_HPWL,m_Algo1_HPWL,m_Algo2_HPWL,m_Base_TNS,m_Algo1_TNS,m_Algo2_TNS,m_Base_Power,m_Algo1_Power,m_Algo2_Power,m_Base_Runtime,m_Algo1_Runtime,m_Algo2_Runtime,m_Base_Hb_Count,m_Algo1_Hb_Count,m_Algo2_Hb_Count
+superblue1_core_very_long,890000,900000,10000,9500,9200,500,480,450,120,118,115,3600,3400,3200,50,45,40
+superblue2_top_module,1200000,1250000,20000,19800,21000,0,0,10,250,248,260,7200,7000,7500,120,115,130
+superblue3_mac_engine,950000,970000,15000,NaN,14000,100,200,80,180,NaN,175,5400,NaN,5200,80,NaN,75
+superblue4_dsp_cluster_huge,2500000,2600000,50000,42000,41000,1000,500,400,600,580,590,14400,12000,11500,300,250,220
+superblue5_control_logic,500000,550000,8000,7900,7800,0,0,0,90,92,91,1800,1750,1700,20,18,15
+superblue10_mixed_signal,1800000,1900000,12000,11000,10500,50,40,30,300,295,290,9000,8500,8000,150,130,120
+superblue18_soc_top_die,2100000,2200000,30000,25000,24000,2000,1800,1500,450,420,410,10800,9500,9000,400,350,300
+bigblue1_network_switch,1500000,1600000,40000,41000,39000,500,600,450,500,510,490,8000,8200,7800,200,210,190
+bigblue3_gpu_core,2800000,2900000,25000,24500,24000,10,5,0,320,315,310,15000,14500,14000,500,480,450
+bigblue4_cpu_cluster_matrix,4000000,4200000,60000,58000,NA,300,280,NaN,800,780,NaN,20000,19000,NA,800,750,NA`;
 
 const DEFAULT_LLM_CONFIG = {
   provider: 'deepseek',
