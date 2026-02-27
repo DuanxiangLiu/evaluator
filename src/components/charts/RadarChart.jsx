@@ -78,7 +78,7 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo }) 
                   </div>
                 </div>
               }
-              tooltipWidth="w-72"
+              tooltipWidth="w-[40rem]"
               position="right-center"
             />
           </h3>

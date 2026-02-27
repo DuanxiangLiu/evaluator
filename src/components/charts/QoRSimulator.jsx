@@ -120,7 +120,7 @@ const QoRSimulator = ({
                     </div>
                   }
                   position="right-center"
-                  tooltipWidth="w-80"
+                  tooltipWidth="w-[40rem]"
                 />
               </h3>
               <p className="text-sm text-gray-500 mt-1">基于多指标加权综合评估算法性能</p>
