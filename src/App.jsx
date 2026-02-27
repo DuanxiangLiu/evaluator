@@ -13,6 +13,7 @@ import CorrelationChart from './components/charts/CorrelationChart';
 import ParetoChart from './components/charts/ParetoChart';
 import RadarChart from './components/charts/RadarChart';
 import QoRSimulator from './components/charts/QoRSimulator';
+import { ToastProvider } from './components/common/Toast';
 import { generateAIInsights, renderMarkdownText } from './services/aiService.jsx';
 import { exportToCSV } from './services/dataService';
 import {
@@ -731,7 +732,9 @@ const AppContent = () => {
 const App = () => {
   return (
     <AppProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </AppProvider>
   );
 };
