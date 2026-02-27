@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { AppProvider, useAppContext } from './context/AppContext';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
@@ -45,6 +46,8 @@ const AppContent = () => {
 
   const toast = useToast();
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [exportMenuPosition, setExportMenuPosition] = useState({ top: 0, left: 0 });
+  const exportMenuRef = useRef(null);
 
   useEffect(() => {
     runAnalysis();
@@ -78,6 +81,27 @@ const AppContent = () => {
       return () => clearInterval(interval);
     }
   }, [aiInsights, isAnalyzing, activeTab]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showExportMenu && exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && showExportMenu) {
+        setShowExportMenu(false);
+      }
+    };
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showExportMenu]);
 
   const handleGenerateAIInsights = async () => {
     if (!stats || !activeMetric) return;
@@ -498,45 +522,66 @@ const AppContent = () => {
                       <button onClick={() => setTableFilter('outlier')} className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${tableFilter === 'outlier' ? 'bg-white text-purple-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700 font-medium'}`}><AlertTriangle className="w-3 h-3" />异常</button>
                       <button onClick={() => setTableFilter('filtered')} className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${tableFilter === 'filtered' ? 'bg-white text-gray-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700 font-medium'}`}><Square className="w-3 h-3" />已过滤</button>
                     </div>
-                    <div className="relative">
+                    <div className="relative" ref={exportMenuRef}>
                       <button 
-                        onClick={() => setShowExportMenu(!showExportMenu)} 
-                        className="text-sm font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+                        onClick={() => {
+                          if (!showExportMenu && exportMenuRef.current) {
+                            const rect = exportMenuRef.current.getBoundingClientRect();
+                            setExportMenuPosition({
+                              top: rect.bottom + 8,
+                              left: rect.right - 200
+                            });
+                          }
+                          setShowExportMenu(!showExportMenu);
+                        }} 
+                        className="text-sm font-medium bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 border border-indigo-200/80 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all duration-200 shadow-sm hover:shadow-md"
                       >
                         <Download className="w-4 h-4" />导出数据
                         <MoreVertical className="w-3 h-3" />
                       </button>
-                      {showExportMenu && (
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-200 z-[100] overflow-hidden">
+                      {showExportMenu && createPortal(
+                        <div 
+                          className="fixed bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 z-[9999] overflow-hidden animate-scaleIn"
+                          style={{
+                            top: exportMenuPosition.top,
+                            left: exportMenuPosition.left,
+                            minWidth: '200px'
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-violet-50">
+                            <span className="text-xs font-semibold text-gray-600">选择导出格式</span>
+                          </div>
                           <button 
                             onClick={() => { exportToCSV(filteredTableData, activeMetric, baseAlgo, compareAlgo, metaColumns, stats); setShowExportMenu(false); toast.success('导出成功', 'CSV文件已下载'); }}
-                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 border-b border-gray-100"
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
                           >
                             <Download className="w-4 h-4 text-indigo-500" />
                             导出当前视图 (CSV)
                           </button>
                           <button 
                             onClick={() => { exportFullDataToCSV(parsedData, availableAlgos, availableMetrics, metaColumns); setShowExportMenu(false); toast.success('导出成功', '完整CSV文件已下载'); }}
-                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 border-b border-gray-100"
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
                           >
                             <FileSpreadsheet className="w-4 h-4 text-green-500" />
                             导出完整数据 (CSV)
                           </button>
                           <button 
                             onClick={() => { exportToExcel(filteredTableData, availableAlgos, availableMetrics, metaColumns, activeMetric, baseAlgo, compareAlgo, stats); setShowExportMenu(false); toast.success('导出成功', 'TSV文件已下载，可直接粘贴到Excel'); }}
-                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 border-b border-gray-100"
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
                           >
                             <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
                             导出为Excel格式 (TSV)
                           </button>
                           <button 
                             onClick={() => { exportToJSON(parsedData, availableAlgos, availableMetrics, metaColumns); setShowExportMenu(false); toast.success('导出成功', 'JSON文件已下载'); }}
-                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2"
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
                           >
                             <FileJson className="w-4 h-4 text-amber-500" />
                             导出为JSON格式
                           </button>
-                        </div>
+                        </div>,
+                        document.body
                       )}
                     </div>
                   </div>
