@@ -67,10 +67,10 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo }) 
             全局多维雷达图 (Geomean Improvement)
             <HelpIcon 
               content={
-                <div className="space-y-2">
-                  <p className="font-bold text-indigo-600">雷达图说明</p>
-                  <div className="space-y-1 text-xs">
-                    <p>雷达图(Spider Chart)是多目标优化(MOO)领域的标准工具。</p>
+                <div className="space-y-3">
+                  <p className="font-bold text-indigo-400 text-lg">全局多维雷达图</p>
+                  <div className="space-y-2 text-sm">
+                    <p>雷达图 (Spider Chart) 是多目标优化 (MOO) 领域的标准工具。</p>
                     <p><b>基线算法：</b>呈现为一个正多边形虚线框</p>
                     <p><b>评估算法：</b>阴影面积如果包裹住基线，代表全面占优</p>
                     <p><b>凹陷区域：</b>代表在该指标上付出了退化的代价</p>

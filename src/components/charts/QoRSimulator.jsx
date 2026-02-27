@@ -109,9 +109,9 @@ const QoRSimulator = ({
                 QoR 综合评估模拟器
                 <HelpIcon 
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">QoR (Quality of Results) 综合评估</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">QoR (Quality of Results) 综合评估</p>
+                      <div className="space-y-2 text-sm">
                         <p>通过调整不同指标的权重，综合评估算法的整体性能。</p>
                         <p><b>权重设置：</b>为每个指标分配权重（总和应为100%）</p>
                         <p><b>得分计算：</b>根据权重和改进率计算综合得分</p>

@@ -10,7 +10,17 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
         <div className="flex justify-between items-center mb-8">
           <h3 className="font-bold text-gray-800 text-lg flex items-center gap-1">
             改进率分布箱线图 ({activeMetric})
-            <HelpIcon content="箱线图直观展示了单个指标在所有 Case 中的宏观分布情况。长条阴影覆盖了 50% 的核心密集区(IQR)，散落在阴影远端的散点即为异常离群点，研发工程师需要重点排查这些点是否引入了特定的 Bug。悬浮数据点可联动表格高亮。" tooltipWidth="w-[40rem]" position="right-center"/>
+            <HelpIcon content={
+              <div className="space-y-3">
+                <p className="font-bold text-indigo-400 text-lg">改进率分布箱线图</p>
+                <div className="space-y-2 text-sm">
+                  <p>箱线图直观展示了单个指标在所有 Case 中的宏观分布情况。</p>
+                  <p><b>长条阴影：</b>覆盖了 50% 的核心密集区 (IQR)</p>
+                  <p><b>异常离群点：</b>散落在阴影远端的散点，研发工程师需要重点排查这些点是否引入了特定的 Bug</p>
+                  <p><b>交互功能：</b>悬浮数据点可联动表格高亮</p>
+                </div>
+              </div>
+            } tooltipWidth="w-[40rem]" position="right-center"/>
           </h3>
           <span className="text-xs font-semibold text-gray-500 bg-white px-3 py-1.5 rounded-lg border shadow-sm flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-purple-500"></span> 异常离群点

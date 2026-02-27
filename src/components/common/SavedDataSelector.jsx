@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Database, Save, Trash2, Edit3, Check, X, Clock, 
   FileText, ChevronDown, Search, Download,
-  Upload, CheckCircle, Loader2, FolderOpen, Sparkles
+  Upload, CheckCircle, Loader2, FolderOpen, Sparkles, FileDown, Clipboard, Play
 } from 'lucide-react';
 import { useToast } from '../common/Toast';
 import datasetStorage, { formatDatasetDate, formatDatasetSize, getDatasetRowCount } from '../../utils/datasetStorage';
@@ -14,7 +14,11 @@ const SavedDataSelector = ({
   currentCsvData, 
   onLoadDataset, 
   onSaveDataset,
-  autoSaveEnabled = true 
+  autoSaveEnabled = true,
+  onFileUpload,
+  onPasteData,
+  isFileLoading = false,
+  fileName = ''
 }) => {
   const [datasets, setDatasets] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -24,9 +28,10 @@ const SavedDataSelector = ({
   const [selectedId, setSelectedId] = useState(DEFAULT_DATASET_ID);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedId, setLastSavedId] = useState(null);
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [newDatasetName, setNewDatasetName] = useState('');
+  const [showPasteArea, setShowPasteArea] = useState(false);
+  const [pastedData, setPastedData] = useState('');
   const dropdownRef = useRef(null);
+  const fileInputRef = useRef(null);
   const toast = useToast();
 
   const defaultDataset = {
@@ -153,45 +158,6 @@ const SavedDataSelector = ({
     }
   };
 
-  const handleSaveAsNew = () => {
-    if (!currentCsvData || !currentCsvData.trim()) {
-      toast.error('保存失败', '没有数据可保存');
-      return;
-    }
-    setNewDatasetName(`数据集 ${datasets.length + 1}`);
-    setShowSaveDialog(true);
-  };
-
-  const handleConfirmSaveAs = () => {
-    if (!newDatasetName.trim()) {
-      toast.error('保存失败', '请输入数据集名称');
-      return;
-    }
-
-    setIsSaving(true);
-    
-    try {
-      const saved = datasetStorage.save({
-        name: newDatasetName.trim(),
-        csvData: currentCsvData,
-        stats: {
-          rows: getDatasetRowCount(currentCsvData),
-          size: formatDatasetSize(currentCsvData)
-        }
-      });
-
-      setSelectedId(saved.id);
-      datasetStorage.setCurrentId(saved.id);
-      loadDatasets();
-      setShowSaveDialog(false);
-      toast.success('保存成功', `已保存为 "${saved.name}"`);
-    } catch (error) {
-      toast.error('保存失败', error.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleExport = (e, dataset) => {
     e.stopPropagation();
     const jsonStr = datasetStorage.exportDataset(dataset.id);
@@ -232,6 +198,44 @@ const SavedDataSelector = ({
     input.click();
   };
 
+  const handleExportCSV = () => {
+    if (!currentCsvData || !currentCsvData.trim()) {
+      toast.error('导出失败', '没有数据可导出');
+      return;
+    }
+    
+    const blob = new Blob([currentCsvData], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${selectedDataset?.name || 'data'}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('导出成功', 'CSV 文件已下载');
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && onFileUpload) {
+      onFileUpload(file);
+    }
+    e.target.value = null;
+  };
+
+  const handleOpenFileDialog = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleApplyPastedData = () => {
+    if (pastedData.trim() && onPasteData) {
+      onPasteData(pastedData);
+      setPastedData('');
+      setShowPasteArea(false);
+    }
+  };
+
   const getSelectedDataset = () => {
     if (selectedId === DEFAULT_DATASET_ID) {
       return defaultDataset;
@@ -243,60 +247,146 @@ const SavedDataSelector = ({
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,.txt"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+        
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-indigo-300 transition-all shadow-sm"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/80 backdrop-blur-sm border border-gray-200/80 rounded-xl text-xs font-medium text-gray-700 hover:bg-white hover:border-indigo-300 hover:shadow-md transition-all duration-200"
         >
-          <Database className="w-4 h-4 text-indigo-500" />
-          <span className="hidden sm:inline max-w-[150px] truncate">
+          <Database className="w-3.5 h-3.5 text-violet-500" />
+          <span className="hidden sm:inline max-w-[120px] truncate">
             {selectedDataset?.name || '选择数据集'}
           </span>
           <span className="sm:hidden">
             {selectedDataset ? '已选择' : '选择'}
           </span>
-          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
         </button>
 
         <button
           onClick={handleQuickSave}
           disabled={isSaving || !currentCsvData?.trim()}
           className={`
-            flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all shadow-sm
+            flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md
             ${lastSavedId 
-              ? 'bg-green-500 text-white' 
-              : 'bg-indigo-600 text-white hover:bg-indigo-700'
+              ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-emerald-500/25' 
+              : 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white hover:from-indigo-600 hover:to-violet-600 shadow-indigo-500/25'
             }
-            disabled:bg-gray-300 disabled:cursor-not-allowed
+            disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none
           `}
-          title="快速保存当前数据"
+          title="保存数据到数据源"
         >
           {isSaving ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
           ) : lastSavedId ? (
-            <CheckCircle className="w-4 h-4" />
+            <CheckCircle className="w-3.5 h-3.5" />
           ) : (
-            <Save className="w-4 h-4" />
+            <Save className="w-3.5 h-3.5" />
           )}
           <span className="hidden sm:inline">
-            {isSaving ? '保存中...' : lastSavedId ? '已保存' : '保存'}
+            {isSaving ? '保存中...' : lastSavedId ? '已保存' : '保存数据'}
           </span>
         </button>
 
         <button
-          onClick={handleSaveAsNew}
+          onClick={handleExportCSV}
           disabled={!currentCsvData?.trim()}
-          className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-indigo-300 transition-all shadow-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-          title="另存为新数据集"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/80 backdrop-blur-sm border border-gray-200/80 rounded-xl text-xs font-medium text-gray-700 hover:bg-white hover:border-indigo-300 hover:shadow-md transition-all duration-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none"
+          title="导出为 CSV 文件"
         >
-          <Upload className="w-4 h-4 text-indigo-500" />
-          <span className="hidden lg:inline">另存为</span>
+          <FileDown className="w-3.5 h-3.5 text-blue-500" />
+          <span className="hidden lg:inline">导出 CSV</span>
         </button>
+
+        <button
+          onClick={handleOpenFileDialog}
+          disabled={isFileLoading}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/80 backdrop-blur-sm border border-gray-200/80 rounded-xl text-xs font-medium text-gray-700 hover:bg-white hover:border-indigo-300 hover:shadow-md transition-all duration-200 disabled:opacity-50"
+          title="上传文件"
+        >
+          {isFileLoading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-500" />
+          ) : (
+            <Upload className="w-3.5 h-3.5 text-emerald-500" />
+          )}
+          <span className="hidden lg:inline">上传文件</span>
+        </button>
+
+        <button
+          onClick={() => setShowPasteArea(!showPasteArea)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md ${
+            showPasteArea 
+              ? 'bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-violet-500/25' 
+              : 'bg-white/80 backdrop-blur-sm border border-gray-200/80 text-gray-700 hover:bg-white hover:border-indigo-300'
+          }`}
+          title="粘贴数据"
+        >
+          <Clipboard className="w-3.5 h-3.5" />
+          <span className="hidden lg:inline">粘贴数据</span>
+        </button>
+
+        {fileName && (
+          <span className="text-xs text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
+            <CheckCircle className="w-3.5 h-3.5" />
+            <span className="max-w-[100px] truncate font-medium">{fileName}</span>
+          </span>
+        )}
       </div>
 
+      {showPasteArea && (
+        <div className="mt-2 space-y-2 p-3 bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl border border-gray-200/80 shadow-sm">
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                navigator.clipboard.readText().then(text => {
+                  setPastedData(text);
+                }).catch(() => {
+                  toast.error('粘贴失败', '无法读取剪贴板内容');
+                });
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-medium transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md"
+            >
+              <Clipboard className="w-3.5 h-3.5" />
+              从剪贴板
+            </button>
+            <button
+              onClick={() => {
+                setPastedData('');
+                setShowPasteArea(false);
+              }}
+              className="px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-medium transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md"
+            >
+              取消
+            </button>
+          </div>
+          <textarea
+            value={pastedData}
+            onChange={(e) => setPastedData(e.target.value)}
+            className="w-full p-3 border border-gray-200/80 rounded-xl text-xs font-mono focus:ring-2 focus:ring-violet-400 focus:border-transparent resize-none bg-white shadow-sm"
+            rows={4}
+            placeholder="粘贴 CSV 数据..."
+          />
+          <button
+            onClick={handleApplyPastedData}
+            disabled={!pastedData.trim()}
+            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-xl text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md shadow-indigo-500/20"
+          >
+            <Play className="w-3.5 h-3.5" />
+            应用数据
+          </button>
+        </div>
+      )}
+
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="p-3 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
+        <div className="absolute top-full left-0 mt-2 w-80 sm:w-96 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="p-3 border-b border-gray-100 bg-gradient-to-r from-violet-50 via-indigo-50 to-blue-50">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
@@ -304,13 +394,13 @@ const SavedDataSelector = ({
                 placeholder="搜索数据集..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200/80 rounded-xl text-sm focus:ring-2 focus:ring-violet-400 focus:border-transparent shadow-sm"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
-            <span className="text-xs text-gray-500">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-slate-50">
+            <span className="text-xs text-gray-500 font-medium">
               共 {datasets.length + 1} 个数据集
             </span>
             <button
@@ -451,61 +541,6 @@ const SavedDataSelector = ({
                 </div>
               ))
             )}
-          </div>
-        </div>
-      )}
-
-      {showSaveDialog && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowSaveDialog(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
-            <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
-              <Save className="w-5 h-5 text-indigo-500" />
-              另存为新数据集
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1.5">
-                  数据集名称
-                </label>
-                <input
-                  type="text"
-                  value={newDatasetName}
-                  onChange={(e) => setNewDatasetName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleConfirmSaveAs();
-                  }}
-                  placeholder="输入数据集名称..."
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => setShowSaveDialog(false)}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-colors"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleConfirmSaveAs}
-                  disabled={!newDatasetName.trim() || isSaving}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white rounded-xl text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      保存中...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      保存
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}

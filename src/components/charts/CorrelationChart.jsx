@@ -15,7 +15,16 @@ const CorrelationChart = ({
         <div>
           <h3 className="font-bold text-gray-800 text-lg flex items-center gap-1">
             特征相关性散点分析 
-            <HelpIcon content="发现深层物理规律：支持分析【属性 vs 指标】(如: 规模越大时序是否越差?)，也支持分析【指标 vs 指标】(如: HPWL优化是否必然伴随功耗上升?)。" tooltipWidth="w-[40rem]" position="right-center"/>
+            <HelpIcon content={
+              <div className="space-y-3">
+                <p className="font-bold text-indigo-400 text-lg">特征相关性散点分析</p>
+                <div className="space-y-2 text-sm">
+                  <p>发现深层物理规律：</p>
+                  <p><b>属性 vs 指标：</b>如规模越大时序是否越差？</p>
+                  <p><b>指标 vs 指标：</b>如 HPWL 优化是否必然伴随功耗上升？</p>
+                </div>
+              </div>
+            } tooltipWidth="w-[40rem]" position="right-center"/>
           </h3>
         </div>
         

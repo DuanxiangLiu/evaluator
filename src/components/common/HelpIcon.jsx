@@ -1,115 +1,153 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { HelpCircle, X, BookOpen } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { HelpCircle, X } from 'lucide-react';
 
 const HelpIcon = ({ 
   text, 
   content, 
   className = "w-3.5 h-3.5 text-gray-400 hover:text-indigo-500 transition-colors", 
   tooltipWidth = "w-80", 
-  position = "bottom-right" 
+  position = "bottom-right"
 }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipStyle, setTooltipStyle] = useState({});
   const iconRef = useRef(null);
-  const [showModal, setShowModal] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
 
   const handleClick = (e) => {
     e.stopPropagation();
-    setIsAnimating(true);
-    setShowModal(true);
+    e.preventDefault();
+    setShowTooltip(!showTooltip);
   };
 
-  const handleClose = () => {
-    setIsAnimating(false);
-    setTimeout(() => {
-      setShowModal(false);
-    }, 200);
-  };
+  const calculatePosition = useCallback(() => {
+    if (!iconRef.current) return;
+
+    const iconRect = iconRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    const widthMap = {
+      'w-80': 320,
+      'w-72': 288,
+      'w-96': 384,
+      'w-[32rem]': 512,
+      'w-[36rem]': 576,
+      'w-[40rem]': 640,
+    };
+    const tooltipWidthPx = widthMap[tooltipWidth] || 320;
+    const tooltipHeight = 200;
+
+    let left, top;
+    let actualPosition = position;
+
+    if (iconRect.left + tooltipWidthPx > viewportWidth - 20) {
+      left = iconRect.right - tooltipWidthPx;
+      actualPosition = actualPosition.replace('right', 'left');
+    } else {
+      left = iconRect.left;
+    }
+
+    if (iconRect.bottom + tooltipHeight + 10 > viewportHeight) {
+      top = iconRect.top - tooltipHeight - 8;
+      actualPosition = actualPosition.replace('bottom', 'top');
+    } else {
+      top = iconRect.bottom + 8;
+    }
+
+    left = Math.max(10, Math.min(left, viewportWidth - tooltipWidthPx - 10));
+    top = Math.max(10, Math.min(top, viewportHeight - tooltipHeight - 10));
+
+    setTooltipStyle({
+      position: 'fixed',
+      left: `${left}px`,
+      top: `${top}px`,
+      zIndex: 9999,
+    });
+  }, [tooltipWidth, position]);
 
   useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        handleClose();
-      }
-    };
-
-    if (showModal) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
+    if (showTooltip) {
+      calculatePosition();
+      window.addEventListener('resize', calculatePosition);
     }
 
     return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = '';
+      window.removeEventListener('resize', calculatePosition);
     };
-  }, [showModal]);
+  }, [showTooltip, calculatePosition]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (iconRef.current && !iconRef.current.contains(e.target)) {
+        setShowTooltip(false);
+      }
+    };
+
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        setShowTooltip(false);
+      }
+    };
+
+    const handleScroll = () => {
+      if (showTooltip) {
+        setShowTooltip(false);
+      }
+    };
+
+    if (showTooltip) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+      window.addEventListener('scroll', handleScroll, true);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [showTooltip]);
 
   return (
     <>
       <div 
-        className="relative inline-flex items-center ml-1 cursor-help group"
         ref={iconRef}
+        className="ml-1 cursor-help group inline-flex"
         onClick={handleClick}
       >
         <HelpCircle 
           className={`${className} transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12`} 
           strokeWidth={2}
         />
-        <span className="absolute inset-0 rounded-full bg-indigo-400/20 scale-0 group-hover:scale-150 transition-transform duration-300" />
       </div>
 
-      {showModal && (
+      {showTooltip && createPortal(
         <div 
-          className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
-          onClick={handleClose}
+          className={`${tooltipWidth} max-w-[90vw]`}
+          style={tooltipStyle}
+          onClick={(e) => e.stopPropagation()}
         >
-          <div 
-            className={`
-              absolute inset-0 bg-black/40 backdrop-blur-sm
-              transition-opacity duration-200
-              ${isAnimating ? 'opacity-100' : 'opacity-0'}
-            `}
-          />
-          <div 
-            className={`
-              relative ${tooltipWidth} max-w-[95vw] max-h-[90vh]
-              bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900
-              text-gray-100 rounded-2xl shadow-2xl
-              border border-gray-700/50
-              overflow-hidden
-              transition-all duration-300 ease-out
-              ${isAnimating 
-                ? 'opacity-100 scale-100 translate-y-0' 
-                : 'opacity-0 scale-95 translate-y-4'
-              }
-            `}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100 rounded-xl shadow-2xl border border-gray-700/50 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 pointer-events-none" />
             
-            <div className="relative flex items-center justify-between px-6 py-4 border-b border-gray-700/50 bg-gray-800/50">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-500/20 rounded-xl">
-                  <BookOpen className="w-5 h-5 text-indigo-400" strokeWidth={2} />
-                </div>
-                <span className="text-lg font-bold text-white">说明</span>
-              </div>
+            <div className="relative flex items-center justify-between px-4 py-3 border-b border-gray-700/50 bg-gray-800/50">
+              <span className="text-sm font-bold text-white">说明</span>
               <button 
-                onClick={handleClose}
-                className="p-2 rounded-xl bg-gray-700/50 hover:bg-gray-700 transition-all duration-200 hover:scale-105 active:scale-95 group"
+                onClick={(e) => { e.stopPropagation(); setShowTooltip(false); }}
+                className="p-1 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-colors"
               >
-                <X className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" strokeWidth={2} />
+                <X className="w-4 h-4 text-gray-400 hover:text-white" strokeWidth={2} />
               </button>
             </div>
             
-            <div className="relative p-6 overflow-y-auto max-h-[calc(90vh-80px)] custom-scrollbar">
-              <div className="text-base leading-relaxed text-gray-200">
+            <div className="relative p-4 overflow-y-auto max-h-[60vh] custom-scrollbar">
+              <div className="text-sm leading-relaxed text-gray-200">
                 {content || text}
               </div>
             </div>
-            
-            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-gray-900 to-transparent pointer-events-none" />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

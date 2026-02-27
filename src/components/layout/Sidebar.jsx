@@ -77,9 +77,9 @@ const Sidebar = ({ isOpen, csvInput, onCsvChange, onRunAnalysis }) => {
           </button>
           <HelpIcon 
             content={
-              <div className="space-y-2">
-                <p className="font-bold text-indigo-600">CSV 数据格式说明</p>
-                <div className="space-y-1 text-xs">
+              <div className="space-y-3">
+                <p className="font-bold text-indigo-400 text-lg">CSV 数据格式说明</p>
+                <div className="space-y-2 text-sm">
                   <p><b>第一列：</b>Case 名称（测试用例标识）</p>
                   <p><b>元数据列：</b>如 Instances、Nets 等设计属性</p>
                   <p><b>指标列格式：</b>m_算法名_指标名</p>
@@ -90,7 +90,7 @@ const Sidebar = ({ isOpen, csvInput, onCsvChange, onRunAnalysis }) => {
               </div>
             }
             position="right-center"
-            tooltipWidth="w-72"
+            tooltipWidth="w-[40rem]"
           />
         </div>
       </div>

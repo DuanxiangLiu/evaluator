@@ -1,8 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { 
-  FileText, Upload, Play, ChevronUp, ChevronDown, Copy, Check, 
-  Clipboard, ChevronLeft, ChevronRight, Loader2, CheckCircle, 
-  AlertCircle, X, Pencil, Plus, Trash2, FileUp
+  FileText, Play, ChevronUp, ChevronDown, Copy, Check, 
+  ChevronLeft, ChevronRight, Loader2, CheckCircle, 
+  AlertCircle, X, Pencil, Plus, Trash2
 } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
 import ValidationResultPanel, { CompactValidationStatus } from '../common/ValidationResultPanel';
@@ -10,14 +10,11 @@ import SavedDataSelector from '../common/SavedDataSelector';
 import { useInputValidation, useFileUpload, INPUT_STATUS } from '../../hooks/useInputValidation';
 import { useToast } from '../common/Toast';
 import { getValidationSuggestions, detectDelimiter } from '../../utils/validationUtils';
-import datasetStorage from '../../utils/datasetStorage';
 
 const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [copied, setCopied] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pastedData, setPastedData] = useState('');
-  const [showPasteArea, setShowPasteArea] = useState(false);
   const [showValidationPanel, setShowValidationPanel] = useState(false);
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState('');
@@ -42,18 +39,8 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   });
 
   const {
-    fileInputRef,
-    isDragging,
     isLoading: isFileLoading,
-    fileName,
-    progress: uploadProgress,
-    handleDragEnter,
-    handleDragLeave,
-    handleDragOver,
-    handleDrop,
-    handleInputChange,
-    openFileDialog,
-    formatFileSize
+    fileName
   } = useFileUpload({
     accept: '.csv,.txt',
     maxSizeMB: 10,
@@ -78,11 +65,6 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
     }
   });
 
-  const defaultDataset = {
-    name: '默认示例数据集',
-    data: generateDefaultDataset()
-  };
-
   useEffect(() => {
     if (csvInput && csvInput.trim()) {
       validateDebounced(csvInput);
@@ -102,34 +84,42 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
     onCsvChange(csvData);
   }, [onCsvChange]);
 
+  const handleFileUpload = useCallback((file) => {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const content = evt.target.result;
+      onCsvChange(content);
+      const result = validateImmediate(content);
+      if (result.valid) {
+        onRunAnalysis(content);
+        toast.success('文件上传成功', `成功解析 ${result.stats?.totalRows || 0} 行数据`);
+      } else {
+        toast.error('数据验证失败', '请检查数据格式');
+        setShowValidationPanel(true);
+      }
+      setCurrentPage(1);
+    };
+    reader.readAsText(file);
+  }, [onCsvChange, onRunAnalysis, validateImmediate, toast, setCurrentPage, setShowValidationPanel]);
+
+  const handlePasteData = useCallback((data) => {
+    onCsvChange(data);
+    const result = validateImmediate(data);
+    if (result.valid) {
+      onRunAnalysis(data);
+      toast.success('数据应用成功', `成功解析 ${result.stats?.totalRows || 0} 行数据`);
+    } else {
+      toast.error('数据验证失败', '请检查数据格式');
+      setShowValidationPanel(true);
+    }
+    setCurrentPage(1);
+  }, [onCsvChange, onRunAnalysis, validateImmediate, toast, setCurrentPage, setShowValidationPanel]);
+
   const handleCopy = () => {
     navigator.clipboard.writeText(csvInput);
     setCopied(true);
     toast.success('复制成功', 'CSV数据已复制到剪贴板');
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const applyPastedData = () => {
-    if (pastedData.trim()) {
-      onCsvChange(pastedData);
-      const result = validateImmediate(pastedData);
-      if (result.valid) {
-        onRunAnalysis(pastedData);
-        if (result.warnings.length > 0) {
-          toast.warning('数据验证通过', `发现 ${result.warnings.length} 个警告`);
-        } else {
-          toast.success('数据应用成功', `成功解析 ${result.stats?.totalRows || 0} 行数据`);
-        }
-      } else {
-        toast.error('数据验证失败', '请检查数据格式');
-        setShowValidationPanel(true);
-      }
-      setPastedData('');
-      setShowPasteArea(false);
-      setCurrentPage(1);
-    } else {
-      toast.error('数据为空', '请先粘贴CSV数据');
-    }
   };
 
   const handleRunAnalysis = () => {
@@ -296,16 +286,18 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const suggestions = getValidationSuggestions({ errors: validationErrors, warnings: validationWarnings });
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden transition-all duration-300 hover:shadow-xl">
       <div 
-        className="flex items-center justify-between px-4 sm:px-5 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 border-b border-indigo-500 cursor-pointer hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-md"
+        className="flex items-center justify-between px-4 sm:px-5 py-3.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 cursor-pointer hover:from-violet-700 hover:via-indigo-700 hover:to-blue-700 transition-all duration-300 shadow-md"
         onClick={() => setIsVisible(!isVisible)}
       >
         <div className="flex items-center gap-2 sm:gap-3">
-          <FileText className="w-5 h-5 text-white flex-shrink-0" />
-          <h2 className="text-sm sm:text-base font-bold text-white">数据源管理</h2>
-          <span className="text-xs text-indigo-100 bg-white/20 px-2 py-0.5 rounded-full hidden sm:inline">
-            ({rows.length} 条数据)
+          <div className="p-1.5 bg-white/15 rounded-lg backdrop-blur-sm">
+            <FileText className="w-4 h-4 text-white flex-shrink-0" />
+          </div>
+          <h2 className="text-sm sm:text-base font-semibold text-white">数据源管理</h2>
+          <span className="text-[10px] text-white/80 bg-white/15 px-2 py-0.5 rounded-full font-medium hidden sm:inline">
+            {rows.length} 条数据
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -321,9 +313,9 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
           )}
           <HelpIcon 
             content={
-              <div className="space-y-2">
-                <p className="font-bold text-indigo-600">CSV 数据格式说明</p>
-                <div className="space-y-1 text-xs">
+              <div className="space-y-3">
+                <p className="font-bold text-indigo-400 text-lg">CSV 数据格式说明</p>
+                <div className="space-y-2 text-sm">
                   <p><b>第一列：</b>Case 名称（测试用例标识）</p>
                   <p><b>元数据列：</b>#Inst（实例数）、#Net（网线数）等</p>
                   <p><b>指标列格式：</b>m_算法名_指标名</p>
@@ -333,142 +325,27 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
               </div>
             }
             position="left-center"
-            tooltipWidth="w-72"
-            className="w-4 h-4 text-white hover:text-indigo-200 transition-colors hidden sm:block"
+            tooltipWidth="w-[40rem]"
+            className="w-4 h-4 text-white/80 hover:text-white transition-colors hidden sm:block"
           />
-          {isVisible ? <ChevronUp className="w-5 h-5 text-white" /> : <ChevronDown className="w-5 h-5 text-white" />}
+          <div className="p-1 bg-white/10 rounded-lg">
+            {isVisible ? <ChevronUp className="w-4 h-4 text-white" /> : <ChevronDown className="w-4 h-4 text-white" />}
+          </div>
         </div>
       </div>
       
       {isVisible && (
         <div className="p-3 sm:p-4 space-y-4">
-          <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-gray-100">
-            <SavedDataSelector
-              currentCsvData={csvInput}
-              onLoadDataset={handleLoadDataset}
-              onSaveDataset={handleSaveDataset}
-              autoSaveEnabled={true}
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-600 mb-1.5 flex items-center gap-1.5">
-              <FileUp className="w-3.5 h-3.5 text-indigo-500" />
-              上传或粘贴数据
-              {getStatusIcon()}
-              <span className="text-[10px] text-gray-400 font-normal ml-1">
-                (支持: CSV, TXT | 分隔符: 逗号, Tab, 分号, 竖线)
-              </span>
-            </label>
-            
-            <div 
-              className={`
-                relative border-2 border-dashed rounded-lg transition-all cursor-pointer
-                ${isDragging 
-                  ? 'border-indigo-500 bg-indigo-50' 
-                  : isFileLoading 
-                    ? 'border-gray-300 bg-gray-50' 
-                    : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
-                }
-              `}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onClick={openFileDialog}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,.txt"
-                onChange={handleInputChange}
-                className="hidden"
-              />
-              
-              {isFileLoading ? (
-                <div className="p-4 space-y-2 text-center">
-                  <Loader2 className="w-6 h-6 mx-auto text-indigo-500 animate-spin" />
-                  <p className="text-sm text-gray-600">正在读取文件...</p>
-                  {uploadProgress > 0 && (
-                    <div className="w-full bg-gray-200 rounded-full h-1.5">
-                      <div 
-                        className="bg-indigo-500 h-1.5 rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="p-4 text-center space-y-1">
-                  <Upload className="w-6 h-6 mx-auto text-gray-400" />
-                  <p className="text-sm text-gray-600">
-                    {isDragging ? '释放以上传文件' : '拖拽文件到此处或点击上传'}
-                  </p>
-                  <p className="text-xs text-gray-400">支持 .csv, .txt 文件，最大 10MB</p>
-                </div>
-              )}
-              
-              {fileName && !isFileLoading && (
-                <div className="px-4 pb-3 flex items-center justify-center gap-2 text-sm text-green-600">
-                  <CheckCircle className="w-4 h-4" />
-                  <span>{fileName}</span>
-                </div>
-              )}
-            </div>
-
-            {!showPasteArea ? (
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowPasteArea(true); }}
-                className="mt-2 w-full py-2 px-4 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-gray-200"
-              >
-                <Clipboard className="w-4 h-4" />
-                粘贴 CSV 数据
-              </button>
-            ) : (
-              <div className="mt-2 space-y-2">
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.readText().then(text => {
-                        setPastedData(text);
-                      }).catch(() => {
-                        toast.error('粘贴失败', '无法读取剪贴板内容');
-                      });
-                    }}
-                    className="flex-1 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-gray-200"
-                  >
-                    <Clipboard className="w-4 h-4" />
-                    从剪贴板粘贴
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPastedData('');
-                      setShowPasteArea(false);
-                    }}
-                    className="py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors border border-gray-200"
-                  >
-                    取消
-                  </button>
-                </div>
-                <textarea
-                  value={pastedData}
-                  onChange={(e) => setPastedData(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-full p-3 border border-gray-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none bg-gray-50"
-                  rows={5}
-                  placeholder="粘贴的 CSV 数据将显示在这里..."
-                />
-                <button
-                  onClick={(e) => { e.stopPropagation(); applyPastedData(); }}
-                  disabled={!pastedData.trim()}
-                  className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <Play className="w-4 h-4" />
-                  应用数据并运行分析
-                </button>
-              </div>
-            )}
-          </div>
+          <SavedDataSelector
+            currentCsvData={csvInput}
+            onLoadDataset={handleLoadDataset}
+            onSaveDataset={handleSaveDataset}
+            autoSaveEnabled={true}
+            onFileUpload={handleFileUpload}
+            onPasteData={handlePasteData}
+            isFileLoading={isFileLoading}
+            fileName={fileName}
+          />
 
           {validationTouched && (validationErrors.length > 0 || validationWarnings.length > 0) && (
             <div>

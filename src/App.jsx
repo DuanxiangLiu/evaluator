@@ -159,9 +159,9 @@ const AppContent = () => {
                 Geomean 改进
                 <HelpIcon
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">几何平均改进率</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">几何平均改进率</p>
+                      <div className="space-y-2 text-sm">
                         <p><b>计算公式：</b>exp(Σln(Ratio)/n)</p>
                         <p><b>工业意义：</b>评估算法整体改进比例的绝对标准</p>
                         <p><b>优势：</b>能有效抵消极端异常值的拉偏效应</p>
@@ -183,9 +183,9 @@ const AppContent = () => {
                 Arith Mean (算术)
                 <HelpIcon
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">算术平均改进率</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">算术平均改进率</p>
+                      <div className="space-y-2 text-sm">
                         <p><b>计算公式：</b>Σ(改进率)/n</p>
                         <p><b>工业意义：</b>直观的算术平均值</p>
                         <p><b>注意：</b>若远大于 Geomean，说明个别测试集表现被异常放大</p>
@@ -208,9 +208,9 @@ const AppContent = () => {
                   P-Value
                   <HelpIcon
                     content={
-                      <div className="space-y-2">
-                        <p className="font-bold text-indigo-600">Wilcoxon 符号秩检验</p>
-                        <div className="space-y-1 text-xs">
+                      <div className="space-y-3">
+                        <p className="font-bold text-indigo-400 text-lg">Wilcoxon 符号秩检验</p>
+                        <div className="space-y-2 text-sm">
                           <p><b>检验方法：</b>非参数统计检验，不依赖数据分布</p>
                           <p><b>工业意义：</b>判断数据分布的改变是否真实有效</p>
                           <p><b>判断标准：</b>P &lt; 0.05 表示提升具有统计学显著性</p>
@@ -239,9 +239,9 @@ const AppContent = () => {
                 95% 置信区间
                 <HelpIcon
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">95% 置信区间</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">95% 置信区间</p>
+                      <div className="space-y-2 text-sm">
                         <p><b>统计含义：</b>评估算法表现波动的 95% 上下限预测</p>
                         <p><b>下限 &gt; 0%：</b>说明该算法极为稳健</p>
                         <p><b>工业应用：</b>几乎在全场景下均有正向收益</p>
@@ -261,9 +261,9 @@ const AppContent = () => {
                 退化案例数
                 <HelpIcon
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">退化案例数</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">退化案例数</p>
+                      <div className="space-y-2 text-sm">
                         <p><b>定义：</b>改进率 &lt; 0% 的案例总数</p>
                         <p><b>统计范围：</b>参与计算的有效样本</p>
                         <p><b>工业标准：</b>通常有极其严格的容忍度红线</p>
@@ -284,9 +284,9 @@ const AppContent = () => {
                 最大退化幅度
                 <HelpIcon
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">最大退化幅度 (WNS)</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">最大退化幅度 (WNS)</p>
+                      <div className="space-y-2 text-sm">
                         <p><b>WNS 思想：</b>Worst Case 分析，即"最坏能有多坏"</p>
                         <p><b>工业意义：</b>评估算法在最差情况下的表现</p>
                         <p><b>判断标准：</b>严重跌破底线的算法改动通常会被直接驳回</p>
@@ -325,9 +325,9 @@ const AppContent = () => {
                 <span>详细数据</span>
                 <HelpIcon
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">详细数据视图</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">详细数据视图</p>
+                      <div className="space-y-2 text-sm">
                         <p><b>功能说明：</b>展示所有测试案例的原始数据和改进率</p>
                         <p><b>数据内容：</b>包含基线算法、对比算法的原始值和改进百分比</p>
                         <p><b>交互功能：</b>支持行选择、列排序、数据过滤和导出</p>
@@ -348,9 +348,9 @@ const AppContent = () => {
                 <span>箱线图</span>
                 <HelpIcon
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">箱线图分析</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">箱线图分析</p>
+                      <div className="space-y-2 text-sm">
                         <p><b>功能说明：</b>展示当前焦点指标的数据分布情况</p>
                         <p><b>统计信息：</b>显示中位数、四分位数、最大值、最小值等</p>
                         <p><b>对比展示：</b>同时展示基线算法和对比算法的分布</p>
@@ -371,9 +371,9 @@ const AppContent = () => {
                 <span>特征相关性</span>
                 <HelpIcon
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">特征相关性分析</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">特征相关性分析</p>
+                      <div className="space-y-2 text-sm">
                         <p><b>功能说明：</b>分析不同特征之间的相关性关系</p>
                         <p><b>可视化方式：</b>使用散点图展示两个特征的关系</p>
                         <p><b>颜色编码：</b>不同颜色表示改进率的不同状态</p>
@@ -394,9 +394,9 @@ const AppContent = () => {
                 <span>帕累托投影</span>
                 <HelpIcon
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">帕累托投影分析</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">帕累托投影分析</p>
+                      <div className="space-y-2 text-sm">
                         <p><b>功能说明：</b>三维可视化展示多个指标的综合表现</p>
                         <p><b>投影原理：</b>基于帕累托法则的多维度数据投影</p>
                         <p><b>坐标轴：</b>X、Y、Z 轴分别代表不同的指标或维度</p>
@@ -417,9 +417,9 @@ const AppContent = () => {
                 <span>全局多维雷达</span>
                 <HelpIcon
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">全局多维雷达分析</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">全局多维雷达分析</p>
+                      <div className="space-y-2 text-sm">
                         <p><b>功能说明：</b>展示所有指标在不同算法下的综合表现</p>
                         <p><b>雷达图：</b>多维度数据可视化，每个轴代表一个指标</p>
                         <p><b>对比分析：</b>同时展示基线算法和对比算法的性能</p>
@@ -440,9 +440,9 @@ const AppContent = () => {
                 <span>AI 智能诊断</span>
                 <HelpIcon
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">AI 智能诊断</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">AI 智能诊断</p>
+                      <div className="space-y-2 text-sm">
                         <p><b>功能说明：</b>基于大语言模型的智能算法性能分析</p>
                         <p><b>分析内容：</b>自动生成深度分析报告和优化建议</p>
                         <p><b>支持模型：</b>支持 Gemini、OpenAI 等主流 LLM</p>
@@ -463,9 +463,9 @@ const AppContent = () => {
                 <span>QoR 模拟器</span>
                 <HelpIcon
                   content={
-                    <div className="space-y-2">
-                      <p className="font-bold text-indigo-600">QoR 模拟器</p>
-                      <div className="space-y-1 text-xs">
+                    <div className="space-y-3">
+                      <p className="font-bold text-indigo-400 text-lg">QoR 模拟器</p>
+                      <div className="space-y-2 text-sm">
                         <p><b>功能说明：</b>Quality of Result 模拟器，自定义权重计算综合评分</p>
                         <p><b>权重配置：</b>可为不同指标设置自定义权重</p>
                         <p><b>实时计算：</b>调整权重后实时更新综合评分</p>
@@ -562,9 +562,9 @@ const AppContent = () => {
                             改进率 %
                             <HelpIcon
                               content={
-                                <div className="space-y-2">
-                                  <p className="font-medium text-indigo-600">改进率计算</p>
-                                  <div className="space-y-1 text-xs">
+                                <div className="space-y-3">
+                                  <p className="font-bold text-indigo-400 text-lg">改进率计算</p>
+                                  <div className="space-y-2 text-sm">
                                     <p><b>计算公式：</b>((Base - Compare) / Base) × 100</p>
                                     <p><b>正值(绿色)：</b>新算法优化，性能提升</p>
                                     <p><b>负值(红色)：</b>新算法退化，性能下降</p>

@@ -16,7 +16,17 @@ const ParetoChart = ({
         <div>
           <h3 className="font-bold text-gray-800 text-lg flex items-center gap-1">
             Pareto Front 多维气泡分析
-            <HelpIcon content="帕累托图揭示了目标之间的竞争关系(Trade-off)。右上角为双赢点，左下角为双输点。你可以选择第三个指标映射为气泡的大小(Radius)，在同一个 2D 平面内直观降维对比 3 个目标的得失。这也是避免复杂3D遮挡的工业界首选方案。" tooltipWidth="w-[40rem]" position="right-center"/>
+            <HelpIcon content={
+              <div className="space-y-3">
+                <p className="font-bold text-indigo-400 text-lg">Pareto Front 多维气泡分析</p>
+                <div className="space-y-2 text-sm">
+                  <p>帕累托图揭示了目标之间的竞争关系 (Trade-off)。</p>
+                  <p><b>右上角：</b>双赢点，两个指标同时优化</p>
+                  <p><b>左下角：</b>双输点，两个指标同时退化</p>
+                  <p><b>气泡大小：</b>可选择第三个指标映射为气泡大小，在 2D 平面内直观对比 3 个目标</p>
+                </div>
+              </div>
+            } tooltipWidth="w-[40rem]" position="right-center"/>
           </h3>
         </div>
         
