@@ -256,6 +256,9 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
               <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-200 flex items-center justify-between">
                 <span className="text-xs text-gray-500">预览 第{currentPage}/{totalPages || 1}页</span>
                 <div className="flex items-center gap-2">
+                  <button onClick={handleRunAnalysis} disabled={!csvInput || !csvInput.trim() || !isValidData} className="text-xs px-3 py-1 rounded font-bold bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 disabled:bg-gray-300 disabled:from-gray-300 disabled:to-gray-300 shadow-sm flex items-center gap-1">
+                    <Play className="w-3 h-3" />运行分析
+                  </button>
                   <button onClick={() => setIsEditingMode(!isEditingMode)} className={`text-xs px-2 py-0.5 rounded ${isEditingMode ? 'bg-indigo-600 text-white' : 'text-indigo-600 hover:bg-indigo-50'}`}>
                     <Pencil className="w-3 h-3 inline mr-1" />{isEditingMode ? '完成' : '编辑'}
                   </button>
@@ -316,10 +319,6 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
               )}
             </div>
           )}
-
-          <button onClick={handleRunAnalysis} disabled={!csvInput || !csvInput.trim() || !isValidData} className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 shadow-sm">
-            <Play className="w-4 h-4" />运行分析
-          </button>
         </div>
       )}
     </div>

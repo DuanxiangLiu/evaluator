@@ -165,6 +165,21 @@ const AppContent = () => {
           <span className="text-base font-bold text-white flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-lg">
             <TrendingUp className="w-4 h-4" />
             关键指标概览
+            <HelpIcon 
+              content={
+                <div className="space-y-2">
+                  <p className="font-bold text-indigo-400">关键指标概览</p>
+                  <div className="text-xs space-y-1">
+                    <p>下方6个统计卡片展示的是当前选中指标（如 HPWL、TNS 等）的详细统计数据。</p>
+                    <p>您可以通过左侧的"指标"下拉框切换不同的评估指标。</p>
+                    <p>统计数据基于"基线"算法与"对比"算法之间的比较计算得出。</p>
+                  </div>
+                </div>
+              }
+              position="bottom-right"
+              tooltipWidth="w-[32rem]"
+              className="w-3.5 h-3.5 text-white/70 hover:text-white"
+            />
           </span>
           
           <div className="h-5 w-px bg-white/30"></div>
@@ -198,7 +213,27 @@ const AppContent = () => {
             {availableAlgos.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
           
-          {stats && <span className="text-xs font-bold text-white bg-white/20 px-2.5 py-1 rounded-full ml-auto">有效样本: {stats.nValid}/{stats.nTotalChecked}</span>}
+          {stats && (
+            <span className="text-xs font-bold text-amber-900 bg-gradient-to-r from-amber-200 to-yellow-200 px-3 py-1.5 rounded-full ml-auto flex items-center gap-1.5 shadow-md border border-amber-300">
+              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span>
+              有效样本: {stats.nValid}/{stats.nTotalChecked}
+              <HelpIcon 
+                content={
+                  <div className="space-y-2">
+                    <p className="font-bold text-indigo-400">有效样本</p>
+                    <div className="text-xs space-y-1">
+                      <p><b>有效样本 (nValid)：</b>参与统计计算的数据行数，排除了包含 NaN 或无效值的行。</p>
+                      <p><b>总样本 (nTotalChecked)：</b>数据集中的总行数。</p>
+                      <p>有效样本数越多，统计结果越可靠。</p>
+                    </div>
+                  </div>
+                }
+                position="bottom-left"
+                tooltipWidth="w-[32rem]"
+                className="w-3 h-3 text-amber-600 hover:text-amber-800"
+              />
+            </span>
+          )}
         </div>
 
         {stats ? (
@@ -806,6 +841,8 @@ const AppContent = () => {
                 hoveredCase={hoveredCase}
                 setHoveredCase={setHoveredCase}
                 setTooltipState={setTooltipState}
+                onCaseClick={setDeepDiveCase}
+                parsedData={parsedData}
               />
             )}
 
@@ -825,6 +862,7 @@ const AppContent = () => {
                 setTooltipState={setTooltipState}
                 baseAlgo={baseAlgo}
                 compareAlgo={compareAlgo}
+                onCaseClick={setDeepDiveCase}
               />
             )}
 
@@ -845,6 +883,7 @@ const AppContent = () => {
                 setTooltipState={setTooltipState}
                 baseAlgo={baseAlgo}
                 compareAlgo={compareAlgo}
+                onCaseClick={setDeepDiveCase}
               />
             )}
 

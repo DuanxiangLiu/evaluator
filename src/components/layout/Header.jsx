@@ -19,7 +19,7 @@ const Header = () => {
               EDA 算法评估器
             </h1>
             <span className="text-[10px] text-amber-200 font-semibold bg-amber-500/20 px-1.5 py-0.5 rounded-full">
-              v1.1
+              v1.2
             </span>
           </div>
           

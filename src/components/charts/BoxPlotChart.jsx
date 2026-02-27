@@ -1,74 +1,123 @@
 import React from 'react';
 import HelpIcon from '../common/HelpIcon';
 
-const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, setHoveredCase, setTooltipState }) => {
+const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, setHoveredCase, setTooltipState, onCaseClick, parsedData }) => {
   if (!stats) return null;
 
+  const yMax = Math.max(Math.abs(stats.maxImp), Math.abs(stats.minImp)) + 5;
+  const mapY = (val) => 50 - (val / yMax) * 50;
+
   return (
-    <div className="p-6 h-full flex flex-col justify-center" onMouseMove={handleChartMouseMove}>
-      <div className="bg-gray-50/50 p-8 rounded-xl border border-gray-200 max-w-4xl mx-auto w-full shadow-sm">
-        <div className="flex justify-between items-center mb-8">
-          <h3 className="font-bold text-gray-800 text-lg flex items-center gap-1">
-            改进率分布箱线图 ({activeMetric})
+    <div className="p-4 h-full flex flex-col justify-center" onMouseMove={handleChartMouseMove}>
+      <div className="bg-white p-5 rounded-xl border border-gray-200 max-w-4xl mx-auto w-full shadow-sm">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-bold text-gray-800 text-base flex items-center gap-1">
+            改进率分布箱线图
+            <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{activeMetric}</span>
             <HelpIcon content={
-              <div className="space-y-3">
-                <p className="font-bold text-indigo-400 text-lg">改进率分布箱线图</p>
-                <div className="space-y-2 text-sm">
+              <div className="space-y-2">
+                <p className="font-bold text-indigo-400">改进率分布箱线图</p>
+                <div className="text-xs space-y-1">
                   <p>箱线图直观展示了单个指标在所有 Case 中的宏观分布情况。</p>
-                  <p><b>长条阴影：</b>覆盖了 50% 的核心密集区 (IQR)</p>
-                  <p><b>异常离群点：</b>散落在阴影远端的散点，研发工程师需要重点排查这些点是否引入了特定的 Bug</p>
-                  <p><b>交互功能：</b>悬浮数据点可联动表格高亮</p>
+                  <p><b>蓝色阴影区 (IQR)：</b>覆盖 50% 的核心密集区，从 Q1 到 Q3</p>
+                  <p><b>虚线 (中位数)：</b>所有 Case 改进率的中位数</p>
+                  <p><b>零线：</b>改进率为 0% 的基准线</p>
+                  <p><b>紫色点：</b>显著优化离群点</p>
+                  <p><b>红色点：</b>严重退化离群点</p>
+                  <p><b>双击数据点：</b>打开深度分析模态框</p>
                 </div>
               </div>
-            } tooltipWidth="w-[40rem]" position="right-center"/>
+            } tooltipWidth="w-[36rem]" position="right-center"/>
           </h3>
-          <span className="text-xs font-semibold text-gray-500 bg-white px-3 py-1.5 rounded-lg border shadow-sm flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-purple-500"></span> 异常离群点
-            <span className="w-3 h-3 rounded-full bg-indigo-500 ml-2"></span> 核心密集区
-          </span>
+          <div className="flex items-center gap-3 text-xs">
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+              <span className="text-gray-600">严重退化</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+              <span className="text-gray-600">显著优化</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+              <span className="text-gray-600">正常范围</span>
+            </span>
+          </div>
         </div>
-        <div className="relative w-full h-80 border-l-2 border-b-2 border-gray-400 mt-2">
-          <div className="absolute -left-14 top-0 text-xs font-bold text-gray-500 text-right w-12">{Math.ceil(stats.maxImp + 2)}%</div>
-          <div className="absolute -left-14 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500 text-right w-12">0%</div>
-          <div className="absolute -left-14 bottom-0 text-xs font-bold text-gray-500 text-right w-12">{Math.floor(stats.minImp - 2)}%</div>
+
+        <div className="flex">
+          <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-bold text-gray-500 w-10">
+            <span>+{yMax.toFixed(0)}%</span>
+            <span className="text-green-600">+{(stats.q3).toFixed(1)}%</span>
+            <span className="text-indigo-600">中位数</span>
+            <span className="text-amber-600">{(stats.q1).toFixed(1)}%</span>
+            <span>0%</span>
+            <span className="text-red-500">-{yMax.toFixed(0)}%</span>
+          </div>
           
-          <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {(() => {
-              const yMax = Math.max(Math.abs(stats.maxImp), Math.abs(stats.minImp)) + 5;
-              const mapY = (val) => 50 - (val / yMax) * 50;
-              return (
-                <>
-                  <line x1="0" y1="50" x2="100" y2="50" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
-                  <rect x="0" y={mapY(stats.q3)} width="100" height={Math.max(0, mapY(stats.q1) - mapY(stats.q3))} fill="#e0e7ff" opacity="0.6" />
-                  <line x1="0" y1={mapY(stats.median)} x2="100" y2={mapY(stats.median)} stroke="#4f46e5" strokeWidth="0.8" strokeDasharray="1 1" />
-                  
-                  {stats.validCases.map((d, i) => {
-                    const imp = d.imp;
-                    const cx = 5 + (i / (stats.nValid - 1 || 1)) * 90;
-                    const cy = mapY(imp);
-                    const isOutlier = imp > stats.outlierUpper || imp < stats.outlierLower;
-                    const isHovered = hoveredCase === d.Case;
-                    
-                    let dotColor = "#6366f1";
-                    if (imp > stats.outlierUpper) dotColor = "#9333ea";
-                    if (imp < stats.outlierLower) dotColor = "#dc2626";
-                    
-                    return (
-                      <circle key={d.Case} cx={cx} cy={cy} r={isHovered ? "4" : (isOutlier ? "2.5" : "1.5")}
-                        fill={dotColor} stroke={isHovered ? "#fff" : "none"} strokeWidth={isHovered ? "0.5" : "0"}
-                        className={`transition-all duration-200 cursor-pointer ${isHovered ? 'animate-pulse' : 'hover:r-3'}`}
-                        onMouseEnter={() => {
-                          setHoveredCase(d.Case);
-                          setTooltipState({ visible: true, x: 0, y: 0, title: d.Case, lines: [`状态: ${isOutlier ? (imp > 0 ? '显著优化(异常)' : '严重退化(异常)') : (imp > 0 ? '优化' : '退化')}`, `改进: ${imp > 0 ? '+' : ''}${imp.toFixed(2)}%`, `Base: ${d.bVal} | Comp: ${d.cVal}`] });
-                        }}
-                        onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
-                      />
-                    );
-                  })}
-                </>
-              );
-            })()}
-          </svg>
+          <div className="relative flex-1 h-64 border-l-2 border-b-2 border-gray-300 bg-gradient-to-b from-green-50/30 via-white to-red-50/30">
+            <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-green-100/20 to-transparent pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-red-100/20 to-transparent pointer-events-none"></div>
+            
+            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <line x1="0" y1="50" x2="100" y2="50" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
+              
+              <rect x="0" y={mapY(stats.q3)} width="100" height={Math.max(0, mapY(stats.q1) - mapY(stats.q3))} fill="#c7d2fe" opacity="0.5" />
+              
+              <line x1="0" y1={mapY(stats.median)} x2="100" y2={mapY(stats.median)} stroke="#4f46e5" strokeWidth="1" strokeDasharray="3 2" />
+              
+              <line x1="0" y1={mapY(stats.q1)} x2="100" y2={mapY(stats.q1)} stroke="#f59e0b" strokeWidth="0.5" strokeDasharray="1 2" />
+              <line x1="0" y1={mapY(stats.q3)} x2="100" y2={mapY(stats.q3)} stroke="#22c55e" strokeWidth="0.5" strokeDasharray="1 2" />
+              
+              {stats.validCases.map((d, i) => {
+                const imp = d.imp;
+                const cx = 5 + (i / (stats.nValid - 1 || 1)) * 90;
+                const cy = mapY(imp);
+                const isOutlier = imp > stats.outlierUpper || imp < stats.outlierLower;
+                const isHovered = hoveredCase === d.Case;
+                
+                let dotColor = "#6366f1";
+                if (imp > stats.outlierUpper) dotColor = "#9333ea";
+                if (imp < stats.outlierLower) dotColor = "#dc2626";
+                
+                return (
+                  <circle key={d.Case} cx={cx} cy={cy} r={isHovered ? "3" : (isOutlier ? "1.8" : "1")}
+                    fill={dotColor} stroke={isHovered ? "#fff" : "none"} strokeWidth={isHovered ? "0.3" : "0"}
+                    className={`transition-all duration-200 cursor-pointer ${isHovered ? 'animate-pulse' : ''}`}
+                    onMouseEnter={() => {
+                      setHoveredCase(d.Case);
+                      setTooltipState({ visible: true, x: 0, y: 0, title: d.Case, lines: [`状态: ${isOutlier ? (imp > 0 ? '显著优化(异常)' : '严重退化(异常)') : (imp > 0 ? '优化' : '退化')}`, `改进: ${imp > 0 ? '+' : ''}${imp.toFixed(2)}%`, `Base: ${d.bVal} | Comp: ${d.cVal}`] });
+                    }}
+                    onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
+                    onDoubleClick={() => {
+                      if (onCaseClick && parsedData) {
+                        const caseData = parsedData.find(p => p.Case === d.Case);
+                        if (caseData) onCaseClick(caseData);
+                      }
+                    }}
+                  />
+                );
+              })}
+            </svg>
+            
+            <div className="absolute top-1 left-2 text-[9px] text-green-600 font-bold bg-green-50/80 px-1 rounded">优化区域 ↑</div>
+            <div className="absolute bottom-1 left-2 text-[9px] text-red-500 font-bold bg-red-50/80 px-1 rounded">退化区域 ↓</div>
+          </div>
+        </div>
+
+        <div className="mt-3 flex justify-center gap-6 text-[10px] text-gray-500">
+          <span className="flex items-center gap-1">
+            <span className="w-6 h-0.5 bg-indigo-500" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #4f46e5 0, #4f46e5 3px, transparent 3px, transparent 6px)' }}></span>
+            中位数线
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-6 h-2 bg-indigo-200/50 rounded"></span>
+            IQR 区域 (Q1-Q3)
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-6 h-0.5 bg-gray-400" style={{ backgroundImage: 'repeating-linear-gradient(90deg, #9ca3af 0, #9ca3af 2px, transparent 2px, transparent 4px)' }}></span>
+            零线 (0%)
+          </span>
         </div>
       </div>
     </div>

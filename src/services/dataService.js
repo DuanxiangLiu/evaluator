@@ -6,7 +6,7 @@ export const EDA_METRICS_CONFIG = {
   HPWL: { name: '半周长线长', unit: 'um', better: 'lower', description: '布线总长度，值越小越好' },
   TNS: { name: '时序负裕度总和', unit: 'ps', better: 'lower', description: '时序违例总和，值越小越好' },
   WNS: { name: '最差时序负裕度', unit: 'ps', better: 'lower', description: '最差的时序违例，值越小越好' },
-  Power: { name: '功耗', unit: 'mW', better: 'lower', description: '芯片功耗，值越小越好' },
+  Congestion: { name: '拥塞', unit: '', better: 'lower', description: '布线拥塞程度，值越小越好' },
   Runtime: { name: '运行时间', unit: 's', better: 'lower', description: '算法运行时间，值越小越好' },
   Hb_Count: { name: '闩锁数量', unit: '个', better: 'lower', description: '闩锁数量，值越小越好' },
   Leakage: { name: '泄漏功耗', unit: 'mW', better: 'lower', description: '泄漏功耗，值越小越好' },

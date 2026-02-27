@@ -274,12 +274,9 @@ const SavedDataSelector = ({
           onClick={handleQuickSave}
           disabled={isSaving || !currentCsvData?.trim()}
           className={`
-            flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md
-            ${lastSavedId 
-              ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-emerald-500/25' 
-              : 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white hover:from-indigo-600 hover:to-violet-600 shadow-indigo-500/25'
-            }
-            disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none
+            flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200
+            bg-white/80 backdrop-blur-sm border border-gray-200/80 text-gray-700 hover:bg-white hover:border-indigo-300 hover:shadow-md
+            disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none
           `}
           title="保存数据到数据源"
         >

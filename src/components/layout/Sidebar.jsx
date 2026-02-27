@@ -5,7 +5,7 @@ import {
   generateDefaultDataset, 
   generateSmallDataset, 
   generateLargeDataset, 
-  generatePowerDataset,
+  generateCongestionDataset,
   generateTimingDataset 
 } from '../../utils/dataGenerator';
 
@@ -26,9 +26,9 @@ const Sidebar = ({ isOpen, csvInput, onCsvChange, onRunAnalysis }) => {
       name: '大型设计数据集 (30 cases)',
       data: generateLargeDataset()
     },
-    power: {
-      name: '功耗优化数据集 (30 cases)',
-      data: generatePowerDataset()
+    congestion: {
+      name: '拥塞优化数据集 (30 cases)',
+      data: generateCongestionDataset()
     },
     timing: {
       name: '时序优化数据集 (30 cases)',

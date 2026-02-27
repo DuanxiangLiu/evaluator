@@ -151,13 +151,13 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
         </div>
       </div>
       
-      <div className="relative w-full flex-1 max-h-[500px] flex items-center justify-center bg-gradient-to-br from-gray-50 to-slate-100 rounded-2xl border border-gray-200/50 shadow-inner">
-        <svg className="w-full h-full overflow-visible" viewBox="-180 -150 360 300" preserveAspectRatio="xMidYMid meet">
+      <div className="relative w-full flex-1 max-h-[500px] flex items-center justify-center bg-gradient-to-br from-gray-50 to-slate-100 rounded-2xl border border-gray-200/50 shadow-inner overflow-hidden">
+        <svg className="w-full h-full" viewBox="-200 -180 400 360" preserveAspectRatio="xMidYMid meet">
           {(() => {
             const N = validMetrics.length;
             if(N < 3) return <text x="0" y="0" textAnchor="middle" fill="#9ca3af" fontSize="12">生成雷达图至少需要 3 个有效的比对指标</text>;
             
-            const baseRadius = 75;
+            const baseRadius = 70;
             
             const getPoint = (angle, r) => ({ x: r * Math.sin(angle), y: -r * Math.cos(angle) });
 
@@ -176,14 +176,14 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
 
             const renderAxes = () => validMetrics.map((m, i) => {
               const angle = (Math.PI * 2 * i) / N;
-              const ptEnd = getPoint(angle, 140);
-              const labelPt = getPoint(angle, 170);
+              const ptEnd = getPoint(angle, 100);
+              const labelPt = getPoint(angle, 125);
               const config = getMetricConfig(m.metric);
               
               return (
                 <g key={`axis-${i}`}>
                   <line x1="0" y1="0" x2={ptEnd.x} y2={ptEnd.y} stroke="#d1d5db" strokeWidth="1" />
-                  <text x={labelPt.x} y={labelPt.y} fontSize="9" fontWeight="bold" fill="#4b5563" textAnchor="middle" dominantBaseline="middle">{m.metric}</text>
+                  <text x={labelPt.x} y={labelPt.y} fontSize="8" fontWeight="bold" fill="#4b5563" textAnchor="middle" dominantBaseline="middle">{m.metric}</text>
                   {selectedAlgosArray.map((algo, algoIdx) => {
                     const statsForAlgo = algoStatsMap[algo];
                     const metricStat = statsForAlgo?.find(s => s.metric === m.metric);
@@ -194,8 +194,8 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
                       <text 
                         key={`imp-${algo}`}
                         x={labelPt.x} 
-                        y={labelPt.y + 12 + algoIdx * 11} 
-                        fontSize="7" 
+                        y={labelPt.y + 10 + algoIdx * 9} 
+                        fontSize="6" 
                         fontWeight="bold" 
                         fill={color.stroke}
                         textAnchor="middle"
