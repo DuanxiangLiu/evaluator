@@ -128,13 +128,13 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       <div 
-        className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-50 to-indigo-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
+        className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 border-b border-indigo-500 cursor-pointer hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-md"
         onClick={() => setIsVisible(!isVisible)}
       >
-        <div className="flex items-center gap-2">
-          <FileText className="w-4 h-4 text-indigo-500" />
-          <h2 className="text-sm font-bold text-gray-700">数据源管理</h2>
-          <span className="text-xs text-gray-400">({rows.length} 条数据)</span>
+        <div className="flex items-center gap-3">
+          <FileText className="w-5 h-5 text-white" />
+          <h2 className="text-base font-bold text-white">数据源管理</h2>
+          <span className="text-xs text-indigo-100 bg-white/20 px-2 py-0.5 rounded-full">({rows.length} 条数据)</span>
         </div>
         <div className="flex items-center gap-2">
           <HelpIcon 
@@ -153,8 +153,9 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
             }
             position="right-center"
             tooltipWidth="w-72"
+            className="w-4 h-4 text-white hover:text-indigo-200 transition-colors"
           />
-          {isVisible ? <ChevronUp className="w-4 h-4 text-gray-500" /> : <ChevronDown className="w-4 h-4 text-gray-500" />}
+          {isVisible ? <ChevronUp className="w-5 h-5 text-white" /> : <ChevronDown className="w-5 h-5 text-white" />}
         </div>
       </div>
       
