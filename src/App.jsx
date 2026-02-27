@@ -487,15 +487,16 @@ const AppContent = () => {
               <div className="flex flex-col h-full">
                 <div className="bg-white border-b border-gray-200 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0 relative z-0">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-sm font-bold text-indigo-800 flex items-center gap-1">
+                    <span className="text-sm font-medium text-indigo-800 flex items-center gap-1">
                       明细数据目标: <span className="bg-indigo-100 px-2 py-0.5 rounded text-indigo-700 shadow-inner ml-1">{activeMetric}</span>
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-3 items-center w-full md:w-auto">
                     <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200 shadow-inner text-xs">
-                      <button onClick={() => setTableFilter('all')} className={`px-3 py-1.5 rounded transition-colors ${tableFilter === 'all' ? 'bg-white text-indigo-700 font-bold shadow-sm' : 'text-gray-500 hover:text-gray-700 font-semibold'}`}>全部</button>
-                      <button onClick={() => setTableFilter('degraded')} className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${tableFilter === 'degraded' ? 'bg-white text-red-700 font-bold shadow-sm' : 'text-gray-500 hover:text-gray-700 font-semibold'}`}><ArrowDown className="w-3 h-3" />退化</button>
-                      <button onClick={() => setTableFilter('outlier')} className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${tableFilter === 'outlier' ? 'bg-white text-purple-700 font-bold shadow-sm' : 'text-gray-500 hover:text-gray-700 font-semibold'}`}><AlertTriangle className="w-3 h-3" />异常</button>
+                      <button onClick={() => setTableFilter('all')} className={`px-3 py-1.5 rounded transition-colors ${tableFilter === 'all' ? 'bg-white text-indigo-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>全部</button>
+                      <button onClick={() => setTableFilter('degraded')} className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${tableFilter === 'degraded' ? 'bg-white text-red-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700 font-medium'}`}><ArrowDown className="w-3 h-3" />退化</button>
+                      <button onClick={() => setTableFilter('outlier')} className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${tableFilter === 'outlier' ? 'bg-white text-purple-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700 font-medium'}`}><AlertTriangle className="w-3 h-3" />异常</button>
+                      <button onClick={() => setTableFilter('filtered')} className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${tableFilter === 'filtered' ? 'bg-white text-gray-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700 font-medium'}`}><Square className="w-3 h-3" />已过滤</button>
                     </div>
                     <div className="relative">
                       <button 
@@ -542,27 +543,27 @@ const AppContent = () => {
                 </div>
 
                 <div className="overflow-x-auto overflow-y-auto flex-1 custom-scrollbar pb-10 relative z-0">
-                  <table className="min-w-full text-base text-left relative">
-                    <thead className="bg-gray-100 text-gray-700 text-lg sticky top-0 z-10 shadow-sm border-b border-gray-200">
+                  <table className="min-w-full text-sm text-left relative">
+                    <thead className="bg-gray-100 text-gray-700 text-sm sticky top-0 z-10 shadow-sm border-b border-gray-200">
                       <tr>
-                        <th className="px-4 py-3 w-10 text-center cursor-pointer hover:bg-gray-200" onClick={toggleAll} title="全选/反选">
+                        <th className="px-4 py-2.5 w-10 text-center cursor-pointer hover:bg-gray-200" onClick={toggleAll} title="全选/反选">
                           {selectedCases.size === parsedData.length ? <CheckSquare className="w-4 h-4 text-indigo-600 mx-auto" /> : <Square className="w-4 h-4 text-gray-400 mx-auto" />}
                         </th>
-                        <th className="px-4 py-3 font-bold cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => handleSort('Case')}><div className="flex items-center justify-between">Case Name <SortIcon config={sortConfig} columnKey="Case" /></div></th>
+                        <th className="px-4 py-2.5 font-medium cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => handleSort('Case')}><div className="flex items-center justify-between">Case Name <SortIcon config={sortConfig} columnKey="Case" /></div></th>
                         {metaColumns.map(mc => (
-                          <th key={mc} className="px-4 py-3 font-bold text-right border-l border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors text-gray-600" onClick={() => handleSort(mc)}>
+                          <th key={mc} className="px-4 py-2.5 font-medium text-right border-l border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors text-gray-600" onClick={() => handleSort(mc)}>
                             <div className="flex items-center justify-end">{mc} <SortIcon config={sortConfig} columnKey={mc} /></div>
                           </th>
                         ))}
-                        <th className="px-4 py-3 font-bold text-right border-l border-gray-300 cursor-pointer hover:bg-gray-200 bg-gray-50 text-lg" onClick={() => handleSort(baseAlgo)}><div className="flex justify-end items-center">{baseAlgo} <SortIcon config={sortConfig} columnKey={baseAlgo} /></div></th>
-                        <th className="px-4 py-3 font-bold text-right cursor-pointer hover:bg-gray-200 bg-gray-50 text-lg" onClick={() => handleSort(compareAlgo)}><div className="flex justify-end items-center">{compareAlgo} <SortIcon config={sortConfig} columnKey={compareAlgo} /></div></th>
-                        <th className="px-4 py-3 font-bold text-right border-l border-gray-300 cursor-pointer hover:bg-indigo-100 bg-indigo-50/60" onClick={() => handleSort('imp')}>
+                        <th className="px-4 py-2.5 font-medium text-right border-l border-gray-300 cursor-pointer hover:bg-gray-200 bg-gray-50" onClick={() => handleSort(baseAlgo)}><div className="flex justify-end items-center">{baseAlgo} <SortIcon config={sortConfig} columnKey={baseAlgo} /></div></th>
+                        <th className="px-4 py-2.5 font-medium text-right cursor-pointer hover:bg-gray-200 bg-gray-50" onClick={() => handleSort(compareAlgo)}><div className="flex justify-end items-center">{compareAlgo} <SortIcon config={sortConfig} columnKey={compareAlgo} /></div></th>
+                        <th className="px-4 py-2.5 font-medium text-right border-l border-gray-300 cursor-pointer hover:bg-indigo-100 bg-indigo-50/60" onClick={() => handleSort('imp')}>
                           <div className="flex justify-end items-center text-indigo-900">
                             改进率 %
                             <HelpIcon
                               content={
                                 <div className="space-y-2">
-                                  <p className="font-bold text-indigo-600">改进率计算</p>
+                                  <p className="font-medium text-indigo-600">改进率计算</p>
                                   <div className="space-y-1 text-xs">
                                     <p><b>计算公式：</b>((Base - Compare) / Base) × 100</p>
                                     <p><b>正值(绿色)：</b>新算法优化，性能提升</p>
@@ -577,7 +578,7 @@ const AppContent = () => {
                             <SortIcon config={sortConfig} columnKey="imp" />
                           </div>
                         </th>
-                        <th className="px-4 py-3 font-bold text-center w-36 bg-indigo-50/60 border-l border-indigo-100 flex items-center justify-center gap-1">
+                        <th className="px-4 py-2.5 font-medium text-center w-36 bg-indigo-50/60 border-l border-indigo-100">
                           状态与透视
                         </th>
                       </tr>
@@ -601,44 +602,46 @@ const AppContent = () => {
                         let impColor = 'text-gray-500'; let badge = null;
 
                         if (!isChecked || isNull) {
-                          badge = <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-gray-200 text-gray-500"><Square className="w-3 h-3" /> 已过滤</span>;
+                          badge = <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-500"><Square className="w-3 h-3" /> 已过滤</span>;
                         } else if (outlierType === 'positive') {
-                          impColor = 'text-purple-600 font-black';
-                          badge = <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-300 shadow-sm"><Zap className="w-3 h-3" /> 显著优化</span>;
+                          impColor = 'text-purple-600 font-medium';
+                          badge = <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 border border-purple-300 shadow-sm"><Zap className="w-3 h-3" /> 显著优化</span>;
                         } else if (outlierType === 'negative') {
-                          impColor = 'text-red-700 font-black';
-                          badge = <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-800 border border-red-300 shadow-sm"><AlertTriangle className="w-3 h-3" /> 严重退化</span>;
+                          impColor = 'text-red-700 font-medium';
+                          badge = <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-300 shadow-sm"><AlertTriangle className="w-3 h-3" /> 严重退化</span>;
                         } else if (imp > 0) {
-                          impColor = 'text-emerald-600 font-bold';
-                          badge = <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"><ArrowUp className="w-3 h-3" /> 优化</span>;
+                          impColor = 'text-emerald-600 font-medium';
+                          badge = <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"><ArrowUp className="w-3 h-3" /> 优化</span>;
                         } else if (imp < 0) {
-                          impColor = 'text-red-600 font-bold';
-                          badge = <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-red-50 text-red-700 border border-red-200"><ArrowDown className="w-3 h-3" /> 退化</span>;
+                          impColor = 'text-red-600 font-medium';
+                          badge = <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-700 border border-red-200"><ArrowDown className="w-3 h-3" /> 退化</span>;
                         } else {
-                          badge = <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-600 border border-gray-200">持平</span>;
+                          badge = <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">持平</span>;
                         }
 
                         return (
                           <tr key={d.Case} className={`transition-all duration-150 ${rowBg}`} onMouseEnter={() => { if (isChecked && !isNull) setHoveredCase(d.Case); }} onMouseLeave={() => setHoveredCase(null)}>
-                            <td className="px-4 py-3 text-center cursor-pointer" onClick={() => toggleCase(d.Case)}><input type="checkbox" checked={isChecked} onChange={() => { }} className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer w-4 h-4" /></td>
-                            <td className="px-4 py-3 font-bold text-gray-800 max-w-[200px] truncate" title={d.Case}>{d.Case}</td>
+                            <td className="px-4 py-2 text-center cursor-pointer" onClick={() => toggleCase(d.Case)}><input type="checkbox" checked={isChecked} onChange={() => { }} className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer w-4 h-4" /></td>
+                            <td className="px-4 py-2 font-medium text-gray-800 max-w-[200px] truncate" title={d.Case}>{d.Case}</td>
                             {metaColumns.map(mc => (
-                              <td key={mc} className="px-4 py-3 text-right font-mono text-[1.5rem] text-gray-600 border-l border-gray-100" title={d.meta[mc]}>{formatIndustrialNumber(d.meta[mc]) || '-'}</td>
+                              <td key={mc} className="px-4 py-2 text-right font-mono text-sm text-gray-600 border-l border-gray-100" title={d.meta[mc]}>{formatIndustrialNumber(d.meta[mc]) || '-'}</td>
                             ))}
-                            <td className="px-4 py-3 text-right font-mono text-[1.5rem] text-gray-600 border-l border-gray-200 bg-gray-50/50">
+                            <td className="px-4 py-2 text-right font-mono text-sm text-gray-600 border-l border-gray-200 bg-gray-50/50">
                               {bVal == null ? <span className="text-gray-300">NaN</span> : bVal}
                             </td>
-                            <td className="px-4 py-3 text-right font-mono text-[1.5rem] text-gray-600 bg-gray-50/50">
+                            <td className="px-4 py-2 text-right font-mono text-sm text-gray-600 bg-gray-50/50">
                               {cVal == null ? <span className="text-gray-300">NaN</span> : cVal}
                             </td>
-                            <td className={`px-4 py-3 text-right font-mono tracking-tight border-l border-gray-200 ${impColor} bg-indigo-50/40`}>{isNull ? '-' : `${imp > 0 ? '+' : ''}${imp.toFixed(2)}%`}</td>
-                            <td className="px-4 py-3 text-center bg-indigo-50/40 border-l border-indigo-100/50 flex justify-center items-center gap-2">
-                              {badge}
-                              {isChecked && !isNull && (
-                                <button onClick={() => setDeepDiveCase(d.Case)} className="text-indigo-400 hover:text-indigo-700 bg-white p-1 rounded border border-indigo-200 shadow-sm" title="单点多维深度透视">
-                                  <Search className="w-3.5 h-3.5" />
-                                </button>
-                              )}
+                            <td className={`px-4 py-2 text-right font-mono text-sm tracking-tight border-l border-gray-200 ${impColor} bg-indigo-50/40`}>{isNull ? '-' : `${imp > 0 ? '+' : ''}${imp.toFixed(2)}%`}</td>
+                            <td className="px-4 py-2 text-center bg-indigo-50/40 border-l border-indigo-100/50">
+                              <div className="flex justify-center items-center gap-2">
+                                {badge}
+                                {isChecked && !isNull && (
+                                  <button onClick={() => setDeepDiveCase(d.Case)} className="text-indigo-400 hover:text-indigo-700 bg-white p-1 rounded border border-indigo-200 shadow-sm" title="单点多维深度透视">
+                                    <Search className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );

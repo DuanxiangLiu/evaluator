@@ -1,8 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { 
   FileText, Upload, Play, ChevronUp, ChevronDown, Database, Copy, Check, 
-  Clipboard, ChevronLeft, ChevronRight, FileUp, Loader2, CheckCircle, 
-  AlertCircle, AlertTriangle, X, RefreshCw, Save, Pencil, Plus, Trash2
+  Clipboard, ChevronLeft, ChevronRight, Loader2, CheckCircle, 
+  AlertCircle, X, Pencil, Plus, Trash2, FileUp, FolderOpen
 } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
 import ValidationResultPanel, { CompactValidationStatus } from '../common/ValidationResultPanel';
@@ -11,13 +11,7 @@ import { useInputValidation, useFileUpload, INPUT_STATUS } from '../../hooks/use
 import { useToast } from '../common/Toast';
 import { getValidationSuggestions, detectDelimiter } from '../../utils/validationUtils';
 import datasetStorage from '../../utils/datasetStorage';
-import { 
-  generateDefaultDataset, 
-  generateSmallDataset, 
-  generateLargeDataset, 
-  generatePowerDataset,
-  generateTimingDataset 
-} from '../../utils/dataGenerator';
+import { generateDefaultDataset } from '../../utils/dataGenerator';
 
 const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const [isVisible, setIsVisible] = useState(true);
@@ -26,13 +20,10 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const [pastedData, setPastedData] = useState('');
   const [showPasteArea, setShowPasteArea] = useState(false);
   const [showValidationPanel, setShowValidationPanel] = useState(false);
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [isEditingMode, setIsEditingMode] = useState(false);
   const rowsPerPage = 20;
-  const isUserActionRef = useRef(false);
-  const autoSaveTimeoutRef = useRef(null);
   const editInputRef = useRef(null);
 
   const toast = useToast();
@@ -88,27 +79,9 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
     }
   });
 
-  const defaultDataSources = {
-    default: {
-      name: '综合设计数据集 (30 cases)',
-      data: generateDefaultDataset()
-    },
-    small: {
-      name: '小型设计数据集 (30 cases)',
-      data: generateSmallDataset()
-    },
-    large: {
-      name: '大型设计数据集 (30 cases)',
-      data: generateLargeDataset()
-    },
-    power: {
-      name: '功耗优化数据集 (30 cases)',
-      data: generatePowerDataset()
-    },
-    timing: {
-      name: '时序优化数据集 (30 cases)',
-      data: generateTimingDataset()
-    }
+  const defaultDataset = {
+    name: '默认示例数据集',
+    data: generateDefaultDataset()
   };
 
   useEffect(() => {
@@ -116,14 +89,6 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
       validateDebounced(csvInput);
     }
   }, [csvInput, validateDebounced]);
-
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const handleLoadDataset = useCallback((csvData, dataset) => {
     onCsvChange(csvData);
@@ -138,21 +103,15 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
     onCsvChange(csvData);
   }, [onCsvChange]);
 
-  const handleDataSourceChange = (e) => {
-    const selectedDataSource = e.target.value;
-    if (defaultDataSources[selectedDataSource]) {
-      const data = defaultDataSources[selectedDataSource].data;
-      onCsvChange(data);
-      const result = validateImmediate(data);
-      if (result.valid) {
-        onRunAnalysis(data);
-        toast.success('数据加载成功', `已加载 ${defaultDataSources[selectedDataSource].name}`);
-      } else {
-        toast.error('数据验证失败', '请检查数据格式');
-        setShowValidationPanel(true);
-      }
-      setCurrentPage(1);
+  const handleLoadDefaultDataset = () => {
+    const data = defaultDataset.data;
+    onCsvChange(data);
+    const result = validateImmediate(data);
+    if (result.valid) {
+      onRunAnalysis(data);
+      toast.success('数据加载成功', `已加载 ${defaultDataset.name}`);
     }
+    setCurrentPage(1);
   };
 
   const handleCopy = () => {
@@ -160,14 +119,6 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
     setCopied(true);
     toast.success('复制成功', 'CSV数据已复制到剪贴板');
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handlePaste = () => {
-    navigator.clipboard.readText().then(text => {
-      setPastedData(text);
-    }).catch(err => {
-      toast.error('粘贴失败', '无法读取剪贴板内容');
-    });
   };
 
   const applyPastedData = () => {
@@ -410,120 +361,101 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
               onSaveDataset={handleSaveDataset}
               autoSaveEnabled={true}
             />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1.5 flex items-center gap-1.5">
-                <Database className="w-3.5 h-3.5 text-indigo-500" />
-                预设数据源
-              </label>
-              <select
-                onChange={handleDataSourceChange}
-                className="w-full p-2 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              >
-                <option value="">选择预设数据源...</option>
-                {Object.entries(defaultDataSources).map(([key, source]) => (
-                  <option key={key} value={key}>{source.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1.5 flex items-center gap-1.5">
-                <FileUp className="w-3.5 h-3.5 text-indigo-500" />
-                文件上传
-                {getStatusIcon()}
-              </label>
-              <div 
-                className={`
-                  relative border-2 border-dashed rounded-lg p-4 text-center transition-all cursor-pointer
-                  ${isDragging 
-                    ? 'border-indigo-500 bg-indigo-50' 
-                    : isFileLoading 
-                      ? 'border-gray-300 bg-gray-50' 
-                      : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
-                  }
-                `}
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onClick={openFileDialog}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,.txt"
-                  onChange={handleInputChange}
-                  className="hidden"
-                />
-                
-                {isFileLoading ? (
-                  <div className="space-y-2">
-                    <Loader2 className="w-6 h-6 mx-auto text-indigo-500 animate-spin" />
-                    <p className="text-sm text-gray-600">正在读取文件...</p>
-                    {uploadProgress > 0 && (
-                      <div className="w-full bg-gray-200 rounded-full h-1.5">
-                        <div 
-                          className="bg-indigo-500 h-1.5 rounded-full transition-all duration-300"
-                          style={{ width: `${uploadProgress}%` }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <Upload className="w-6 h-6 mx-auto text-gray-400" />
-                    <p className="text-sm text-gray-600">
-                      {isDragging ? '释放以上传文件' : '拖拽文件到此处或点击上传'}
-                    </p>
-                    <p className="text-xs text-gray-400">支持 .csv, .txt 文件，最大 10MB</p>
-                  </div>
-                )}
-                
-                {fileName && !isFileLoading && (
-                  <div className="mt-2 flex items-center justify-center gap-2 text-sm text-green-600">
-                    <CheckCircle className="w-4 h-4" />
-                    <span>{fileName}</span>
-                  </div>
-                )}
-              </div>
-            </div>
+            <button
+              onClick={handleLoadDefaultDataset}
+              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-indigo-300 transition-all shadow-sm"
+            >
+              <FolderOpen className="w-4 h-4 text-indigo-500" />
+              <span className="hidden sm:inline">加载示例数据</span>
+              <span className="sm:hidden">示例</span>
+            </button>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-gray-600 mb-1.5 flex items-center gap-1.5">
-              <Clipboard className="w-3.5 h-3.5 text-indigo-500" />
-              粘贴 CSV 数据
+              <FileUp className="w-3.5 h-3.5 text-indigo-500" />
+              上传或粘贴数据
+              {getStatusIcon()}
               <span className="text-[10px] text-gray-400 font-normal ml-1">
-                (支持: 逗号, 制表符, 分号, 竖线, 空格)
+                (支持: CSV, TXT | 分隔符: 逗号, Tab, 分号, 竖线)
               </span>
             </label>
+            
+            <div 
+              className={`
+                relative border-2 border-dashed rounded-lg transition-all cursor-pointer
+                ${isDragging 
+                  ? 'border-indigo-500 bg-indigo-50' 
+                  : isFileLoading 
+                    ? 'border-gray-300 bg-gray-50' 
+                    : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
+                }
+              `}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onClick={openFileDialog}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.txt"
+                onChange={handleInputChange}
+                className="hidden"
+              />
+              
+              {isFileLoading ? (
+                <div className="p-4 space-y-2 text-center">
+                  <Loader2 className="w-6 h-6 mx-auto text-indigo-500 animate-spin" />
+                  <p className="text-sm text-gray-600">正在读取文件...</p>
+                  {uploadProgress > 0 && (
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div 
+                        className="bg-indigo-500 h-1.5 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-4 text-center space-y-1">
+                  <Upload className="w-6 h-6 mx-auto text-gray-400" />
+                  <p className="text-sm text-gray-600">
+                    {isDragging ? '释放以上传文件' : '拖拽文件到此处或点击上传'}
+                  </p>
+                  <p className="text-xs text-gray-400">支持 .csv, .txt 文件，最大 10MB</p>
+                </div>
+              )}
+              
+              {fileName && !isFileLoading && (
+                <div className="px-4 pb-3 flex items-center justify-center gap-2 text-sm text-green-600">
+                  <CheckCircle className="w-4 h-4" />
+                  <span>{fileName}</span>
+                </div>
+              )}
+            </div>
+
             {!showPasteArea ? (
               <button
-                onClick={() => setShowPasteArea(true)}
-                className="w-full py-2 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-indigo-200"
+                onClick={(e) => { e.stopPropagation(); setShowPasteArea(true); }}
+                className="mt-2 w-full py-2 px-4 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-gray-200"
               >
                 <Clipboard className="w-4 h-4" />
-                打开粘贴区域
+                粘贴 CSV 数据
               </button>
             ) : (
-              <div className="space-y-2">
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
-                  <p className="font-bold mb-1">📋 支持的分隔符格式：</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2">
-                    <span className="px-2 py-0.5 bg-white rounded border border-blue-100"><b>,</b> 逗号 (标准CSV)</span>
-                    <span className="px-2 py-0.5 bg-white rounded border border-blue-100"><b>Tab</b> 制表符 (Excel复制)</span>
-                    <span className="px-2 py-0.5 bg-white rounded border border-blue-100"><b>;</b> 分号</span>
-                    <span className="px-2 py-0.5 bg-white rounded border border-blue-100"><b>|</b> 竖线</span>
-                    <span className="px-2 py-0.5 bg-white rounded border border-blue-100"><b>空格</b> (连续视为单个)</span>
-                  </div>
-                </div>
+              <div className="mt-2 space-y-2">
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
-                    onClick={handlePaste}
-                    className="flex-1 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
+                    onClick={() => {
+                      navigator.clipboard.readText().then(text => {
+                        setPastedData(text);
+                      }).catch(() => {
+                        toast.error('粘贴失败', '无法读取剪贴板内容');
+                      });
+                    }}
+                    className="flex-1 py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 border border-gray-200"
                   >
                     <Clipboard className="w-4 h-4" />
                     从剪贴板粘贴
@@ -533,30 +465,27 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
                       setPastedData('');
                       setShowPasteArea(false);
                     }}
-                    className="py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-bold transition-colors border border-gray-200"
+                    className="py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors border border-gray-200"
                   >
                     取消
                   </button>
                 </div>
-                <div className="space-y-2">
-                  <textarea
-                    value={pastedData}
-                    onChange={(e) => {
-                      setPastedData(e.target.value);
-                    }}
-                    className="w-full p-3 border border-gray-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none bg-gray-50"
-                    rows={5}
-                    placeholder="粘贴的 CSV 数据将显示在这里..."
-                  />
-                  <button
-                    onClick={applyPastedData}
-                    disabled={!pastedData.trim()}
-                    className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    <Play className="w-4 h-4" />
-                    应用数据并运行分析
-                  </button>
-                </div>
+                <textarea
+                  value={pastedData}
+                  onChange={(e) => setPastedData(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full p-3 border border-gray-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none bg-gray-50"
+                  rows={5}
+                  placeholder="粘贴的 CSV 数据将显示在这里..."
+                />
+                <button
+                  onClick={(e) => { e.stopPropagation(); applyPastedData(); }}
+                  disabled={!pastedData.trim()}
+                  className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <Play className="w-4 h-4" />
+                  应用数据并运行分析
+                </button>
               </div>
             )}
           </div>
@@ -565,7 +494,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
             <div>
               <button
                 onClick={() => setShowValidationPanel(!showValidationPanel)}
-                className="flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-indigo-600 transition-colors"
+                className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors"
               >
                 {showValidationPanel ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 验证结果 ({validationErrors.length} 错误, {validationWarnings.length} 警告)
@@ -589,13 +518,13 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
           {csvInput && headers.length > 0 && (
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               <div className="bg-gray-50 px-3 py-2 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="text-xs font-bold text-gray-600">
+                <span className="text-xs font-medium text-gray-600">
                   数据预览 ({rows.length} 条数据，第 {currentPage} / {totalPages || 1} 页)
                 </span>
                 <div className="flex items-center gap-2">
                   <button 
                     onClick={() => setIsEditingMode(!isEditingMode)}
-                    className={`text-xs font-bold flex items-center gap-1 px-2 py-1 rounded transition-colors ${
+                    className={`text-xs font-medium flex items-center gap-1 px-2 py-1 rounded transition-colors ${
                       isEditingMode 
                         ? 'bg-indigo-600 text-white' 
                         : 'text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50'
@@ -606,7 +535,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
                   </button>
                   <button 
                     onClick={handleCopy}
-                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                    className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
                   >
                     {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                     {copied ? '已复制' : '复制全部'}
@@ -617,20 +546,20 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
                 <div className="bg-indigo-50 px-3 py-2 border-b border-indigo-100 flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => handleAddRow('start')}
-                    className="px-2 py-1 bg-white hover:bg-indigo-100 text-indigo-700 rounded text-xs font-bold transition-colors border border-indigo-200 flex items-center gap-1"
+                    className="px-2 py-1 bg-white hover:bg-indigo-100 text-indigo-700 rounded text-xs font-medium transition-colors border border-indigo-200 flex items-center gap-1"
                   >
                     <Plus className="w-3 h-3" />
                     在开头添加行
                   </button>
                   <button
                     onClick={() => handleAddRow('end')}
-                    className="px-2 py-1 bg-white hover:bg-indigo-100 text-indigo-700 rounded text-xs font-bold transition-colors border border-indigo-200 flex items-center gap-1"
+                    className="px-2 py-1 bg-white hover:bg-indigo-100 text-indigo-700 rounded text-xs font-medium transition-colors border border-indigo-200 flex items-center gap-1"
                   >
                     <Plus className="w-3 h-3" />
                     在末尾添加行
                   </button>
                   <span className="text-xs text-indigo-600 ml-2">
-                    💡 双击单元格编辑，按 Enter 保存，按 Esc 取消
+                    双击单元格编辑，按 Enter 保存，按 Esc 取消
                   </span>
                 </div>
               )}
@@ -639,12 +568,12 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
                   <thead className="bg-indigo-50 text-indigo-900 sticky top-0 z-10">
                     <tr>
                       {isEditingMode && (
-                        <th className="px-2 py-2 font-bold whitespace-nowrap border-r border-indigo-100 w-10">
+                        <th className="px-2 py-2 font-medium whitespace-nowrap border-r border-indigo-100 w-10">
                           操作
                         </th>
                       )}
                       {headers.map((header, idx) => (
-                        <th key={idx} className="px-2 sm:px-3 py-2 font-bold whitespace-nowrap border-r border-indigo-100 last:border-r-0">
+                        <th key={idx} className="px-2 sm:px-3 py-2 font-medium whitespace-nowrap border-r border-indigo-100 last:border-r-0">
                           {header}
                         </th>
                       ))}
@@ -704,7 +633,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
                   <button
                     onClick={goToPreviousPage}
                     disabled={currentPage === 1}
-                    className="px-2 sm:px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-bold transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                    className="px-2 sm:px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-medium transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                   >
                     <ChevronLeft className="w-3 h-3" />
                     <span className="hidden sm:inline">上一页</span>
@@ -725,7 +654,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
                         <button
                           key={page}
                           onClick={() => goToPage(page)}
-                          className={`px-2 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                          className={`px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                             currentPage === page
                               ? 'bg-indigo-600 text-white'
                               : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'
@@ -742,7 +671,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
                   <button
                     onClick={goToNextPage}
                     disabled={currentPage === totalPages}
-                    className="px-2 sm:px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-bold transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                    className="px-2 sm:px-3 py-1.5 bg-white hover:bg-gray-100 text-gray-700 rounded-lg text-xs font-medium transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                   >
                     <span className="hidden sm:inline">下一页</span>
                     <ChevronRight className="w-3 h-3" />
@@ -754,17 +683,9 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
 
           <div className="flex gap-2">
             <button
-              onClick={openFileDialog}
-              className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-gray-200"
-            >
-              <Upload className="w-4 h-4" />
-              <span className="hidden sm:inline">上传 CSV 文件</span>
-              <span className="sm:hidden">上传</span>
-            </button>
-            <button
               onClick={handleRunAnalysis}
               disabled={!csvInput || !csvInput.trim() || !isValidData}
-              className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
+              className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm"
             >
               <Play className="w-4 h-4" />
               <span className="hidden sm:inline">运行分析</span>
