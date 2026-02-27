@@ -207,6 +207,169 @@ export const exportToCSV = (filteredData, activeMetric, baseAlgo, compareAlgo, m
   document.body.removeChild(link);
 };
 
+export const exportFullDataToCSV = (data, algos, metrics, metaColumns) => {
+  const headers = ['Case', ...metaColumns];
+  
+  metrics.forEach(metric => {
+    algos.forEach(algo => {
+      headers.push(`m_${algo}_${metric}`);
+    });
+  });
+  
+  let csvContent = headers.join(',') + '\n';
+  
+  data.forEach(row => {
+    const values = [row.Case];
+    
+    metaColumns.forEach(mc => {
+      values.push(row.meta[mc] ?? '');
+    });
+    
+    metrics.forEach(metric => {
+      algos.forEach(algo => {
+        const val = row.raw[metric]?.[algo];
+        values.push(val == null ? 'NaN' : val.toString());
+      });
+    });
+    
+    csvContent += values.join(',') + '\n';
+  });
+  
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `eda_full_export_${new Date().getTime()}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+export const exportToJSON = (data, algos, metrics, metaColumns) => {
+  const exportData = {
+    exportedAt: new Date().toISOString(),
+    summary: {
+      totalCases: data.length,
+      algorithms: algos,
+      metrics: metrics,
+      metaColumns: metaColumns
+    },
+    data: data.map(row => ({
+      case: row.Case,
+      meta: row.meta,
+      values: metrics.reduce((acc, metric) => {
+        acc[metric] = algos.reduce((algoAcc, algo) => {
+          algoAcc[algo] = row.raw[metric]?.[algo] ?? null;
+          return algoAcc;
+        }, {});
+        return acc;
+      }, {})
+    }))
+  };
+  
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `eda_export_${new Date().getTime()}.json`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+export const exportToExcel = (data, algos, metrics, metaColumns, activeMetric, baseAlgo, compareAlgo, stats) => {
+  const headers = ['Case', ...metaColumns, `${activeMetric}_${baseAlgo}`, `${activeMetric}_${compareAlgo}`, 'Improvement(%)', 'Status'];
+  
+  let csvContent = headers.join('\t') + '\n';
+  
+  data.forEach(row => {
+    const bVal = row.raw[activeMetric]?.[baseAlgo];
+    const cVal = row.raw[activeMetric]?.[compareAlgo];
+    const isNull = bVal == null || cVal == null;
+    let imp = 0;
+    let status = 'Filtered';
+    
+    if (!isNull) {
+      imp = calculateImprovement(bVal, cVal);
+      const validMatch = stats?.validCases.find(v => v.Case === row.Case);
+      if (validMatch) {
+        if (validMatch.outlierType === 'positive') status = 'Significant_Opt';
+        else if (validMatch.outlierType === 'negative') status = 'Severe_Degrade';
+        else status = imp > 0 ? 'Optimized' : (imp < 0 ? 'Degraded' : 'Neutral');
+      }
+    }
+    
+    const values = [
+      row.Case,
+      ...metaColumns.map(mc => row.meta[mc] ?? ''),
+      bVal == null ? 'NaN' : bVal,
+      cVal == null ? 'NaN' : cVal,
+      isNull ? '-' : imp.toFixed(2),
+      status
+    ];
+    
+    csvContent += values.join('\t') + '\n';
+  });
+  
+  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/plain;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `eda_export_${activeMetric}_${new Date().getTime()}.tsv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+export const updateDataValue = (data, caseName, metric, algorithm, newValue) => {
+  return data.map(row => {
+    if (row.Case === caseName) {
+      return {
+        ...row,
+        raw: {
+          ...row.raw,
+          [metric]: {
+            ...row.raw[metric],
+            [algorithm]: newValue
+          }
+        }
+      };
+    }
+    return row;
+  });
+};
+
+export const dataToCSVString = (data, algos, metrics, metaColumns) => {
+  const headers = ['Case', ...metaColumns];
+  
+  metrics.forEach(metric => {
+    algos.forEach(algo => {
+      headers.push(`m_${algo}_${metric}`);
+    });
+  });
+  
+  let csvContent = headers.join(',') + '\n';
+  
+  data.forEach(row => {
+    const values = [row.Case];
+    
+    metaColumns.forEach(mc => {
+      values.push(row.meta[mc] ?? '');
+    });
+    
+    metrics.forEach(metric => {
+      algos.forEach(algo => {
+        const val = row.raw[metric]?.[algo];
+        values.push(val == null ? 'NaN' : val.toString());
+      });
+    });
+    
+    csvContent += values.join(',') + '\n';
+  });
+  
+  return csvContent;
+};
+
 export const validateAndParseCSV = (csvString) => {
   const validation = validateCSVStructure(csvString);
   

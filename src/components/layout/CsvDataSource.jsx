@@ -399,6 +399,9 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
             <label className="block text-xs font-bold text-gray-600 mb-1.5 flex items-center gap-1.5">
               <Clipboard className="w-3.5 h-3.5 text-indigo-500" />
               粘贴 CSV 数据
+              <span className="text-[10px] text-gray-400 font-normal ml-1">
+                (支持: 逗号, 制表符, 分号, 竖线, 空格)
+              </span>
             </label>
             {!showPasteArea ? (
               <button
@@ -410,6 +413,16 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
               </button>
             ) : (
               <div className="space-y-2">
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
+                  <p className="font-bold mb-1">📋 支持的分隔符格式：</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-2">
+                    <span className="px-2 py-0.5 bg-white rounded border border-blue-100"><b>,</b> 逗号 (标准CSV)</span>
+                    <span className="px-2 py-0.5 bg-white rounded border border-blue-100"><b>Tab</b> 制表符 (Excel复制)</span>
+                    <span className="px-2 py-0.5 bg-white rounded border border-blue-100"><b>;</b> 分号</span>
+                    <span className="px-2 py-0.5 bg-white rounded border border-blue-100"><b>|</b> 竖线</span>
+                    <span className="px-2 py-0.5 bg-white rounded border border-blue-100"><b>空格</b> (连续视为单个)</span>
+                  </div>
+                </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button
                     onClick={handlePaste}

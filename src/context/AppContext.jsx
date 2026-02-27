@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { parseCSV, computeStatistics } from '../services/dataService';
+import { parseCSV, computeStatistics, updateDataValue, dataToCSVString } from '../services/dataService';
 import { generateDefaultDataset } from '../utils/dataGenerator';
 
 const AppContext = createContext(null);
@@ -246,6 +246,14 @@ export const AppProvider = ({ children }) => {
     }));
   }, [tooltipState.visible]);
 
+  const handleEditDataValue = useCallback((caseName, columnId, metric, algorithm, newValue) => {
+    const updatedData = updateDataValue(parsedData, caseName, metric, algorithm, newValue);
+    setParsedData(updatedData);
+    
+    const newCsvString = dataToCSVString(updatedData, availableAlgos, availableMetrics, metaColumns);
+    setCsvInput(newCsvString);
+  }, [parsedData, availableAlgos, availableMetrics, metaColumns, setCsvInput]);
+
   const value = {
     csvInput, setCsvInput,
     llmConfig, setLlmConfig,
@@ -286,7 +294,8 @@ export const AppProvider = ({ children }) => {
     toggleCase,
     toggleAll,
     equalizeWeights,
-    handleChartMouseMove
+    handleChartMouseMove,
+    handleEditDataValue
   };
 
   return (

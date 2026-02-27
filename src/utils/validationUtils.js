@@ -80,15 +80,40 @@ export const validateFileSize = (file, maxSizeMB = 10) => {
   return { valid: true, errors: [] };
 };
 
+export const SUPPORTED_DELIMITERS = [
+  { char: ',', name: '逗号', description: '标准CSV格式', example: 'A,B,C' },
+  { char: '\t', name: '制表符', description: 'TSV格式，Excel复制常用', example: 'A\tB\tC' },
+  { char: ';', name: '分号', description: '欧洲地区常用', example: 'A;B;C' },
+  { char: '|', name: '竖线', description: '管道分隔符', example: 'A|B|C' },
+  { char: ' ', name: '空格', description: '空格分隔（连续空格视为单个）', example: 'A B C' }
+];
+
 export const detectDelimiter = (csvString) => {
   const firstLine = csvString.trim().split('\n')[0] || '';
-  const tabCount = (firstLine.match(/\t/g) || []).length;
-  const commaCount = (firstLine.match(/,/g) || []).length;
   
-  if (tabCount > commaCount) {
-    return '\t';
-  }
-  return ',';
+  const counts = {
+    ',': (firstLine.match(/,/g) || []).length,
+    '\t': (firstLine.match(/\t/g) || []).length,
+    ';': (firstLine.match(/;/g) || []).length,
+    '|': (firstLine.match(/\|/g) || []).length,
+    ' ': Math.max(0, (firstLine.match(/\s+/g) || []).length - 1)
+  };
+  
+  let maxChar = ',';
+  let maxCount = 0;
+  
+  Object.entries(counts).forEach(([char, count]) => {
+    if (count > maxCount) {
+      maxCount = count;
+      maxChar = char;
+    }
+  });
+  
+  return maxChar;
+};
+
+export const getDelimiterInfo = (char) => {
+  return SUPPORTED_DELIMITERS.find(d => d.char === char) || SUPPORTED_DELIMITERS[0];
 };
 
 export const validateCSVStructure = (csvString) => {

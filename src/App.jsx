@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AppProvider, useAppContext } from './context/AppContext';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
@@ -6,6 +6,7 @@ import CsvDataSource from './components/layout/CsvDataSource';
 import ControlBar from './components/layout/ControlBar';
 import HelpIcon from './components/common/HelpIcon';
 import SortIcon from './components/common/SortIcon';
+import EditableCell from './components/common/EditableCell';
 import DeepDiveModal from './components/modals/DeepDiveModal';
 import AiConfigModal from './components/modals/AiConfigModal';
 import BoxPlotChart from './components/charts/BoxPlotChart';
@@ -13,13 +14,14 @@ import CorrelationChart from './components/charts/CorrelationChart';
 import ParetoChart from './components/charts/ParetoChart';
 import RadarChart from './components/charts/RadarChart';
 import QoRSimulator from './components/charts/QoRSimulator';
-import { ToastProvider } from './components/common/Toast';
+import { ToastProvider, useToast } from './components/common/Toast';
 import { generateAIInsights, renderMarkdownText } from './services/aiService.jsx';
-import { exportToCSV } from './services/dataService';
+import { exportToCSV, exportFullDataToCSV, exportToJSON, exportToExcel } from './services/dataService';
 import {
   CheckSquare, Square, ArrowUp, ArrowDown, Search, Download,
   Bot, Settings, X, Zap, Loader2, AlertTriangle,
-  BarChart2, ScatterChart, GitMerge, Radar, Scale, TrendingUp
+  BarChart2, ScatterChart, GitMerge, Radar, Scale, TrendingUp,
+  FileJson, FileSpreadsheet, MoreVertical
 } from 'lucide-react';
 import { formatIndustrialNumber } from './utils/formatters';
 
@@ -37,8 +39,12 @@ const AppContent = () => {
     displayInsights, setDisplayInsights, aiError, setAiError,
     showAiConfig, setShowAiConfig, showAiPanel, setShowAiPanel,
     stats, allMetricsStats, sortedTableData, filteredTableData,
-    runAnalysis, toggleCase, toggleAll, handleSort, handleChartMouseMove
+    runAnalysis, toggleCase, toggleAll, handleSort, handleChartMouseMove,
+    handleEditDataValue
   } = useAppContext();
+
+  const toast = useToast();
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   useEffect(() => {
     runAnalysis();
@@ -491,7 +497,47 @@ const AppContent = () => {
                       <button onClick={() => setTableFilter('degraded')} className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${tableFilter === 'degraded' ? 'bg-white text-red-700 font-bold shadow-sm' : 'text-gray-500 hover:text-gray-700 font-semibold'}`}><ArrowDown className="w-3 h-3" />退化</button>
                       <button onClick={() => setTableFilter('outlier')} className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${tableFilter === 'outlier' ? 'bg-white text-purple-700 font-bold shadow-sm' : 'text-gray-500 hover:text-gray-700 font-semibold'}`}><AlertTriangle className="w-3 h-3" />异常</button>
                     </div>
-                    <button onClick={() => exportToCSV(filteredTableData, activeMetric, baseAlgo, compareAlgo, metaColumns, stats)} className="text-sm font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"><Download className="w-4 h-4" />导出 CSV</button>
+                    <div className="relative">
+                      <button 
+                        onClick={() => setShowExportMenu(!showExportMenu)} 
+                        className="text-sm font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm"
+                      >
+                        <Download className="w-4 h-4" />导出数据
+                        <MoreVertical className="w-3 h-3" />
+                      </button>
+                      {showExportMenu && (
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
+                          <button 
+                            onClick={() => { exportToCSV(filteredTableData, activeMetric, baseAlgo, compareAlgo, metaColumns, stats); setShowExportMenu(false); toast.success('导出成功', 'CSV文件已下载'); }}
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 border-b border-gray-100"
+                          >
+                            <Download className="w-4 h-4 text-indigo-500" />
+                            导出当前视图 (CSV)
+                          </button>
+                          <button 
+                            onClick={() => { exportFullDataToCSV(parsedData, availableAlgos, availableMetrics, metaColumns); setShowExportMenu(false); toast.success('导出成功', '完整CSV文件已下载'); }}
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 border-b border-gray-100"
+                          >
+                            <FileSpreadsheet className="w-4 h-4 text-green-500" />
+                            导出完整数据 (CSV)
+                          </button>
+                          <button 
+                            onClick={() => { exportToExcel(filteredTableData, availableAlgos, availableMetrics, metaColumns, activeMetric, baseAlgo, compareAlgo, stats); setShowExportMenu(false); toast.success('导出成功', 'TSV文件已下载，可直接粘贴到Excel'); }}
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 border-b border-gray-100"
+                          >
+                            <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+                            导出为Excel格式 (TSV)
+                          </button>
+                          <button 
+                            onClick={() => { exportToJSON(parsedData, availableAlgos, availableMetrics, metaColumns); setShowExportMenu(false); toast.success('导出成功', 'JSON文件已下载'); }}
+                            className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2"
+                          >
+                            <FileJson className="w-4 h-4 text-amber-500" />
+                            导出为JSON格式
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -508,8 +554,8 @@ const AppContent = () => {
                             <div className="flex items-center justify-end">{mc} <SortIcon config={sortConfig} columnKey={mc} /></div>
                           </th>
                         ))}
-                        <th className="px-4 py-3 font-bold text-right border-l border-gray-300 cursor-pointer hover:bg-gray-200 bg-gray-50" onClick={() => handleSort(baseAlgo)}><div className="flex justify-end items-center">{baseAlgo} <SortIcon config={sortConfig} columnKey={baseAlgo} /></div></th>
-                        <th className="px-4 py-3 font-bold text-right cursor-pointer hover:bg-gray-200 bg-indigo-50/30 text-indigo-900" onClick={() => handleSort(compareAlgo)}><div className="flex justify-end items-center">{compareAlgo} <SortIcon config={sortConfig} columnKey={compareAlgo} /></div></th>
+                        <th className="px-4 py-3 font-bold text-right border-l border-gray-300 cursor-pointer hover:bg-gray-200 bg-gray-50 text-lg" onClick={() => handleSort(baseAlgo)}><div className="flex justify-end items-center">{baseAlgo} <SortIcon config={sortConfig} columnKey={baseAlgo} /></div></th>
+                        <th className="px-4 py-3 font-bold text-right cursor-pointer hover:bg-gray-200 bg-gray-50 text-lg" onClick={() => handleSort(compareAlgo)}><div className="flex justify-end items-center">{compareAlgo} <SortIcon config={sortConfig} columnKey={compareAlgo} /></div></th>
                         <th className="px-4 py-3 font-bold text-right border-l border-gray-300 cursor-pointer hover:bg-indigo-100 bg-indigo-50/60" onClick={() => handleSort('imp')}>
                           <div className="flex justify-end items-center text-indigo-900">
                             改进率 %
@@ -579,8 +625,30 @@ const AppContent = () => {
                             {metaColumns.map(mc => (
                               <td key={mc} className="px-4 py-3 text-right font-mono text-sm text-gray-500 border-l border-gray-100" title={d.meta[mc]}>{formatIndustrialNumber(d.meta[mc]) || '-'}</td>
                             ))}
-                            <td className="px-4 py-3 text-right font-mono text-base text-gray-600 border-l border-gray-200 bg-gray-50/50">{bVal == null ? <span className="text-gray-300">NaN</span> : bVal}</td>
-                            <td className="px-4 py-3 text-right font-mono font-bold text-base text-indigo-900 bg-indigo-50/20">{cVal == null ? <span className="text-gray-300">NaN</span> : cVal}</td>
+                            <td className="px-4 py-3 text-right font-mono text-[1.5rem] text-gray-600 border-l border-gray-200 bg-gray-50/50">
+                              <EditableCell
+                                value={bVal}
+                                rowId={d.Case}
+                                columnId={baseAlgo}
+                                metric={activeMetric}
+                                algorithm={baseAlgo}
+                                valueType="number"
+                                onSave={handleEditDataValue}
+                                className="px-2 py-1"
+                              />
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono text-[1.5rem] text-gray-600 bg-gray-50/50">
+                              <EditableCell
+                                value={cVal}
+                                rowId={d.Case}
+                                columnId={compareAlgo}
+                                metric={activeMetric}
+                                algorithm={compareAlgo}
+                                valueType="number"
+                                onSave={handleEditDataValue}
+                                className="px-2 py-1"
+                              />
+                            </td>
                             <td className={`px-4 py-3 text-right font-mono tracking-tight border-l border-gray-200 ${impColor} bg-indigo-50/40`}>{isNull ? '-' : `${imp > 0 ? '+' : ''}${imp.toFixed(2)}%`}</td>
                             <td className="px-4 py-3 text-center bg-indigo-50/40 border-l border-indigo-100/50 flex justify-center items-center gap-2">
                               {badge}
