@@ -312,13 +312,167 @@ const AppContent = () => {
           )}
 
           <div className="flex items-center overflow-x-auto border-b border-gray-200 bg-gray-50 scrollbar-hide flex-shrink-0 relative z-10">
-            <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'table' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('table')}><BarChart2 className="w-4 h-4" /> 详细数据</button>
-            <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'single' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('single')}><BarChart2 className="w-4 h-4" /> 箱线图</button>
-            <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'correlation' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('correlation')}><ScatterChart className="w-4 h-4" /> 特征相关性</button>
-            <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'multi' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('multi')}><GitMerge className="w-4 h-4" /> 帕累托投影</button>
-            <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'all_metrics' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('all_metrics')}><Radar className="w-4 h-4" /> 全局多维雷达</button>
-            <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'ai_analysis' ? 'border-purple-600 text-purple-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('ai_analysis')}><Bot className="w-4 h-4" /> AI 智能诊断</button>
-            <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'qor_simulator' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('qor_simulator')}><Scale className="w-4 h-4" /> QoR 模拟器</button>
+            <div className="flex items-center gap-2">
+              <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'table' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('table')}>
+                <BarChart2 className="w-4 h-4" />
+                <span>详细数据</span>
+                <HelpIcon
+                  content={
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-600">详细数据视图</p>
+                      <div className="space-y-1 text-xs">
+                        <p><b>功能说明：</b>展示所有测试案例的原始数据和改进率</p>
+                        <p><b>数据内容：</b>包含基线算法、对比算法的原始值和改进百分比</p>
+                        <p><b>交互功能：</b>支持行选择、列排序、数据过滤和导出</p>
+                        <p><b>异常标注：</b>自动识别并标注显著优化和严重退化的案例</p>
+                        <p><b>深度分析：</b>点击 🔍 图标可查看单个案例的多维雷达图</p>
+                      </div>
+                    </div>
+                  }
+                  tooltipWidth="w-[40rem]"
+                  position="bottom-center"
+                  className="w-4 h-4 text-gray-400 hover:text-indigo-500"
+                />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'single' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('single')}>
+                <BarChart2 className="w-4 h-4" />
+                <span>箱线图</span>
+                <HelpIcon
+                  content={
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-600">箱线图分析</p>
+                      <div className="space-y-1 text-xs">
+                        <p><b>功能说明：</b>展示当前焦点指标的数据分布情况</p>
+                        <p><b>统计信息：</b>显示中位数、四分位数、最大值、最小值等</p>
+                        <p><b>对比展示：</b>同时展示基线算法和对比算法的分布</p>
+                        <p><b>异常检测：</b>箱体外部的点表示异常值</p>
+                        <p><b>交互功能：</b>鼠标悬停可查看具体案例的详细信息</p>
+                      </div>
+                    </div>
+                  }
+                  tooltipWidth="w-[40rem]"
+                  position="bottom-center"
+                  className="w-4 h-4 text-gray-400 hover:text-indigo-500"
+                />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'correlation' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('correlation')}>
+                <ScatterChart className="w-4 h-4" />
+                <span>特征相关性</span>
+                <HelpIcon
+                  content={
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-600">特征相关性分析</p>
+                      <div className="space-y-1 text-xs">
+                        <p><b>功能说明：</b>分析不同特征之间的相关性关系</p>
+                        <p><b>可视化方式：</b>使用散点图展示两个特征的关系</p>
+                        <p><b>颜色编码：</b>不同颜色表示改进率的不同状态</p>
+                        <p><b>交互功能：</b>可选择任意两个特征进行相关性分析</p>
+                        <p><b>应用场景：</b>帮助理解特征间的相互影响和依赖关系</p>
+                      </div>
+                    </div>
+                  }
+                  tooltipWidth="w-[40rem]"
+                  position="bottom-center"
+                  className="w-4 h-4 text-gray-400 hover:text-indigo-500"
+                />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'multi' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('multi')}>
+                <GitMerge className="w-4 h-4" />
+                <span>帕累托投影</span>
+                <HelpIcon
+                  content={
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-600">帕累托投影分析</p>
+                      <div className="space-y-1 text-xs">
+                        <p><b>功能说明：</b>三维可视化展示多个指标的综合表现</p>
+                        <p><b>投影原理：</b>基于帕累托法则的多维度数据投影</p>
+                        <p><b>坐标轴：</b>X、Y、Z 轴分别代表不同的指标或维度</p>
+                        <p><b>颜色编码：</b>点的颜色表示改进率状态</p>
+                        <p><b>交互功能：</b>可自由选择三个维度进行投影分析</p>
+                      </div>
+                    </div>
+                  }
+                  tooltipWidth="w-[40rem]"
+                  position="bottom-center"
+                  className="w-4 h-4 text-gray-400 hover:text-indigo-500"
+                />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'all_metrics' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('all_metrics')}>
+                <Radar className="w-4 h-4" />
+                <span>全局多维雷达</span>
+                <HelpIcon
+                  content={
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-600">全局多维雷达分析</p>
+                      <div className="space-y-1 text-xs">
+                        <p><b>功能说明：</b>展示所有指标在不同算法下的综合表现</p>
+                        <p><b>雷达图：</b>多维度数据可视化，每个轴代表一个指标</p>
+                        <p><b>对比分析：</b>同时展示基线算法和对比算法的性能</p>
+                        <p><b>面积对比：</b>雷达图面积越大，整体表现越好</p>
+                        <p><b>应用场景：</b>快速评估算法在多个指标上的综合优劣</p>
+                      </div>
+                    </div>
+                  }
+                  tooltipWidth="w-[40rem]"
+                  position="bottom-center"
+                  className="w-4 h-4 text-gray-400 hover:text-indigo-500"
+                />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'ai_analysis' ? 'border-purple-600 text-purple-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('ai_analysis')}>
+                <Bot className="w-4 h-4" />
+                <span>AI 智能诊断</span>
+                <HelpIcon
+                  content={
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-600">AI 智能诊断</p>
+                      <div className="space-y-1 text-xs">
+                        <p><b>功能说明：</b>基于大语言模型的智能算法性能分析</p>
+                        <p><b>分析内容：</b>自动生成深度分析报告和优化建议</p>
+                        <p><b>支持模型：</b>支持 Gemini、OpenAI 等主流 LLM</p>
+                        <p><b>配置要求：</b>需要先配置相应的 API Key</p>
+                        <p><b>输出格式：</b>以 Markdown 格式展示结构化分析报告</p>
+                      </div>
+                    </div>
+                  }
+                  tooltipWidth="w-[40rem]"
+                  position="bottom-center"
+                  className="w-4 h-4 text-gray-400 hover:text-indigo-500"
+                />
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'qor_simulator' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('qor_simulator')}>
+                <Scale className="w-4 h-4" />
+                <span>QoR 模拟器</span>
+                <HelpIcon
+                  content={
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-600">QoR 模拟器</p>
+                      <div className="space-y-1 text-xs">
+                        <p><b>功能说明：</b>Quality of Result 模拟器，自定义权重计算综合评分</p>
+                        <p><b>权重配置：</b>可为不同指标设置自定义权重</p>
+                        <p><b>实时计算：</b>调整权重后实时更新综合评分</p>
+                        <p><b>对比分析：</b>同时展示基线和对比算法的 QoR 评分</p>
+                        <p><b>应用场景：</b>根据业务需求自定义评估标准</p>
+                      </div>
+                    </div>
+                  }
+                  tooltipWidth="w-[40rem]"
+                  position="bottom-center"
+                  className="w-4 h-4 text-gray-400 hover:text-indigo-500"
+                />
+              </button>
+            </div>
           </div>
 
           <div className="bg-white flex-1 overflow-y-auto custom-scrollbar relative z-0">
