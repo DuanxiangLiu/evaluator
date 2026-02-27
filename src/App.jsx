@@ -482,23 +482,6 @@ const AppContent = () => {
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="text-sm font-bold text-indigo-800 flex items-center gap-1">
                       明细数据目标: <span className="bg-indigo-100 px-2 py-0.5 rounded text-indigo-700 shadow-inner ml-1">{activeMetric}</span>
-                      <HelpIcon
-                        content={
-                          <div className="space-y-2">
-                            <p className="font-bold text-indigo-600">详细数据表格说明</p>
-                            <div className="space-y-1 text-xs">
-                              <p><b>数据内容：</b>包含所有底层明细数据</p>
-                              <p><b>行选择：</b>支持按行勾选，可剔除脏数据</p>
-                              <p><b>列排序：</b>点击列头可进行升序/降序排序</p>
-                              <p><b>默认排序：</b>若存在 Instance 属性列，系统默认按大到小排序</p>
-                              <p><b>异常标注：</b>系统自动使用 IQR (四分位距) 法则标注离群异常值</p>
-                              <p><b>深度透视：</b>点击最右侧 🔍 图标可进行个例深度雷达透视</p>
-                            </div>
-                          </div>
-                        }
-                        tooltipWidth="w-[40rem]"
-                        position="right-center"
-                      />
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-3 items-center w-full md:w-auto">
@@ -512,8 +495,8 @@ const AppContent = () => {
                 </div>
 
                 <div className="overflow-x-auto overflow-y-auto flex-1 custom-scrollbar pb-10 relative z-0">
-                  <table className="min-w-full text-sm text-left relative">
-                    <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10 shadow-sm border-b border-gray-200">
+                  <table className="min-w-full text-base text-left relative">
+                    <thead className="bg-gray-100 text-gray-700 text-lg sticky top-0 z-10 shadow-sm border-b border-gray-200">
                       <tr>
                         <th className="px-4 py-3 w-10 text-center cursor-pointer hover:bg-gray-200" onClick={toggleAll} title="全选/反选">
                           {selectedCases.size === parsedData.length ? <CheckSquare className="w-4 h-4 text-indigo-600 mx-auto" /> : <Square className="w-4 h-4 text-gray-400 mx-auto" />}
@@ -593,10 +576,10 @@ const AppContent = () => {
                             <td className="px-4 py-3 text-center cursor-pointer" onClick={() => toggleCase(d.Case)}><input type="checkbox" checked={isChecked} onChange={() => { }} className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer w-4 h-4" /></td>
                             <td className="px-4 py-3 font-bold text-gray-800 max-w-[200px] truncate" title={d.Case}>{d.Case}</td>
                             {metaColumns.map(mc => (
-                              <td key={mc} className="px-4 py-3 text-right font-mono text-xs text-gray-500 border-l border-gray-100" title={d.meta[mc]}>{formatIndustrialNumber(d.meta[mc]) || '-'}</td>
+                              <td key={mc} className="px-4 py-3 text-right font-mono text-sm text-gray-500 border-l border-gray-100" title={d.meta[mc]}>{formatIndustrialNumber(d.meta[mc]) || '-'}</td>
                             ))}
-                            <td className="px-4 py-3 text-right font-mono text-gray-600 border-l border-gray-200 bg-gray-50/50">{bVal == null ? <span className="text-gray-300">NaN</span> : bVal}</td>
-                            <td className="px-4 py-3 text-right font-mono font-bold text-indigo-900 bg-indigo-50/20">{cVal == null ? <span className="text-gray-300">NaN</span> : cVal}</td>
+                            <td className="px-4 py-3 text-right font-mono text-base text-gray-600 border-l border-gray-200 bg-gray-50/50">{bVal == null ? <span className="text-gray-300">NaN</span> : bVal}</td>
+                            <td className="px-4 py-3 text-right font-mono font-bold text-base text-indigo-900 bg-indigo-50/20">{cVal == null ? <span className="text-gray-300">NaN</span> : cVal}</td>
                             <td className={`px-4 py-3 text-right font-mono tracking-tight border-l border-gray-200 ${impColor} bg-indigo-50/40`}>{isNull ? '-' : `${imp > 0 ? '+' : ''}${imp.toFixed(2)}%`}</td>
                             <td className="px-4 py-3 text-center bg-indigo-50/40 border-l border-indigo-100/50 flex justify-center items-center gap-2">
                               {badge}
