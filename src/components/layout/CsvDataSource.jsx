@@ -2,13 +2,15 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { 
   FileText, Upload, Play, ChevronUp, ChevronDown, Database, Copy, Check, 
   Clipboard, ChevronLeft, ChevronRight, FileUp, Loader2, CheckCircle, 
-  AlertCircle, AlertTriangle, X, RefreshCw
+  AlertCircle, AlertTriangle, X, RefreshCw, Save
 } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
 import ValidationResultPanel, { CompactValidationStatus } from '../common/ValidationResultPanel';
+import SavedDataSelector from '../common/SavedDataSelector';
 import { useInputValidation, useFileUpload, INPUT_STATUS } from '../../hooks/useInputValidation';
 import { useToast } from '../common/Toast';
 import { getValidationSuggestions, detectDelimiter } from '../../utils/validationUtils';
+import datasetStorage from '../../utils/datasetStorage';
 import { 
   generateDefaultDataset, 
   generateSmallDataset, 
@@ -18,14 +20,16 @@ import {
 } from '../../utils/dataGenerator';
 
 const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [copied, setCopied] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pastedData, setPastedData] = useState('');
   const [showPasteArea, setShowPasteArea] = useState(false);
   const [showValidationPanel, setShowValidationPanel] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
   const rowsPerPage = 20;
   const isUserActionRef = useRef(false);
+  const autoSaveTimeoutRef = useRef(null);
 
   const toast = useToast();
 
@@ -108,6 +112,27 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
       validateDebounced(csvInput);
     }
   }, [csvInput, validateDebounced]);
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleLoadDataset = useCallback((csvData, dataset) => {
+    onCsvChange(csvData);
+    const result = validateImmediate(csvData);
+    if (result.valid) {
+      onRunAnalysis(csvData);
+    }
+    setCurrentPage(1);
+  }, [onCsvChange, onRunAnalysis, validateImmediate]);
+
+  const handleSaveDataset = useCallback((csvData) => {
+    onCsvChange(csvData);
+  }, [onCsvChange]);
 
   const handleDataSourceChange = (e) => {
     const selectedDataSource = e.target.value;
@@ -281,6 +306,15 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
       
       {isVisible && (
         <div className="p-3 sm:p-4 space-y-4">
+          <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-gray-100">
+            <SavedDataSelector
+              currentCsvData={csvInput}
+              onLoadDataset={handleLoadDataset}
+              onSaveDataset={handleSaveDataset}
+              autoSaveEnabled={true}
+            />
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-600 mb-1.5 flex items-center gap-1.5">

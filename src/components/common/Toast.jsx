@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { X, CheckCircle, AlertCircle, AlertTriangle, Info, XCircle, CheckCircle2, AlertOctagon, InfoIcon } from 'lucide-react';
 
 const ToastContext = createContext(null);
 
@@ -12,44 +12,75 @@ export const TOAST_TYPES = {
 
 const TOAST_CONFIG = {
   [TOAST_TYPES.SUCCESS]: {
-    icon: CheckCircle,
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
-    iconColor: 'text-green-500',
-    textColor: 'text-green-800',
-    progressColor: 'bg-green-400'
+    icon: CheckCircle2,
+    bgColor: 'bg-gradient-to-r from-emerald-50 to-green-50',
+    borderColor: 'border-l-4 border-l-emerald-500 border border-emerald-100',
+    iconBgColor: 'bg-emerald-100',
+    iconColor: 'text-emerald-600',
+    titleColor: 'text-emerald-900',
+    textColor: 'text-emerald-700',
+    progressColor: 'bg-gradient-to-r from-emerald-400 to-green-400',
+    progressBg: 'bg-emerald-100',
+    hoverBg: 'hover:bg-emerald-100/50',
+    closeBtnHover: 'hover:bg-emerald-200/50',
+    shadow: 'shadow-lg shadow-emerald-500/10',
+    ring: 'ring-1 ring-emerald-500/20'
   },
   [TOAST_TYPES.ERROR]: {
-    icon: AlertCircle,
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    iconColor: 'text-red-500',
-    textColor: 'text-red-800',
-    progressColor: 'bg-red-400'
+    icon: AlertOctagon,
+    bgColor: 'bg-gradient-to-r from-red-50 to-rose-50',
+    borderColor: 'border-l-4 border-l-red-500 border border-red-100',
+    iconBgColor: 'bg-red-100',
+    iconColor: 'text-red-600',
+    titleColor: 'text-red-900',
+    textColor: 'text-red-700',
+    progressColor: 'bg-gradient-to-r from-red-400 to-rose-400',
+    progressBg: 'bg-red-100',
+    hoverBg: 'hover:bg-red-100/50',
+    closeBtnHover: 'hover:bg-red-200/50',
+    shadow: 'shadow-lg shadow-red-500/10',
+    ring: 'ring-1 ring-red-500/20'
   },
   [TOAST_TYPES.WARNING]: {
     icon: AlertTriangle,
-    bgColor: 'bg-yellow-50',
-    borderColor: 'border-yellow-200',
-    iconColor: 'text-yellow-500',
-    textColor: 'text-yellow-800',
-    progressColor: 'bg-yellow-400'
+    bgColor: 'bg-gradient-to-r from-amber-50 to-yellow-50',
+    borderColor: 'border-l-4 border-l-amber-500 border border-amber-100',
+    iconBgColor: 'bg-amber-100',
+    iconColor: 'text-amber-600',
+    titleColor: 'text-amber-900',
+    textColor: 'text-amber-700',
+    progressColor: 'bg-gradient-to-r from-amber-400 to-yellow-400',
+    progressBg: 'bg-amber-100',
+    hoverBg: 'hover:bg-amber-100/50',
+    closeBtnHover: 'hover:bg-amber-200/50',
+    shadow: 'shadow-lg shadow-amber-500/10',
+    ring: 'ring-1 ring-amber-500/20'
   },
   [TOAST_TYPES.INFO]: {
-    icon: Info,
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    iconColor: 'text-blue-500',
-    textColor: 'text-blue-800',
-    progressColor: 'bg-blue-400'
+    icon: InfoIcon,
+    bgColor: 'bg-gradient-to-r from-blue-50 to-indigo-50',
+    borderColor: 'border-l-4 border-l-blue-500 border border-blue-100',
+    iconBgColor: 'bg-blue-100',
+    iconColor: 'text-blue-600',
+    titleColor: 'text-blue-900',
+    textColor: 'text-blue-700',
+    progressColor: 'bg-gradient-to-r from-blue-400 to-indigo-400',
+    progressBg: 'bg-blue-100',
+    hoverBg: 'hover:bg-blue-100/50',
+    closeBtnHover: 'hover:bg-blue-200/50',
+    shadow: 'shadow-lg shadow-blue-500/10',
+    ring: 'ring-1 ring-blue-500/20'
   }
 };
 
-const Toast = ({ id, type, title, message, duration, onClose }) => {
+const Toast = ({ id, type, title, message, duration, onClose, index }) => {
   const [progress, setProgress] = useState(100);
   const [isPaused, setIsPaused] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const config = TOAST_CONFIG[type] || TOAST_CONFIG[TOAST_TYPES.INFO];
   const Icon = config.icon;
+  const toastRef = useRef(null);
 
   useEffect(() => {
     if (duration <= 0 || isPaused) return;
@@ -64,52 +95,110 @@ const Toast = ({ id, type, title, message, duration, onClose }) => {
 
       if (remaining <= 0) {
         clearInterval(timer);
-        onClose(id);
+        handleClose();
       }
     }, step);
 
     return () => clearInterval(timer);
-  }, [duration, isPaused, id, onClose]);
+  }, [duration, isPaused]);
 
-  const handleMouseEnter = () => setIsPaused(true);
-  const handleMouseLeave = () => setIsPaused(false);
+  const handleClose = useCallback(() => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onClose(id);
+    }, 300);
+  }, [id, onClose]);
+
+  const handleMouseEnter = () => {
+    setIsPaused(true);
+    setIsHovered(true);
+  };
+  
+  const handleMouseLeave = () => {
+    setIsPaused(false);
+    setIsHovered(false);
+  };
 
   return (
     <div
+      ref={toastRef}
       className={`
-        ${config.bgColor} ${config.borderColor} ${config.textColor}
-        border rounded-lg shadow-lg p-4 min-w-[300px] max-w-[420px]
+        ${config.bgColor} ${config.borderColor} ${config.shadow} ${config.ring}
+        rounded-xl p-0 min-w-[320px] max-w-[420px] sm:max-w-[480px]
         transform transition-all duration-300 ease-out
-        animate-in slide-in-from-right-full
+        ${isExiting 
+          ? 'opacity-0 translate-x-full scale-95' 
+          : 'opacity-100 translate-x-0 scale-100 animate-in slide-in-from-right-full'
+        }
+        ${config.hoverBg}
+        backdrop-blur-sm
       `}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      style={{
+        animationDelay: `${index * 50}ms`,
+        zIndex: 9999 - index
+      }}
     >
-      <div className="flex items-start gap-3">
-        <Icon className={`w-5 h-5 ${config.iconColor} flex-shrink-0 mt-0.5`} />
-        <div className="flex-1 min-w-0">
+      <div className="flex items-start gap-3 p-4">
+        <div className={`
+          ${config.iconBgColor} rounded-lg p-2 flex-shrink-0
+          transition-transform duration-200 ${isHovered ? 'scale-110' : 'scale-100'}
+        `}>
+          <Icon className={`w-5 h-5 ${config.iconColor}`} strokeWidth={2} />
+        </div>
+        
+        <div className="flex-1 min-w-0 py-0.5">
           {title && (
-            <p className="font-bold text-sm mb-1">{title}</p>
+            <p className={`font-semibold text-sm ${config.titleColor} mb-1 leading-tight`}>
+              {title}
+            </p>
           )}
           {message && (
-            <p className="text-sm opacity-90 break-words">{message}</p>
+            <p className={`text-sm ${config.textColor} opacity-90 break-words leading-relaxed`}>
+              {message}
+            </p>
           )}
         </div>
+        
         <button
-          onClick={() => onClose(id)}
-          className="flex-shrink-0 p-1 hover:bg-black/5 rounded transition-colors"
+          onClick={handleClose}
+          className={`
+            flex-shrink-0 p-1.5 rounded-lg transition-all duration-200
+            ${config.closeBtnHover}
+            opacity-60 hover:opacity-100
+            focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300
+          `}
+          aria-label="关闭提示"
         >
-          <X className="w-4 h-4" />
+          <X className="w-4 h-4" strokeWidth={2} />
         </button>
       </div>
+      
       {duration > 0 && (
-        <div className="mt-2 h-1 bg-black/10 rounded-full overflow-hidden">
+        <div className={`h-1.5 ${config.progressBg} rounded-b-xl overflow-hidden`}>
           <div
-            className={`h-full ${config.progressColor} transition-all duration-100 ease-linear`}
+            className={`h-full ${config.progressColor} transition-all duration-100 ease-linear rounded-r-full`}
             style={{ width: `${progress}%` }}
           />
         </div>
       )}
+    </div>
+  );
+};
+
+const ToastContainer = ({ toasts, onClose }) => {
+  return (
+    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none sm:gap-4">
+      {toasts.map((toast, index) => (
+        <div key={toast.id} className="pointer-events-auto">
+          <Toast
+            {...toast}
+            index={index}
+            onClose={onClose}
+          />
+        </div>
+      ))}
     </div>
   );
 };
@@ -172,15 +261,7 @@ export const ToastProvider = ({ children, maxToasts = 5 }) => {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2">
-        {toasts.map(toast => (
-          <Toast
-            key={toast.id}
-            {...toast}
-            onClose={removeToast}
-          />
-        ))}
-      </div>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
     </ToastContext.Provider>
   );
 };
