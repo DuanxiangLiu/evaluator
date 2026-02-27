@@ -1,8 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { 
-  FileText, Upload, Play, ChevronUp, ChevronDown, Database, Copy, Check, 
+  FileText, Upload, Play, ChevronUp, ChevronDown, Copy, Check, 
   Clipboard, ChevronLeft, ChevronRight, Loader2, CheckCircle, 
-  AlertCircle, X, Pencil, Plus, Trash2, FileUp, FolderOpen
+  AlertCircle, X, Pencil, Plus, Trash2, FileUp
 } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
 import ValidationResultPanel, { CompactValidationStatus } from '../common/ValidationResultPanel';
@@ -11,7 +11,6 @@ import { useInputValidation, useFileUpload, INPUT_STATUS } from '../../hooks/use
 import { useToast } from '../common/Toast';
 import { getValidationSuggestions, detectDelimiter } from '../../utils/validationUtils';
 import datasetStorage from '../../utils/datasetStorage';
-import { generateDefaultDataset } from '../../utils/dataGenerator';
 
 const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const [isVisible, setIsVisible] = useState(true);
@@ -102,17 +101,6 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const handleSaveDataset = useCallback((csvData) => {
     onCsvChange(csvData);
   }, [onCsvChange]);
-
-  const handleLoadDefaultDataset = () => {
-    const data = defaultDataset.data;
-    onCsvChange(data);
-    const result = validateImmediate(data);
-    if (result.valid) {
-      onRunAnalysis(data);
-      toast.success('数据加载成功', `已加载 ${defaultDataset.name}`);
-    }
-    setCurrentPage(1);
-  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(csvInput);
@@ -361,14 +349,6 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
               onSaveDataset={handleSaveDataset}
               autoSaveEnabled={true}
             />
-            <button
-              onClick={handleLoadDefaultDataset}
-              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-indigo-300 transition-all shadow-sm"
-            >
-              <FolderOpen className="w-4 h-4 text-indigo-500" />
-              <span className="hidden sm:inline">加载示例数据</span>
-              <span className="sm:hidden">示例</span>
-            </button>
           </div>
 
           <div>

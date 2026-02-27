@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Database, Save, Trash2, Edit3, Check, X, Clock, 
-  FileText, ChevronDown, Search, MoreVertical, Download,
-  Upload, AlertTriangle, CheckCircle, Loader2, FolderOpen
+  FileText, ChevronDown, Search, Download,
+  Upload, CheckCircle, Loader2, FolderOpen, Sparkles
 } from 'lucide-react';
 import { useToast } from '../common/Toast';
 import datasetStorage, { formatDatasetDate, formatDatasetSize, getDatasetRowCount } from '../../utils/datasetStorage';
+import { generateDefaultDataset } from '../../utils/dataGenerator';
+
+const DEFAULT_DATASET_ID = '__default_dataset__';
 
 const SavedDataSelector = ({ 
   currentCsvData, 
@@ -18,13 +21,21 @@ const SavedDataSelector = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(DEFAULT_DATASET_ID);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedId, setLastSavedId] = useState(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [newDatasetName, setNewDatasetName] = useState('');
   const dropdownRef = useRef(null);
   const toast = useToast();
+
+  const defaultDataset = {
+    id: DEFAULT_DATASET_ID,
+    name: '默认示例数据集',
+    csvData: generateDefaultDataset(),
+    stats: { rows: 30, size: '2.1 KB' },
+    isDefault: true
+  };
 
   const loadDatasets = useCallback(() => {
     const saved = datasetStorage.getAll();
@@ -56,7 +67,9 @@ const SavedDataSelector = ({
 
   const handleSelectDataset = (dataset) => {
     setSelectedId(dataset.id);
-    datasetStorage.setCurrentId(dataset.id);
+    if (!dataset.isDefault) {
+      datasetStorage.setCurrentId(dataset.id);
+    }
     onLoadDataset(dataset.csvData, dataset);
     setIsOpen(false);
     toast.success('数据加载成功', `已加载 "${dataset.name}"`);
@@ -70,7 +83,7 @@ const SavedDataSelector = ({
       if (success) {
         loadDatasets();
         if (selectedId === dataset.id) {
-          setSelectedId(null);
+          setSelectedId(DEFAULT_DATASET_ID);
           datasetStorage.setCurrentId(null);
         }
         toast.success('删除成功', `已删除 "${dataset.name}"`);
@@ -112,10 +125,12 @@ const SavedDataSelector = ({
     setIsSaving(true);
     
     try {
-      const existingDataset = selectedId ? datasetStorage.getById(selectedId) : null;
+      const existingDataset = selectedId && selectedId !== DEFAULT_DATASET_ID 
+        ? datasetStorage.getById(selectedId) 
+        : null;
       
       const saved = datasetStorage.save({
-        id: selectedId || null,
+        id: existingDataset?.id || null,
         name: existingDataset?.name || `数据集 ${datasets.length + 1}`,
         csvData: currentCsvData,
         stats: {
@@ -217,7 +232,14 @@ const SavedDataSelector = ({
     input.click();
   };
 
-  const selectedDataset = datasets.find(d => d.id === selectedId);
+  const getSelectedDataset = () => {
+    if (selectedId === DEFAULT_DATASET_ID) {
+      return defaultDataset;
+    }
+    return datasets.find(d => d.id === selectedId);
+  };
+
+  const selectedDataset = getSelectedDataset();
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -289,7 +311,7 @@ const SavedDataSelector = ({
 
           <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
             <span className="text-xs text-gray-500">
-              共 {datasets.length} 个数据集
+              共 {datasets.length + 1} 个数据集
             </span>
             <button
               onClick={handleImport}
@@ -301,9 +323,40 @@ const SavedDataSelector = ({
           </div>
 
           <div className="max-h-72 overflow-y-auto custom-scrollbar">
+            <div
+              onClick={() => handleSelectDataset(defaultDataset)}
+              className={`
+                p-3 border-b border-gray-100 cursor-pointer transition-all group
+                ${selectedId === DEFAULT_DATASET_ID 
+                  ? 'bg-indigo-50 border-l-4 border-l-indigo-500' 
+                  : 'hover:bg-gray-50'
+                }
+              `}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <p className="text-sm font-medium text-gray-800 truncate">
+                      {defaultDataset.name}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 ml-6">
+                    <span className="flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      {defaultDataset.stats.rows} 行
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span>{defaultDataset.stats.size}</span>
+                    <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px]">内置</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {filteredDatasets.length === 0 ? (
-              <div className="p-8 text-center">
-                <FolderOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <div className="p-6 text-center">
+                <FolderOpen className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">
                   {searchTerm ? '未找到匹配的数据集' : '暂无保存的数据集'}
                 </p>
@@ -406,7 +459,7 @@ const SavedDataSelector = ({
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowSaveDialog(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
               <Save className="w-5 h-5 text-indigo-500" />
               另存为新数据集
             </h3>
