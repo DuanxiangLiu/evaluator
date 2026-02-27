@@ -53,7 +53,7 @@ const HelpIcon = ({
         >
           <div className="absolute inset-0 bg-black/30"></div>
           <div 
-            className={`relative ${tooltipWidth} max-w-[90vw] max-h-[85vh] bg-gray-900 text-gray-100 rounded-2xl shadow-2xl border border-gray-600 overflow-hidden animate-in fade-in zoom-in duration-200`}
+            className={`relative ${tooltipWidth} max-w-[95vw] max-h-[90vh] bg-gray-900 text-gray-100 rounded-2xl shadow-2xl border border-gray-600 overflow-hidden animate-in fade-in zoom-in duration-200`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 bg-gray-800">
@@ -68,7 +68,7 @@ const HelpIcon = ({
                 <X className="w-5 h-5 text-gray-400 hover:text-white" />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto max-h-[calc(85vh-70px)] custom-scrollbar text-base leading-relaxed">
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-70px)] custom-scrollbar text-base leading-relaxed">
               {content || text}
             </div>
           </div>

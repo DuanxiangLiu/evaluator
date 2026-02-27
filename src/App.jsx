@@ -139,16 +139,16 @@ const AppContent = () => {
         />
 
         <div className="flex justify-between items-end px-1 mt-1">
-          <div className="text-sm font-bold text-gray-700 flex items-center gap-1">
+          <div className="text-lg font-bold text-gray-700 flex items-center gap-1">
             核心统计指征 ({activeMetric})
-            {stats && <span className="ml-3 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 shadow-sm">有效计算样本: {stats.nValid} / {stats.nTotalChecked}</span>}
+            {stats && <span className="ml-3 text-sm font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 shadow-sm">有效计算样本: {stats.nValid} / {stats.nTotalChecked}</span>}
           </div>
         </div>
 
         {stats ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
             <div className={`p-4 rounded-xl border relative group transition-colors ${stats.geomeanImp > 0 ? 'bg-emerald-50 border-emerald-200 shadow-sm' : (stats.geomeanImp < 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200')}`}>
-              <div className={`text-xs font-bold mb-1 flex items-center ${stats.geomeanImp > 0 ? 'text-emerald-800' : (stats.geomeanImp < 0 ? 'text-red-800' : 'text-gray-600')}`}>
+              <div className={`text-sm font-bold mb-1 flex items-center ${stats.geomeanImp > 0 ? 'text-emerald-800' : (stats.geomeanImp < 0 ? 'text-red-800' : 'text-gray-600')}`}>
                 Geomean 改进
                 <HelpIcon
                   content={
@@ -163,16 +163,16 @@ const AppContent = () => {
                     </div>
                   }
                   position="bottom-right"
-                  tooltipWidth="w-72"
+                  tooltipWidth="w-[36rem]"
                 />
               </div>
-              <div className={`text-2xl font-black ${stats.geomeanImp > 0 ? 'text-emerald-600' : (stats.geomeanImp < 0 ? 'text-red-600' : 'text-gray-700')}`}>
+              <div className={`text-3xl font-black ${stats.geomeanImp > 0 ? 'text-emerald-600' : (stats.geomeanImp < 0 ? 'text-red-600' : 'text-gray-700')}`}>
                 {stats.geomeanImp > 0 ? '+' : ''}{stats.geomeanImp.toFixed(2)}%
               </div>
             </div>
 
             <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative group">
-              <div className="text-xs text-gray-500 font-bold mb-1 flex items-center">
+              <div className="text-sm text-gray-500 font-bold mb-1 flex items-center">
                 Arith Mean (算术)
                 <HelpIcon
                   content={
@@ -187,16 +187,16 @@ const AppContent = () => {
                     </div>
                   }
                   position="bottom-right"
-                  tooltipWidth="w-72"
+                  tooltipWidth="w-[36rem]"
                 />
               </div>
-              <div className={`text-2xl font-black ${stats.meanImp > 0 ? 'text-emerald-600' : (stats.meanImp < 0 ? 'text-red-600' : 'text-gray-700')}`}>
+              <div className={`text-3xl font-black ${stats.meanImp > 0 ? 'text-emerald-600' : (stats.meanImp < 0 ? 'text-red-600' : 'text-gray-700')}`}>
                 {stats.meanImp > 0 ? '+' : ''}{stats.meanImp.toFixed(2)}%
               </div>
             </div>
 
             <div className={`p-4 rounded-xl border shadow-sm transition-colors ${stats.pValue < 0.05 ? 'bg-emerald-50 border-emerald-200' : 'bg-orange-50 border-orange-200'}`}>
-              <div className={`text-xs font-bold mb-1 flex justify-between items-center ${stats.pValue < 0.05 ? 'text-emerald-800' : 'text-orange-800'}`}>
+              <div className={`text-sm font-bold mb-1 flex justify-between items-center ${stats.pValue < 0.05 ? 'text-emerald-800' : 'text-orange-800'}`}>
                 <div className="flex items-center">
                   P-Value
                   <HelpIcon
@@ -213,13 +213,13 @@ const AppContent = () => {
                       </div>
                     }
                     position="bottom-right"
-                    tooltipWidth="w-80"
+                    tooltipWidth="w-[40rem]"
                   />
                 </div>
               </div>
-              <div className={`text-2xl font-black flex items-baseline gap-1 ${stats.pValue < 0.05 ? 'text-emerald-600' : 'text-orange-600'}`}>
+              <div className={`text-3xl font-black flex items-baseline gap-1 ${stats.pValue < 0.05 ? 'text-emerald-600' : 'text-orange-600'}`}>
                 {stats.pValue.toFixed(3)}
-                <span className="text-xs font-bold opacity-80">{stats.pValue < 0.05 ? '(显著)' : '(不显著)'}</span>
+                <span className="text-sm font-bold opacity-80">{stats.pValue < 0.05 ? '(显著)' : '(不显著)'}</span>
               </div>
               <div className="w-full h-1.5 bg-gray-200/80 rounded-full mt-2 overflow-hidden relative border border-gray-300/50">
                 <div className="absolute left-[50%] top-0 bottom-0 w-px bg-red-500 z-10"></div>
@@ -228,7 +228,7 @@ const AppContent = () => {
             </div>
 
             <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative group flex flex-col justify-between">
-              <div className="text-xs text-gray-500 font-bold mb-1 flex items-center">
+              <div className="text-sm text-gray-500 font-bold mb-1 flex items-center">
                 95% 置信区间
                 <HelpIcon
                   content={
@@ -243,14 +243,14 @@ const AppContent = () => {
                     </div>
                   }
                   position="bottom-left"
-                  tooltipWidth="w-72"
+                  tooltipWidth="w-[36rem]"
                 />
               </div>
-              <div className="text-sm xl:text-base font-black text-gray-700 tracking-tighter bg-gray-50 p-1.5 rounded text-center border border-gray-100">[{stats.ciLower.toFixed(1)}%, {stats.ciUpper.toFixed(1)}%]</div>
+              <div className="text-lg xl:text-xl font-black text-gray-700 tracking-tighter bg-gray-50 p-1.5 rounded text-center border border-gray-100">[{stats.ciLower.toFixed(1)}%, {stats.ciUpper.toFixed(1)}%]</div>
             </div>
 
             <div className={`p-4 rounded-xl border shadow-sm flex flex-col justify-between ${stats.degradedCount > 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
-              <div className={`text-xs font-bold mb-1 flex items-center ${stats.degradedCount > 0 ? 'text-red-800' : 'text-emerald-800'}`}>
+              <div className={`text-sm font-bold mb-1 flex items-center ${stats.degradedCount > 0 ? 'text-red-800' : 'text-emerald-800'}`}>
                 退化案例数
                 <HelpIcon
                   content={
@@ -266,14 +266,14 @@ const AppContent = () => {
                     </div>
                   }
                   position="bottom-left"
-                  tooltipWidth="w-72"
+                  tooltipWidth="w-[36rem]"
                 />
               </div>
-              <div className={`text-2xl font-black ${stats.degradedCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{stats.degradedCount}</div>
+              <div className={`text-3xl font-black ${stats.degradedCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{stats.degradedCount}</div>
             </div>
 
             <div className={`p-4 rounded-xl border shadow-sm transition-colors ${stats.minImp < 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
-              <div className={`text-xs font-bold mb-1 flex items-center ${stats.minImp < 0 ? 'text-red-800' : 'text-emerald-800'}`}>
+              <div className={`text-sm font-bold mb-1 flex items-center ${stats.minImp < 0 ? 'text-red-800' : 'text-emerald-800'}`}>
                 最大退化幅度
                 <HelpIcon
                   content={
@@ -289,10 +289,10 @@ const AppContent = () => {
                     </div>
                   }
                   position="bottom-left"
-                  tooltipWidth="w-72"
+                  tooltipWidth="w-[36rem]"
                 />
               </div>
-              <div className={`text-2xl font-black ${stats.minImp < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{stats.minImp < 0 ? stats.minImp.toFixed(2) + '%' : '无'}</div>
+              <div className={`text-3xl font-black ${stats.minImp < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{stats.minImp < 0 ? stats.minImp.toFixed(2) + '%' : '无'}</div>
             </div>
           </div>
         ) : (
@@ -311,7 +311,7 @@ const AppContent = () => {
             </div>
           )}
 
-          <div className="flex items-center overflow-x-auto border-b border-gray-200 bg-gray-50 scrollbar-hide flex-shrink-0 z-20 relative">
+          <div className="flex items-center overflow-x-auto border-b border-gray-200 bg-gray-50 scrollbar-hide flex-shrink-0 relative z-10">
             <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'table' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('table')}><BarChart2 className="w-4 h-4" /> 详细数据</button>
             <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'single' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('single')}><BarChart2 className="w-4 h-4" /> 箱线图</button>
             <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'correlation' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('correlation')}><ScatterChart className="w-4 h-4" /> 特征相关性</button>
@@ -324,7 +324,7 @@ const AppContent = () => {
           <div className="bg-white flex-1 overflow-y-auto custom-scrollbar relative z-0">
             {activeTab === 'table' && (
               <div className="flex flex-col h-full">
-                <div className="bg-white border-b border-gray-200 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0 z-20">
+                <div className="bg-white border-b border-gray-200 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0 relative z-0">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="text-sm font-bold text-indigo-800 flex items-center gap-1">
                       明细数据目标: <span className="bg-indigo-100 px-2 py-0.5 rounded text-indigo-700 shadow-inner ml-1">{activeMetric}</span>
@@ -342,7 +342,7 @@ const AppContent = () => {
                             </div>
                           </div>
                         }
-                        tooltipWidth="w-80"
+                        tooltipWidth="w-[40rem]"
                         position="right-center"
                       />
                     </span>
@@ -357,7 +357,7 @@ const AppContent = () => {
                   </div>
                 </div>
 
-                <div className="overflow-x-auto overflow-y-auto flex-1 custom-scrollbar pb-10">
+                <div className="overflow-x-auto overflow-y-auto flex-1 custom-scrollbar pb-10 relative z-0">
                   <table className="min-w-full text-sm text-left relative">
                     <thead className="bg-gray-100 text-gray-700 sticky top-0 z-10 shadow-sm border-b border-gray-200">
                       <tr>
@@ -388,7 +388,7 @@ const AppContent = () => {
                                 </div>
                               }
                               position="bottom-left"
-                              tooltipWidth="w-64"
+                              tooltipWidth="w-[32rem]"
                             />
                             <SortIcon config={sortConfig} columnKey="imp" />
                           </div>
