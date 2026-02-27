@@ -22,7 +22,7 @@ import {
   CheckSquare, Square, ArrowUp, ArrowDown, Search, Download,
   Bot, Settings, X, Zap, Loader2, AlertTriangle,
   BarChart2, ScatterChart, GitMerge, Radar, Scale, TrendingUp,
-  FileJson, FileSpreadsheet, MoreVertical
+  FileJson, FileSpreadsheet, MoreVertical, Box
 } from 'lucide-react';
 import { formatIndustrialNumber } from './utils/formatters';
 
@@ -84,8 +84,12 @@ const AppContent = () => {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (showExportMenu && exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
-        setShowExportMenu(false);
+      if (showExportMenu && exportMenuRef.current) {
+        const exportMenuPortal = document.getElementById('export-menu-portal');
+        if (!exportMenuRef.current.contains(e.target) && 
+            (!exportMenuPortal || !exportMenuPortal.contains(e.target))) {
+          setShowExportMenu(false);
+        }
       }
     };
     const handleEscape = (e) => {
@@ -169,171 +173,176 @@ const AppContent = () => {
           onCompareAlgoChange={setCompareAlgo}
         />
 
-        <div className="flex justify-between items-end px-1 mt-1">
-          <div className="text-lg font-bold text-gray-700 flex items-center gap-1">
-            核心统计指征 ({activeMetric})
-            {stats && <span className="ml-3 text-sm font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 shadow-sm">有效计算样本: {stats.nValid} / {stats.nTotalChecked}</span>}
-          </div>
+        <div className="flex items-center gap-3 mb-2 bg-gradient-to-r from-gray-50 to-indigo-50 px-3 py-2 rounded-lg border border-gray-200">
+          <span className="text-base font-bold text-gray-800 flex items-center gap-1.5">
+            <TrendingUp className="w-4 h-4 text-indigo-600" />
+            核心统计指征
+          </span>
+          <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2.5 py-1 rounded-full border border-indigo-200 shadow-sm">{activeMetric}</span>
+          {stats && <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-200 shadow-sm">有效样本: {stats.nValid}/{stats.nTotalChecked}</span>}
         </div>
 
         {stats ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-            <div className={`p-4 rounded-xl border relative group transition-colors ${stats.geomeanImp > 0 ? 'bg-emerald-50 border-emerald-200 shadow-sm' : (stats.geomeanImp < 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200')}`}>
-              <div className={`text-sm font-bold mb-1 flex items-center ${stats.geomeanImp > 0 ? 'text-emerald-800' : (stats.geomeanImp < 0 ? 'text-red-800' : 'text-gray-600')}`}>
+            <div className={`p-3 rounded-xl border ${stats.geomeanImp > 0 ? 'bg-emerald-50 border-emerald-200' : (stats.geomeanImp < 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200')}`}>
+              <div className={`text-xs font-bold mb-1 flex items-center ${stats.geomeanImp > 0 ? 'text-emerald-800' : (stats.geomeanImp < 0 ? 'text-red-800' : 'text-gray-600')}`}>
                 Geomean 改进
                 <HelpIcon
                   content={
-                    <div className="space-y-3">
-                      <p className="font-bold text-indigo-400 text-lg">几何平均改进率</p>
-                      <div className="space-y-2 text-sm">
-                        <p><b>计算公式：</b>exp(Σln(Ratio)/n)</p>
-                        <p><b>工业意义：</b>评估算法整体改进比例的绝对标准</p>
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-400">几何平均改进率</p>
+                      <div className="text-xs space-y-1">
+                        <p><b>公式：</b>exp(Σln(Ratio)/n)</p>
+                        <p><b>意义：</b>评估算法整体改进比例的绝对标准</p>
                         <p><b>优势：</b>能有效抵消极端异常值的拉偏效应</p>
-                        <p><b>解读：</b>正值表示整体优化，负值表示整体退化</p>
+                        <p><b>解读：</b>正值=优化，负值=退化</p>
                       </div>
                     </div>
                   }
                   position="bottom-right"
                   tooltipWidth="w-[36rem]"
+                  className="w-3 h-3 ml-0.5"
                 />
               </div>
-              <div className={`text-3xl font-black ${stats.geomeanImp > 0 ? 'text-emerald-600' : (stats.geomeanImp < 0 ? 'text-red-600' : 'text-gray-700')}`}>
+              <div className={`text-2xl font-black ${stats.geomeanImp > 0 ? 'text-emerald-600' : (stats.geomeanImp < 0 ? 'text-red-600' : 'text-gray-700')}`}>
                 {stats.geomeanImp > 0 ? '+' : ''}{stats.geomeanImp.toFixed(2)}%
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative group">
-              <div className="text-sm text-gray-500 font-bold mb-1 flex items-center">
+            <div className="bg-white p-3 rounded-xl border border-gray-200">
+              <div className="text-xs font-bold text-gray-500 mb-1 flex items-center">
                 Arith Mean (算术)
                 <HelpIcon
                   content={
-                    <div className="space-y-3">
-                      <p className="font-bold text-indigo-400 text-lg">算术平均改进率</p>
-                      <div className="space-y-2 text-sm">
-                        <p><b>计算公式：</b>Σ(改进率)/n</p>
-                        <p><b>工业意义：</b>直观的算术平均值</p>
-                        <p><b>注意：</b>若远大于 Geomean，说明个别测试集表现被异常放大</p>
-                        <p><b>示例：</b>基线分母极小导致改进率虚高</p>
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-400">算术平均改进率</p>
+                      <div className="text-xs space-y-1">
+                        <p><b>公式：</b>Σ(改进率)/n</p>
+                        <p><b>意义：</b>直观的算术平均值</p>
+                        <p><b>注意：</b>若远大于Geomean，说明个别测试集被异常放大</p>
                       </div>
                     </div>
                   }
                   position="bottom-right"
                   tooltipWidth="w-[36rem]"
+                  className="w-3 h-3 ml-0.5"
                 />
               </div>
-              <div className={`text-3xl font-black ${stats.meanImp > 0 ? 'text-emerald-600' : (stats.meanImp < 0 ? 'text-red-600' : 'text-gray-700')}`}>
+              <div className={`text-2xl font-black ${stats.meanImp > 0 ? 'text-emerald-600' : (stats.meanImp < 0 ? 'text-red-600' : 'text-gray-700')}`}>
                 {stats.meanImp > 0 ? '+' : ''}{stats.meanImp.toFixed(2)}%
               </div>
             </div>
 
-            <div className={`p-4 rounded-xl border shadow-sm transition-colors ${stats.pValue < 0.05 ? 'bg-emerald-50 border-emerald-200' : 'bg-orange-50 border-orange-200'}`}>
-              <div className={`text-sm font-bold mb-1 flex justify-between items-center ${stats.pValue < 0.05 ? 'text-emerald-800' : 'text-orange-800'}`}>
-                <div className="flex items-center">
-                  P-Value
-                  <HelpIcon
-                    content={
-                      <div className="space-y-3">
-                        <p className="font-bold text-indigo-400 text-lg">Wilcoxon 符号秩检验</p>
-                        <div className="space-y-2 text-sm">
-                          <p><b>检验方法：</b>非参数统计检验，不依赖数据分布</p>
-                          <p><b>工业意义：</b>判断数据分布的改变是否真实有效</p>
-                          <p><b>判断标准：</b>P &lt; 0.05 表示提升具有统计学显著性</p>
-                          <p><b>绿色显示：</b>证明整体提升非随机测试噪声</p>
-                          <p><b>橙色显示：</b>可能存在随机波动，需要更多样本</p>
-                        </div>
+            <div className={`p-3 rounded-xl border ${stats.pValue < 0.05 ? 'bg-emerald-50 border-emerald-200' : 'bg-orange-50 border-orange-200'}`}>
+              <div className={`text-xs font-bold mb-1 flex items-center ${stats.pValue < 0.05 ? 'text-emerald-800' : 'text-orange-800'}`}>
+                P-Value
+                <HelpIcon
+                  content={
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-400">Wilcoxon 符号秩检验</p>
+                      <div className="text-xs space-y-1">
+                        <p><b>方法：</b>非参数统计检验，不依赖数据分布</p>
+                        <p><b>意义：</b>判断数据分布改变是否真实有效</p>
+                        <p><b>标准：</b>P&lt;0.05 表示提升具有统计学显著性</p>
+                        <p><b>绿色：</b>整体提升非随机噪声</p>
+                        <p><b>橙色：</b>可能存在随机波动</p>
                       </div>
-                    }
-                    position="bottom-right"
-                    tooltipWidth="w-[40rem]"
-                  />
-                </div>
+                    </div>
+                  }
+                  position="bottom-right"
+                  tooltipWidth="w-[36rem]"
+                  className="w-3 h-3 ml-0.5"
+                />
               </div>
-              <div className={`text-3xl font-black flex items-baseline gap-1 ${stats.pValue < 0.05 ? 'text-emerald-600' : 'text-orange-600'}`}>
+              <div className={`text-2xl font-black flex items-baseline gap-1 ${stats.pValue < 0.05 ? 'text-emerald-600' : 'text-orange-600'}`}>
                 {stats.pValue.toFixed(3)}
-                <span className="text-sm font-bold opacity-80">{stats.pValue < 0.05 ? '(显著)' : '(不显著)'}</span>
+                <span className="text-xs font-bold opacity-80">{stats.pValue < 0.05 ? '(显著)' : '(不显著)'}</span>
               </div>
-              <div className="w-full h-1.5 bg-gray-200/80 rounded-full mt-2 overflow-hidden relative border border-gray-300/50">
+              <div className="w-full h-1 bg-gray-200/80 rounded-full mt-1.5 overflow-hidden relative">
                 <div className="absolute left-[50%] top-0 bottom-0 w-px bg-red-500 z-10"></div>
                 <div className={`h-full ${stats.pValue < 0.05 ? 'bg-emerald-500' : 'bg-orange-500'}`} style={{ width: `${Math.min((stats.pValue / 0.1) * 100, 100)}%` }}></div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm relative group flex flex-col justify-between">
-              <div className="text-sm text-gray-500 font-bold mb-1 flex items-center">
+            <div className="bg-white p-3 rounded-xl border border-gray-200">
+              <div className="text-xs font-bold text-gray-500 mb-1 flex items-center">
                 95% 置信区间
                 <HelpIcon
                   content={
-                    <div className="space-y-3">
-                      <p className="font-bold text-indigo-400 text-lg">95% 置信区间</p>
-                      <div className="space-y-2 text-sm">
-                        <p><b>统计含义：</b>评估算法表现波动的 95% 上下限预测</p>
-                        <p><b>下限 &gt; 0%：</b>说明该算法极为稳健</p>
-                        <p><b>工业应用：</b>几乎在全场景下均有正向收益</p>
-                        <p><b>区间越窄：</b>表示算法表现越稳定</p>
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-400">95% 置信区间</p>
+                      <div className="text-xs space-y-1">
+                        <p><b>含义：</b>算法表现波动的95%上下限预测</p>
+                        <p><b>下限&gt;0%：</b>说明该算法极为稳健</p>
+                        <p><b>应用：</b>几乎在全场景下均有正向收益</p>
+                        <p><b>区间越窄：</b>算法表现越稳定</p>
                       </div>
                     </div>
                   }
                   position="bottom-left"
                   tooltipWidth="w-[36rem]"
+                  className="w-3 h-3 ml-0.5"
                 />
               </div>
-              <div className="text-lg xl:text-xl font-black text-gray-700 tracking-tighter bg-gray-50 p-1.5 rounded text-center border border-gray-100">[{stats.ciLower.toFixed(1)}%, {stats.ciUpper.toFixed(1)}%]</div>
+              <div className="text-base font-black text-gray-700 bg-gray-50 p-1.5 rounded text-center border border-gray-100">[{stats.ciLower.toFixed(1)}%, {stats.ciUpper.toFixed(1)}%]</div>
             </div>
 
-            <div className={`p-4 rounded-xl border shadow-sm flex flex-col justify-between ${stats.degradedCount > 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
-              <div className={`text-sm font-bold mb-1 flex items-center ${stats.degradedCount > 0 ? 'text-red-800' : 'text-emerald-800'}`}>
+            <div className={`p-3 rounded-xl border ${stats.degradedCount > 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
+              <div className={`text-xs font-bold mb-1 flex items-center ${stats.degradedCount > 0 ? 'text-red-800' : 'text-emerald-800'}`}>
                 退化案例数
                 <HelpIcon
                   content={
-                    <div className="space-y-3">
-                      <p className="font-bold text-indigo-400 text-lg">退化案例数</p>
-                      <div className="space-y-2 text-sm">
-                        <p><b>定义：</b>改进率 &lt; 0% 的案例总数</p>
-                        <p><b>统计范围：</b>参与计算的有效样本</p>
-                        <p><b>工业标准：</b>通常有极其严格的容忍度红线</p>
-                        <p><b>绿色显示：</b>无退化案例，表现优秀</p>
-                        <p><b>红色显示：</b>存在退化，需要重点关注</p>
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-400">退化案例数</p>
+                      <div className="text-xs space-y-1">
+                        <p><b>定义：</b>改进率&lt;0%的案例总数</p>
+                        <p><b>范围：</b>参与计算的有效样本</p>
+                        <p><b>标准：</b>通常有严格的容忍度红线</p>
+                        <p><b>绿色：</b>无退化案例，表现优秀</p>
+                        <p><b>红色：</b>存在退化，需重点关注</p>
                       </div>
                     </div>
                   }
                   position="bottom-left"
                   tooltipWidth="w-[36rem]"
+                  className="w-3 h-3 ml-0.5"
                 />
               </div>
-              <div className={`text-3xl font-black ${stats.degradedCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{stats.degradedCount}</div>
+              <div className={`text-2xl font-black ${stats.degradedCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{stats.degradedCount}</div>
             </div>
 
-            <div className={`p-4 rounded-xl border shadow-sm transition-colors ${stats.minImp < 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
-              <div className={`text-sm font-bold mb-1 flex items-center ${stats.minImp < 0 ? 'text-red-800' : 'text-emerald-800'}`}>
+            <div className={`p-3 rounded-xl border ${stats.minImp < 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'}`}>
+              <div className={`text-xs font-bold mb-1 flex items-center ${stats.minImp < 0 ? 'text-red-800' : 'text-emerald-800'}`}>
                 最大退化幅度
                 <HelpIcon
                   content={
-                    <div className="space-y-3">
-                      <p className="font-bold text-indigo-400 text-lg">最大退化幅度 (WNS)</p>
-                      <div className="space-y-2 text-sm">
-                        <p><b>WNS 思想：</b>Worst Case 分析，即"最坏能有多坏"</p>
-                        <p><b>工业意义：</b>评估算法在最差情况下的表现</p>
-                        <p><b>判断标准：</b>严重跌破底线的算法改动通常会被直接驳回</p>
-                        <p><b>绿色显示：</b>无退化或退化幅度可控</p>
-                        <p><b>红色显示：</b>存在严重退化，需要分析原因</p>
+                    <div className="space-y-2">
+                      <p className="font-bold text-indigo-400">最大退化幅度 (WNS)</p>
+                      <div className="text-xs space-y-1">
+                        <p><b>WNS：</b>Worst Case分析，"最坏能有多坏"</p>
+                        <p><b>意义：</b>评估算法在最差情况下的表现</p>
+                        <p><b>标准：</b>严重跌破底线的改动通常被驳回</p>
+                        <p><b>绿色：</b>无退化或退化可控</p>
+                        <p><b>红色：</b>存在严重退化</p>
                       </div>
                     </div>
                   }
                   position="bottom-left"
                   tooltipWidth="w-[36rem]"
+                  className="w-3 h-3 ml-0.5"
                 />
               </div>
-              <div className={`text-3xl font-black ${stats.minImp < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{stats.minImp < 0 ? stats.minImp.toFixed(2) + '%' : '无'}</div>
+              <div className={`text-2xl font-black ${stats.minImp < 0 ? 'text-red-600' : 'text-emerald-600'}`}>{stats.minImp < 0 ? stats.minImp.toFixed(2) + '%' : '无'}</div>
             </div>
           </div>
         ) : (
-          <div className="bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-lg flex items-center gap-2 shadow-sm font-semibold text-sm">
-            <AlertTriangle className="w-5 h-5" />
-            没有合法的对比数据参与计算。请检查数据源，或切换焦点目标。
+          <div className="bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-lg flex items-center gap-2 text-sm">
+            <AlertTriangle className="w-4 h-4" />
+            没有合法的对比数据。请检查数据源或切换目标。
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[800px] relative z-0">
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 overflow-hidden flex flex-col h-[700px] relative z-0">
           {tooltipState.visible && (
             <div className="absolute pointer-events-none bg-gray-900/95 border border-gray-700 text-white text-xs px-4 py-3 rounded-xl shadow-2xl z-[100] whitespace-nowrap backdrop-blur-sm transition-opacity duration-75"
               style={{ left: tooltipState.x + 15, top: tooltipState.y + 15 }}>
@@ -368,7 +377,7 @@ const AppContent = () => {
             </div>
             <div className="flex items-center gap-2">
               <button className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'single' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100/50'}`} onClick={() => setActiveTab('single')}>
-                <BarChart2 className="w-4 h-4" />
+                <Box className="w-4 h-4" />
                 <span>箱线图</span>
                 <HelpIcon
                   content={
@@ -551,6 +560,7 @@ const AppContent = () => {
                       </button>
                       {showExportMenu && createPortal(
                         <div 
+                          id="export-menu-portal"
                           className="fixed bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 z-[9999] overflow-hidden animate-scaleIn"
                           style={{
                             top: `${exportMenuPosition.top}px`,
@@ -565,10 +575,20 @@ const AppContent = () => {
                           <div className="py-1">
                             <button 
                               onClick={(e) => { 
+                                e.preventDefault();
                                 e.stopPropagation();
-                                exportToCSV(filteredTableData, activeMetric, baseAlgo, compareAlgo, metaColumns, stats); 
-                                setShowExportMenu(false); 
-                                toast.success('导出成功', 'CSV文件已下载'); 
+                                try {
+                                  if (!filteredTableData || filteredTableData.length === 0) {
+                                    toast.warning('导出失败', '没有数据可导出');
+                                    return;
+                                  }
+                                  exportToCSV(filteredTableData, activeMetric, baseAlgo, compareAlgo, metaColumns, stats); 
+                                  setShowExportMenu(false); 
+                                  toast.success('导出成功', 'CSV文件已下载'); 
+                                } catch (err) {
+                                  console.error('Export CSV error:', err);
+                                  toast.error('导出失败', err.message);
+                                }
                               }}
                               className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
                             >
@@ -577,10 +597,20 @@ const AppContent = () => {
                             </button>
                             <button 
                               onClick={(e) => { 
+                                e.preventDefault();
                                 e.stopPropagation();
-                                exportFullDataToCSV(parsedData, availableAlgos, availableMetrics, metaColumns); 
-                                setShowExportMenu(false); 
-                                toast.success('导出成功', '完整CSV文件已下载'); 
+                                try {
+                                  if (!parsedData || parsedData.length === 0) {
+                                    toast.warning('导出失败', '没有数据可导出');
+                                    return;
+                                  }
+                                  exportFullDataToCSV(parsedData, availableAlgos, availableMetrics, metaColumns); 
+                                  setShowExportMenu(false); 
+                                  toast.success('导出成功', '完整CSV文件已下载'); 
+                                } catch (err) {
+                                  console.error('Export full CSV error:', err);
+                                  toast.error('导出失败', err.message);
+                                }
                               }}
                               className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
                             >
@@ -589,10 +619,20 @@ const AppContent = () => {
                             </button>
                             <button 
                               onClick={(e) => { 
+                                e.preventDefault();
                                 e.stopPropagation();
-                                exportToExcel(filteredTableData, availableAlgos, availableMetrics, metaColumns, activeMetric, baseAlgo, compareAlgo, stats); 
-                                setShowExportMenu(false); 
-                                toast.success('导出成功', 'TSV文件已下载'); 
+                                try {
+                                  if (!filteredTableData || filteredTableData.length === 0) {
+                                    toast.warning('导出失败', '没有数据可导出');
+                                    return;
+                                  }
+                                  exportToExcel(filteredTableData, availableAlgos, availableMetrics, metaColumns, activeMetric, baseAlgo, compareAlgo, stats); 
+                                  setShowExportMenu(false); 
+                                  toast.success('导出成功', 'TSV文件已下载'); 
+                                } catch (err) {
+                                  console.error('Export Excel error:', err);
+                                  toast.error('导出失败', err.message);
+                                }
                               }}
                               className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
                             >
@@ -601,10 +641,20 @@ const AppContent = () => {
                             </button>
                             <button 
                               onClick={(e) => { 
+                                e.preventDefault();
                                 e.stopPropagation();
-                                exportToJSON(parsedData, availableAlgos, availableMetrics, metaColumns); 
-                                setShowExportMenu(false); 
-                                toast.success('导出成功', 'JSON文件已下载'); 
+                                try {
+                                  if (!parsedData || parsedData.length === 0) {
+                                    toast.warning('导出失败', '没有数据可导出');
+                                    return;
+                                  }
+                                  exportToJSON(parsedData, availableAlgos, availableMetrics, metaColumns); 
+                                  setShowExportMenu(false); 
+                                  toast.success('导出成功', 'JSON文件已下载'); 
+                                } catch (err) {
+                                  console.error('Export JSON error:', err);
+                                  toast.error('导出失败', err.message);
+                                }
                               }}
                               className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors"
                             >
@@ -785,6 +835,8 @@ const AppContent = () => {
                 availableAlgos={availableAlgos}
                 baseAlgo={baseAlgo}
                 compareAlgo={compareAlgo}
+                parsedData={parsedData}
+                selectedCases={selectedCases}
               />
             )}
 

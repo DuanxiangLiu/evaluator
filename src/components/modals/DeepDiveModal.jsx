@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Search, Box } from 'lucide-react';
+import { getMetricConfig } from '../../services/dataService';
 
 const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetrics, onClose }) => {
   if (!isOpen || !caseData) return null;
@@ -12,18 +13,24 @@ const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetri
     return { metric: m, bVal, cVal, imp };
   }).filter(d => d !== null);
 
-  const maxAbsImp = Math.max(...radarData.map(d => Math.abs(d.imp)), 1);
+  const getNormalizedImp = (imp, metric) => {
+    const config = getMetricConfig(metric);
+    if (config.better === 'higher') {
+      return -imp;
+    }
+    return imp;
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 flex justify-between items-center">
           <div>
             <h3 className="font-bold text-xl text-gray-900 flex items-center gap-2">
               <Search className="w-5 h-5 text-indigo-600" />
               单例深度透视
             </h3>
-            <p className="text-sm text-gray-500 mt-1">Case: <span className="font-bold text-indigo-700">{caseData.Case}</span></p>
+            <p className="text-sm text-gray-500 mt-1">Case: <span className="font-bold text-indigo-700">{caseData.Case}</span> | 对比: <span className="font-bold">{baseAlgo}</span> vs <span className="font-bold text-purple-700">{compareAlgo}</span></p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white rounded-lg text-gray-400 hover:text-gray-600 transition-colors">
             <X className="w-5 h-5" />
@@ -49,40 +56,61 @@ const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetri
             
             <div>
               <h4 className="font-bold text-gray-700 mb-3">多维雷达图</h4>
-              <div className="aspect-square relative bg-gray-50 rounded-lg border border-gray-200">
-                <svg className="w-full h-full overflow-visible" viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMid meet">
+              <div className="aspect-square relative bg-gradient-to-br from-gray-50 to-slate-100 rounded-xl border border-gray-200/50 shadow-inner">
+                <svg className="w-full h-full overflow-visible" viewBox="-120 -100 240 220" preserveAspectRatio="xMidYMid meet">
                   {(() => {
                     const N = radarData.length;
                     if (N < 3) return <text x="0" y="0" textAnchor="middle" fill="#9ca3af" fontSize="10">需要至少3个指标</text>;
                     
                     const baseRadius = 60;
-                    const getRadius = (imp) => baseRadius + (imp / maxAbsImp) * 30;
+                    const maxImp = 20;
                     const getPoint = (angle, r) => ({ x: r * Math.sin(angle), y: -r * Math.cos(angle) });
 
-                    const basePolygon = Array.from({length: N}).map((_, i) => {
-                      const pt = getPoint((Math.PI * 2 * i) / N, baseRadius);
-                      return `${pt.x},${pt.y}`;
-                    }).join(' ');
+                    const rings = [0.33, 0.67, 1.0, 1.33];
+                    const ringPolygons = rings.map(scale => {
+                      const r = baseRadius * scale;
+                      return Array.from({length: N}).map((_, i) => {
+                        const pt = getPoint((Math.PI * 2 * i) / N, r);
+                        return `${pt.x},${pt.y}`;
+                      }).join(' ');
+                    });
 
                     const dataPolygon = radarData.map((d, i) => {
-                      const r = getRadius(d.imp);
+                      const normalizedImp = getNormalizedImp(d.imp, d.metric);
+                      const scale = Math.max(0.3, Math.min(1.5, 1 + normalizedImp / maxImp));
+                      const r = baseRadius * scale;
                       const pt = getPoint((Math.PI * 2 * i) / N, r);
                       return `${pt.x},${pt.y}`;
                     }).join(' ');
 
                     return (
                       <>
-                        <polygon points={basePolygon} fill="none" stroke="#e5e7eb" strokeWidth="1" strokeDasharray="2 2" />
-                        <polygon points={dataPolygon} fill="#818cf8" fillOpacity="0.3" stroke="#4f46e5" strokeWidth="2" />
+                        {ringPolygons.map((pts, i) => (
+                          <polygon key={`ring-${i}`} points={pts} fill="none" stroke="#e5e7eb" strokeWidth="1" strokeDasharray={i===2 ? "" : "2 2"} />
+                        ))}
+                        
+                        <polygon points={Array.from({length: N}).map((_, i) => {
+                          const pt = getPoint((Math.PI * 2 * i) / N, baseRadius);
+                          return `${pt.x},${pt.y}`;
+                        }).join(' ')} fill="none" stroke="#9ca3af" strokeWidth="2" strokeDasharray="4 4" />
+                        
+                        <polygon points={dataPolygon} fill="#818cf8" fillOpacity="0.2" stroke="#4f46e5" strokeWidth="2" />
                         
                         {radarData.map((d, i) => {
                           const angle = (Math.PI * 2 * i) / N;
-                          const ptEnd = getPoint(angle, 85);
-                          const labelPt = getPoint(angle, 95);
+                          const ptEnd = getPoint(angle, 80);
+                          const labelPt = getPoint(angle, 100);
+                          const config = getMetricConfig(d.metric);
+                          
                           return (
                             <g key={i}>
                               <line x1="0" y1="0" x2={ptEnd.x} y2={ptEnd.y} stroke="#d1d5db" strokeWidth="0.5" />
-                              <text x={labelPt.x} y={labelPt.y} fontSize="5" fontWeight="bold" fill="#4b5563" textAnchor="middle" dominantBaseline="middle">{d.metric}</text>
+                              <text x={labelPt.x} y={labelPt.y} fontSize="7" fontWeight="bold" fill="#4b5563" textAnchor="middle" dominantBaseline="middle">{d.metric}</text>
+                              <text x={labelPt.x} y={labelPt.y + 10} fontSize="6" fontWeight="bold" fill={d.imp >= 0 ? '#059669' : '#dc2626'} textAnchor="middle">
+                                {d.imp > 0 ? '+' : ''}{d.imp.toFixed(1)}%
+                                {config.better === 'higher' && <tspan fill="#6366f1"> ↑</tspan>}
+                                {config.better === 'lower' && <tspan fill="#6366f1"> ↓</tspan>}
+                              </text>
                             </g>
                           );
                         })}
@@ -90,6 +118,10 @@ const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetri
                     );
                   })()}
                 </svg>
+                
+                <div className="absolute bottom-2 left-2 text-[9px] text-gray-400 bg-white/80 px-2 py-1 rounded">
+                  向外 = 优化 | 向内 = 退化
+                </div>
               </div>
             </div>
           </div>
@@ -104,19 +136,28 @@ const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetri
                     <th className="px-4 py-2 text-right font-bold text-gray-600">{baseAlgo}</th>
                     <th className="px-4 py-2 text-right font-bold text-gray-600">{compareAlgo}</th>
                     <th className="px-4 py-2 text-right font-bold text-gray-600">改进率</th>
+                    <th className="px-4 py-2 text-center font-bold text-gray-600">方向</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {radarData.map(d => (
-                    <tr key={d.metric} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 font-bold text-gray-800">{d.metric}</td>
-                      <td className="px-4 py-2 text-right font-mono text-gray-600">{d.bVal}</td>
-                      <td className="px-4 py-2 text-right font-mono font-bold text-indigo-700">{d.cVal}</td>
-                      <td className={`px-4 py-2 text-right font-mono font-bold ${d.imp > 0 ? 'text-emerald-600' : (d.imp < 0 ? 'text-red-600' : 'text-gray-600')}`}>
-                        {d.imp > 0 ? '+' : ''}{d.imp.toFixed(2)}%
-                      </td>
-                    </tr>
-                  ))}
+                  {radarData.map(d => {
+                    const config = getMetricConfig(d.metric);
+                    return (
+                      <tr key={d.metric} className="hover:bg-gray-50">
+                        <td className="px-4 py-2 font-bold text-gray-800">{d.metric}</td>
+                        <td className="px-4 py-2 text-right font-mono text-gray-600">{d.bVal}</td>
+                        <td className="px-4 py-2 text-right font-mono font-bold text-indigo-700">{d.cVal}</td>
+                        <td className={`px-4 py-2 text-right font-mono font-bold ${d.imp > 0 ? 'text-emerald-600' : (d.imp < 0 ? 'text-red-600' : 'text-gray-600')}`}>
+                          {d.imp > 0 ? '+' : ''}{d.imp.toFixed(2)}%
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <span className={`text-xs px-2 py-0.5 rounded ${config.better === 'higher' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                            {config.better === 'higher' ? '↑ 越大越好' : '↓ 越小越好'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

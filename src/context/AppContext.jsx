@@ -91,9 +91,7 @@ export const AppProvider = ({ children }) => {
     if (metrics.length > 1 && !metrics.includes(paretoY)) {
       setParetoY(metrics[1] || metrics[0]);
     }
-    if (metrics.length > 2 && !metrics.includes(paretoZ)) {
-      setParetoZ(metrics[2] || metrics[0]);
-    }
+    setParetoZ('');
     
     const instanceCol = metas.find(c => c.toLowerCase() === 'instances' || c.toLowerCase() === 'instance');
     if (instanceCol) {

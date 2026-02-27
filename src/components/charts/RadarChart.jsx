@@ -1,11 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { CheckSquare, Square, HelpCircle } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
-import { getMetricConfig } from '../../services/dataService';
+import { getMetricConfig, computeStatistics } from '../../services/dataService';
 
-const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo }) => {
-  if (!allMetricsStats || allMetricsStats.length === 0) return null;
-
+const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, parsedData, selectedCases }) => {
   const algoColors = {
     'Base': { fill: 'none', stroke: '#9ca3af', strokeDasharray: '4 4', strokeWidth: 2, fillOpacity: 0, label: '基线' },
     'Algo1': { fill: '#818cf8', fillOpacity: 0.15, stroke: '#4f46e5', strokeWidth: 2, label: '算法1' },
@@ -15,15 +13,21 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo }) 
     'Algo5': { fill: '#c4b5fd', fillOpacity: 0.15, stroke: '#7c3aed', strokeWidth: 2, label: '算法5' },
   };
 
-  const getAlgoColor = (algoName) => {
+  const getAlgoColor = (algoName, index) => {
     const shortName = algoName.replace('m_', '');
-    return algoColors[shortName] || { 
-      fill: '#cbd5e1', 
-      fillOpacity: 0.15, 
-      stroke: '#64748b', 
-      strokeWidth: 2, 
-      label: algoName 
-    };
+    if (algoColors[shortName]) {
+      return algoColors[shortName];
+    }
+    const colors = [
+      { fill: '#818cf8', fillOpacity: 0.15, stroke: '#4f46e5', strokeWidth: 2 },
+      { fill: '#a7f3d0', fillOpacity: 0.15, stroke: '#059669', strokeWidth: 2 },
+      { fill: '#fca5a5', fillOpacity: 0.15, stroke: '#dc2626', strokeWidth: 2 },
+      { fill: '#fcd34d', fillOpacity: 0.15, stroke: '#d97706', strokeWidth: 2 },
+      { fill: '#c4b5fd', fillOpacity: 0.15, stroke: '#7c3aed', strokeWidth: 2 },
+      { fill: '#93c5fd', fillOpacity: 0.15, stroke: '#2563eb', strokeWidth: 2 },
+      { fill: '#f9a8d4', fillOpacity: 0.15, stroke: '#db2777', strokeWidth: 2 },
+    ];
+    return colors[index % colors.length];
   };
 
   const [selectedAlgos, setSelectedAlgos] = useState(() => {
@@ -45,6 +49,41 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo }) 
       return newSet;
     });
   };
+
+  const algoStatsMap = useMemo(() => {
+    if (!parsedData || parsedData.length === 0 || !baseAlgo || !selectedCases) {
+      return {};
+    }
+
+    const statsMap = {};
+    const metrics = allMetricsStats.map(m => m.metric);
+    
+    Array.from(selectedAlgos).forEach(algo => {
+      if (algo === baseAlgo) {
+        statsMap[algo] = metrics.map(m => ({
+          metric: m,
+          stats: { geomeanImp: 0 }
+        }));
+      } else {
+        statsMap[algo] = metrics.map(m => ({
+          metric: m,
+          stats: computeStatistics(m, baseAlgo, algo, parsedData, selectedCases)
+        }));
+      }
+    });
+
+    return statsMap;
+  }, [parsedData, selectedAlgos, baseAlgo, selectedCases, allMetricsStats]);
+
+  const validMetrics = useMemo(() => {
+    return allMetricsStats.filter(m => m.stats !== null);
+  }, [allMetricsStats]);
+
+  const selectedAlgosArray = useMemo(() => {
+    return Array.from(selectedAlgos).filter(algo => algo !== baseAlgo);
+  }, [selectedAlgos, baseAlgo]);
+
+  if (!allMetricsStats || allMetricsStats.length === 0) return null;
 
   return (
     <div className="p-6 max-w-5xl mx-auto h-full flex flex-col w-full">
@@ -79,9 +118,9 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo }) 
           <span className="text-sm font-medium text-gray-600">选择要显示的算法：</span>
         </div>
         <div className="flex flex-wrap gap-2">
-          {availableAlgos.map(algo => {
+          {availableAlgos.map((algo, index) => {
             const isSelected = selectedAlgos.has(algo);
-            const color = getAlgoColor(algo);
+            const color = getAlgoColor(algo, index);
             
             return (
               <button
@@ -113,14 +152,12 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo }) 
       </div>
       
       <div className="relative w-full flex-1 max-h-[500px] flex items-center justify-center bg-gradient-to-br from-gray-50 to-slate-100 rounded-2xl border border-gray-200/50 shadow-inner">
-        <svg className="w-full h-full overflow-visible" viewBox="-150 -150 300 300" preserveAspectRatio="xMidYMid meet">
+        <svg className="w-full h-full overflow-visible" viewBox="-180 -150 360 300" preserveAspectRatio="xMidYMid meet">
           {(() => {
-            const validMetrics = allMetricsStats.filter(m => m.stats !== null);
             const N = validMetrics.length;
             if(N < 3) return <text x="0" y="0" textAnchor="middle" fill="#9ca3af" fontSize="12">生成雷达图至少需要 3 个有效的比对指标</text>;
             
             const baseRadius = 75;
-            const maxRadius = 130;
             
             const getPoint = (angle, r) => ({ x: r * Math.sin(angle), y: -r * Math.cos(angle) });
 
@@ -140,29 +177,43 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo }) 
             const renderAxes = () => validMetrics.map((m, i) => {
               const angle = (Math.PI * 2 * i) / N;
               const ptEnd = getPoint(angle, 140);
-              const labelPt = getPoint(angle, 160);
-              const imp = m.stats.geomeanImp;
+              const labelPt = getPoint(angle, 170);
               const config = getMetricConfig(m.metric);
               
               return (
                 <g key={`axis-${i}`}>
                   <line x1="0" y1="0" x2={ptEnd.x} y2={ptEnd.y} stroke="#d1d5db" strokeWidth="1" />
-                  <text x={labelPt.x} y={labelPt.y} fontSize="8" fontWeight="bold" fill="#4b5563" textAnchor="middle" dominantBaseline="middle">{m.metric}</text>
-                  <text x={labelPt.x} y={labelPt.y + 12} fontSize="7" fontWeight="bold" fill={imp >= 0 ? '#059669' : '#dc2626'} textAnchor="middle">
-                    {imp > 0 ? '+' : ''}{imp.toFixed(2)}%
-                    {config.better === 'higher' && <tspan fill="#6366f1"> ↑</tspan>}
-                    {config.better === 'lower' && <tspan fill="#6366f1"> ↓</tspan>}
-                  </text>
+                  <text x={labelPt.x} y={labelPt.y} fontSize="9" fontWeight="bold" fill="#4b5563" textAnchor="middle" dominantBaseline="middle">{m.metric}</text>
+                  {selectedAlgosArray.map((algo, algoIdx) => {
+                    const statsForAlgo = algoStatsMap[algo];
+                    const metricStat = statsForAlgo?.find(s => s.metric === m.metric);
+                    const imp = metricStat?.stats?.geomeanImp || 0;
+                    const color = getAlgoColor(algo, availableAlgos.indexOf(algo));
+                    
+                    return (
+                      <text 
+                        key={`imp-${algo}`}
+                        x={labelPt.x} 
+                        y={labelPt.y + 12 + algoIdx * 11} 
+                        fontSize="7" 
+                        fontWeight="bold" 
+                        fill={color.stroke}
+                        textAnchor="middle"
+                      >
+                        {algo}: {imp > 0 ? '+' : ''}{imp.toFixed(1)}%
+                      </text>
+                    );
+                  })}
                 </g>
               );
             });
 
             const renderAlgoPolygons = () => {
               const elements = [];
-              const selectedAlgosArray = Array.from(selectedAlgos);
+              const allSelectedAlgos = Array.from(selectedAlgos);
               
-              selectedAlgosArray.forEach((algo, algoIndex) => {
-                const color = getAlgoColor(algo);
+              allSelectedAlgos.forEach((algo, algoIndex) => {
+                const color = getAlgoColor(algo, availableAlgos.indexOf(algo));
                 const isBaseline = algo === baseAlgo;
                 
                 if (isBaseline) {
@@ -176,16 +227,18 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo }) 
                       <polygon 
                         points={basePolygon}
                         fill="none" 
-                        stroke={color.stroke} 
-                        strokeWidth={color.strokeWidth}
-                        strokeDasharray={color.strokeDasharray}
+                        stroke="#9ca3af" 
+                        strokeWidth={2}
+                        strokeDasharray="4 4"
                       />
                     </g>
                   );
                 } else {
                   const algoPolygon = validMetrics.map((m, i) => {
                     const config = getMetricConfig(m.metric);
-                    const imp = m.stats.geomeanImp || 0;
+                    const statsForAlgo = algoStatsMap[algo];
+                    const metricStat = statsForAlgo?.find(s => s.metric === m.metric);
+                    const imp = metricStat?.stats?.geomeanImp || 0;
                     
                     let normalizedImp = imp;
                     if (config.better === 'higher') {
@@ -229,7 +282,7 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo }) 
         <div className="absolute top-4 left-4 flex flex-col gap-2 text-xs font-medium text-gray-600 bg-white/90 p-3 rounded-xl backdrop-blur-md border border-gray-200/50 shadow-lg">
           <div className="text-[10px] text-gray-400 mb-1">图例说明</div>
           {Array.from(selectedAlgos).map(algo => {
-            const color = getAlgoColor(algo);
+            const color = getAlgoColor(algo, availableAlgos.indexOf(algo));
             const isBaseline = algo === baseAlgo;
             
             return (
@@ -238,7 +291,7 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo }) 
                   className="w-4 h-3 rounded-sm"
                   style={{
                     backgroundColor: isBaseline ? 'transparent' : color.fill,
-                    borderColor: color.stroke,
+                    borderColor: isBaseline ? '#9ca3af' : color.stroke,
                     borderWidth: 2,
                     borderStyle: isBaseline ? 'dashed' : 'solid'
                   }}
