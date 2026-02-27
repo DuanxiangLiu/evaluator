@@ -506,7 +506,7 @@ const AppContent = () => {
                         <MoreVertical className="w-3 h-3" />
                       </button>
                       {showExportMenu && (
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-200 z-[100] overflow-hidden">
                           <button 
                             onClick={() => { exportToCSV(filteredTableData, activeMetric, baseAlgo, compareAlgo, metaColumns, stats); setShowExportMenu(false); toast.success('导出成功', 'CSV文件已下载'); }}
                             className="w-full px-4 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 border-b border-gray-100"
@@ -623,31 +623,13 @@ const AppContent = () => {
                             <td className="px-4 py-3 text-center cursor-pointer" onClick={() => toggleCase(d.Case)}><input type="checkbox" checked={isChecked} onChange={() => { }} className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer w-4 h-4" /></td>
                             <td className="px-4 py-3 font-bold text-gray-800 max-w-[200px] truncate" title={d.Case}>{d.Case}</td>
                             {metaColumns.map(mc => (
-                              <td key={mc} className="px-4 py-3 text-right font-mono text-sm text-gray-500 border-l border-gray-100" title={d.meta[mc]}>{formatIndustrialNumber(d.meta[mc]) || '-'}</td>
+                              <td key={mc} className="px-4 py-3 text-right font-mono text-[1.5rem] text-gray-600 border-l border-gray-100" title={d.meta[mc]}>{formatIndustrialNumber(d.meta[mc]) || '-'}</td>
                             ))}
                             <td className="px-4 py-3 text-right font-mono text-[1.5rem] text-gray-600 border-l border-gray-200 bg-gray-50/50">
-                              <EditableCell
-                                value={bVal}
-                                rowId={d.Case}
-                                columnId={baseAlgo}
-                                metric={activeMetric}
-                                algorithm={baseAlgo}
-                                valueType="number"
-                                onSave={handleEditDataValue}
-                                className="px-2 py-1"
-                              />
+                              {bVal == null ? <span className="text-gray-300">NaN</span> : bVal}
                             </td>
                             <td className="px-4 py-3 text-right font-mono text-[1.5rem] text-gray-600 bg-gray-50/50">
-                              <EditableCell
-                                value={cVal}
-                                rowId={d.Case}
-                                columnId={compareAlgo}
-                                metric={activeMetric}
-                                algorithm={compareAlgo}
-                                valueType="number"
-                                onSave={handleEditDataValue}
-                                className="px-2 py-1"
-                              />
+                              {cVal == null ? <span className="text-gray-300">NaN</span> : cVal}
                             </td>
                             <td className={`px-4 py-3 text-right font-mono tracking-tight border-l border-gray-200 ${impColor} bg-indigo-50/40`}>{isNull ? '-' : `${imp > 0 ? '+' : ''}${imp.toFixed(2)}%`}</td>
                             <td className="px-4 py-3 text-center bg-indigo-50/40 border-l border-indigo-100/50 flex justify-center items-center gap-2">
