@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { 
   FileText, Upload, Play, ChevronUp, ChevronDown, Database, Copy, Check, 
   Clipboard, ChevronLeft, ChevronRight, FileUp, Loader2, CheckCircle, 
-  AlertCircle, AlertTriangle, X, RefreshCw, Save
+  AlertCircle, AlertTriangle, X, RefreshCw, Save, Pencil, Plus, Trash2
 } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
 import ValidationResultPanel, { CompactValidationStatus } from '../common/ValidationResultPanel';
@@ -27,9 +27,13 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const [showPasteArea, setShowPasteArea] = useState(false);
   const [showValidationPanel, setShowValidationPanel] = useState(false);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [editingCell, setEditingCell] = useState(null);
+  const [editValue, setEditValue] = useState('');
+  const [isEditingMode, setIsEditingMode] = useState(false);
   const rowsPerPage = 20;
   const isUserActionRef = useRef(false);
   const autoSaveTimeoutRef = useRef(null);
+  const editInputRef = useRef(null);
 
   const toast = useToast();
 
@@ -217,8 +221,101 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
       return values;
     });
     
-    return { headers, rows };
+    return { headers, rows, delimiter };
   };
+
+  const reconstructCSV = useCallback((headers, rows, delimiter = ',') => {
+    const headerLine = headers.join(delimiter);
+    const dataLines = rows.map(row => row.join(delimiter));
+    return [headerLine, ...dataLines].join('\n');
+  }, []);
+
+  const handleCellDoubleClick = useCallback((rowIdx, cellIdx, currentValue) => {
+    const actualRowIdx = (currentPage - 1) * rowsPerPage + rowIdx;
+    setEditingCell({ rowIdx: actualRowIdx, cellIdx });
+    setEditValue(currentValue);
+  }, [currentPage, rowsPerPage]);
+
+  const handleCellEdit = useCallback((e) => {
+    setEditValue(e.target.value);
+  }, []);
+
+  const handleCellEditSave = useCallback(() => {
+    if (editingCell) {
+      const { headers, rows, delimiter } = parseCSV(csvInput);
+      if (rows[editingCell.rowIdx]) {
+        rows[editingCell.rowIdx][editingCell.cellIdx] = editValue;
+        const newCsv = reconstructCSV(headers, rows, delimiter);
+        onCsvChange(newCsv);
+        toast.success('编辑成功', '单元格已更新');
+      }
+      setEditingCell(null);
+      setEditValue('');
+    }
+  }, [editingCell, editValue, csvInput, onCsvChange, reconstructCSV, toast]);
+
+  const handleCellEditCancel = useCallback(() => {
+    setEditingCell(null);
+    setEditValue('');
+  }, []);
+
+  const handleCellEditKeyDown = useCallback((e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleCellEditSave();
+    } else if (e.key === 'Escape') {
+      handleCellEditCancel();
+    }
+  }, [handleCellEditSave, handleCellEditCancel]);
+
+  const handleAddRow = useCallback((position = 'end') => {
+    const { headers, rows, delimiter } = parseCSV(csvInput);
+    const newRow = new Array(headers.length).fill('');
+    
+    if (position === 'start') {
+      rows.unshift(newRow);
+    } else {
+      rows.push(newRow);
+    }
+    
+    const newCsv = reconstructCSV(headers, rows, delimiter);
+    onCsvChange(newCsv);
+    toast.success('添加成功', '已添加新行');
+    
+    if (position === 'end') {
+      const newTotalPages = Math.ceil(rows.length / rowsPerPage);
+      setCurrentPage(newTotalPages);
+    } else {
+      setCurrentPage(1);
+    }
+  }, [csvInput, onCsvChange, reconstructCSV, toast, rowsPerPage]);
+
+  const handleDeleteRow = useCallback((displayRowIdx) => {
+    const actualRowIdx = (currentPage - 1) * rowsPerPage + displayRowIdx;
+    const { headers, rows, delimiter } = parseCSV(csvInput);
+    
+    if (rows.length === 0) {
+      toast.error('删除失败', '没有可删除的行');
+      return;
+    }
+    
+    rows.splice(actualRowIdx, 1);
+    const newCsv = reconstructCSV(headers, rows, delimiter);
+    onCsvChange(newCsv);
+    toast.success('删除成功', '已删除该行');
+    
+    const newTotalPages = Math.ceil(rows.length / rowsPerPage) || 1;
+    if (currentPage > newTotalPages) {
+      setCurrentPage(newTotalPages);
+    }
+  }, [csvInput, onCsvChange, reconstructCSV, toast, currentPage, rowsPerPage]);
+
+  useEffect(() => {
+    if (editingCell && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingCell]);
 
   const { headers, rows } = parseCSV(csvInput);
   const totalPages = Math.ceil(rows.length / rowsPerPage);
@@ -495,18 +592,57 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
                 <span className="text-xs font-bold text-gray-600">
                   数据预览 ({rows.length} 条数据，第 {currentPage} / {totalPages || 1} 页)
                 </span>
-                <button 
-                  onClick={handleCopy}
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
-                >
-                  {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                  {copied ? '已复制' : '复制全部'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setIsEditingMode(!isEditingMode)}
+                    className={`text-xs font-bold flex items-center gap-1 px-2 py-1 rounded transition-colors ${
+                      isEditingMode 
+                        ? 'bg-indigo-600 text-white' 
+                        : 'text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50'
+                    }`}
+                  >
+                    <Pencil className="w-3 h-3" />
+                    {isEditingMode ? '完成编辑' : '编辑模式'}
+                  </button>
+                  <button 
+                    onClick={handleCopy}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                  >
+                    {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    {copied ? '已复制' : '复制全部'}
+                  </button>
+                </div>
               </div>
+              {isEditingMode && (
+                <div className="bg-indigo-50 px-3 py-2 border-b border-indigo-100 flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handleAddRow('start')}
+                    className="px-2 py-1 bg-white hover:bg-indigo-100 text-indigo-700 rounded text-xs font-bold transition-colors border border-indigo-200 flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    在开头添加行
+                  </button>
+                  <button
+                    onClick={() => handleAddRow('end')}
+                    className="px-2 py-1 bg-white hover:bg-indigo-100 text-indigo-700 rounded text-xs font-bold transition-colors border border-indigo-200 flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" />
+                    在末尾添加行
+                  </button>
+                  <span className="text-xs text-indigo-600 ml-2">
+                    💡 双击单元格编辑，按 Enter 保存，按 Esc 取消
+                  </span>
+                </div>
+              )}
               <div className="overflow-x-auto max-h-[300px] sm:max-h-[400px]">
                 <table className="min-w-full text-xs text-left">
                   <thead className="bg-indigo-50 text-indigo-900 sticky top-0 z-10">
                     <tr>
+                      {isEditingMode && (
+                        <th className="px-2 py-2 font-bold whitespace-nowrap border-r border-indigo-100 w-10">
+                          操作
+                        </th>
+                      )}
                       {headers.map((header, idx) => (
                         <th key={idx} className="px-2 sm:px-3 py-2 font-bold whitespace-nowrap border-r border-indigo-100 last:border-r-0">
                           {header}
@@ -516,12 +652,48 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {displayRows.map((row, rowIdx) => (
-                      <tr key={rowIdx} className="hover:bg-indigo-50/30">
-                        {row.map((cell, cellIdx) => (
-                          <td key={cellIdx} className="px-2 sm:px-3 py-2 font-mono text-gray-600 whitespace-nowrap border-r border-gray-100 last:border-r-0">
-                            {cell}
+                      <tr key={rowIdx} className={`hover:bg-indigo-50/30 ${isEditingMode ? 'group' : ''}`}>
+                        {isEditingMode && (
+                          <td className="px-2 py-2 border-r border-gray-100">
+                            <button
+                              onClick={() => handleDeleteRow(rowIdx)}
+                              className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="删除此行"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </td>
-                        ))}
+                        )}
+                        {row.map((cell, cellIdx) => {
+                          const actualRowIdx = (currentPage - 1) * rowsPerPage + rowIdx;
+                          const isEditing = editingCell && 
+                            editingCell.rowIdx === actualRowIdx && 
+                            editingCell.cellIdx === cellIdx;
+                          
+                          return (
+                            <td 
+                              key={cellIdx} 
+                              className={`px-2 sm:px-3 py-2 font-mono text-gray-600 whitespace-nowrap border-r border-gray-100 last:border-r-0 ${
+                                isEditingMode ? 'cursor-pointer hover:bg-indigo-100' : ''
+                              }`}
+                              onDoubleClick={() => isEditingMode && handleCellDoubleClick(rowIdx, cellIdx, cell)}
+                            >
+                              {isEditing ? (
+                                <input
+                                  ref={editInputRef}
+                                  type="text"
+                                  value={editValue}
+                                  onChange={handleCellEdit}
+                                  onKeyDown={handleCellEditKeyDown}
+                                  onBlur={handleCellEditSave}
+                                  className="w-full px-1 py-0.5 text-xs font-mono border border-indigo-400 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                                />
+                              ) : (
+                                cell
+                              )}
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))}
                   </tbody>
