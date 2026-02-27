@@ -4,7 +4,6 @@ import { AppProvider, useAppContext } from './context/AppContext';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import CsvDataSource from './components/layout/CsvDataSource';
-import ControlBar from './components/layout/ControlBar';
 import HelpIcon from './components/common/HelpIcon';
 import SortIcon from './components/common/SortIcon';
 import EditableCell from './components/common/EditableCell';
@@ -162,24 +161,44 @@ const AppContent = () => {
           onRunAnalysis={runAnalysis}
         />
 
-        <ControlBar
-          availableMetrics={availableMetrics}
-          activeMetric={activeMetric}
-          onMetricChange={setActiveMetric}
-          availableAlgos={availableAlgos}
-          baseAlgo={baseAlgo}
-          compareAlgo={compareAlgo}
-          onBaseAlgoChange={setBaseAlgo}
-          onCompareAlgoChange={setCompareAlgo}
-        />
-
-        <div className="flex items-center gap-3 mb-2 bg-gradient-to-r from-gray-50 to-indigo-50 px-3 py-2 rounded-lg border border-gray-200">
-          <span className="text-base font-bold text-gray-800 flex items-center gap-1.5">
-            <TrendingUp className="w-4 h-4 text-indigo-600" />
-            核心统计指征
+        <div className="flex flex-wrap items-center gap-2 mb-2 bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 rounded-xl shadow-md">
+          <span className="text-base font-bold text-white flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-lg">
+            <TrendingUp className="w-4 h-4" />
+            关键指标概览
           </span>
-          <span className="text-xs font-bold text-indigo-700 bg-indigo-100 px-2.5 py-1 rounded-full border border-indigo-200 shadow-sm">{activeMetric}</span>
-          {stats && <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-200 shadow-sm">有效样本: {stats.nValid}/{stats.nTotalChecked}</span>}
+          
+          <div className="h-5 w-px bg-white/30"></div>
+          
+          <span className="text-xs font-bold text-white/80">指标:</span>
+          <select
+            value={activeMetric}
+            onChange={(e) => setActiveMetric(e.target.value)}
+            className="text-sm font-semibold border-0 rounded-lg py-1 px-2 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 shadow-sm"
+          >
+            {availableMetrics.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+          
+          <span className="text-xs font-bold text-white/80">基线:</span>
+          <select
+            value={baseAlgo}
+            onChange={(e) => setBaseAlgo(e.target.value)}
+            className="text-sm font-semibold border-0 rounded-lg py-1 px-2 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 shadow-sm"
+          >
+            {availableAlgos.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          
+          <span className="text-white/60 font-bold text-xs">vs</span>
+          
+          <span className="text-xs font-bold text-white/80">对比:</span>
+          <select
+            value={compareAlgo}
+            onChange={(e) => setCompareAlgo(e.target.value)}
+            className="text-sm font-semibold border-0 rounded-lg py-1 px-2 focus:ring-2 focus:ring-white/50 bg-amber-100 text-amber-800 shadow-sm"
+          >
+            {availableAlgos.map(a => <option key={a} value={a}>{a}</option>)}
+          </select>
+          
+          {stats && <span className="text-xs font-bold text-white bg-white/20 px-2.5 py-1 rounded-full ml-auto">有效样本: {stats.nValid}/{stats.nTotalChecked}</span>}
         </div>
 
         {stats ? (
