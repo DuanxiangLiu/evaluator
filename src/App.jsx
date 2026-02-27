@@ -121,6 +121,12 @@ const AppContent = () => {
       <div className="max-w-[1600px] mx-auto space-y-6">
         <Header isSidebarOpen={isSidebarOpen} onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
 
+        <CsvDataSource
+          csvInput={csvInput}
+          onCsvChange={setCsvInput}
+          onRunAnalysis={runAnalysis}
+        />
+
         <ControlBar
           availableMetrics={availableMetrics}
           activeMetric={activeMetric}
@@ -130,12 +136,6 @@ const AppContent = () => {
           compareAlgo={compareAlgo}
           onBaseAlgoChange={setBaseAlgo}
           onCompareAlgoChange={setCompareAlgo}
-        />
-
-        <CsvDataSource
-          csvInput={csvInput}
-          onCsvChange={setCsvInput}
-          onRunAnalysis={runAnalysis}
         />
 
         <div className="flex justify-between items-end px-1 mt-1">
