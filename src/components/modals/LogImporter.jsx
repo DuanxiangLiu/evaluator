@@ -7,6 +7,7 @@ import {
   Trash2, Eye, Filter, Layers, Cpu, HardDrive, Clock, HelpCircle,
   Sparkles, Zap
 } from 'lucide-react';
+import { logger } from '../../utils/logger';
 import {
   scanFilesFromFileList,
   formatFileSize,
@@ -108,7 +109,7 @@ const LogImporter = ({ isOpen, onClose, onImportData, llmConfig }) => {
       }
 
       if (result.errors.length > 0) {
-        console.warn('扫描错误:', result.errors);
+        logger.warn('扫描错误:', result.errors);
       }
     } catch (error) {
       toast.error('扫描失败', error.message);

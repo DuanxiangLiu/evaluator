@@ -27,7 +27,6 @@ export const AppProvider = ({ children }) => {
   const [tableFilter, setTableFilter] = useState('all');
   const [corrX, setCorrX] = useState('');
   const [corrY, setCorrY] = useState('');
-  const [trendBase, setTrendBase] = useState('');
   const [paretoX, setParetoX] = useState('');
   const [paretoY, setParetoY] = useState('');
   const [paretoZ, setParetoZ] = useState('');
@@ -42,10 +41,9 @@ export const AppProvider = ({ children }) => {
   const [displayInsights, setDisplayInsights] = useState('');
   const [aiError, setAiError] = useState('');
   const [showAiConfig, setShowAiConfig] = useState(false);
-  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [showPromptConfig, setShowPromptConfig] = useState(false);
   
   const dataVersionRef = useRef(0);
-  const lastAnalysisParamsRef = useRef('');
 
   const runAnalysis = useCallback((inputData = csvInput) => {
     const { data, algos, metrics, metaColumns: metas } = parseCSV(inputData);
@@ -319,7 +317,6 @@ export const AppProvider = ({ children }) => {
     tableFilter, setTableFilter,
     corrX, setCorrX,
     corrY, setCorrY,
-    trendBase, setTrendBase,
     paretoX, setParetoX,
     paretoY, setParetoY,
     paretoZ, setParetoZ,
@@ -335,7 +332,7 @@ export const AppProvider = ({ children }) => {
     displayInsights, setDisplayInsights,
     aiError, setAiError,
     showAiConfig, setShowAiConfig,
-    showAiPanel, setShowAiPanel,
+    showPromptConfig, setShowPromptConfig,
     stats,
     allMetricsStats,
     sortedTableData,

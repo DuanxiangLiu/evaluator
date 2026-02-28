@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import { 
   validateCSVStructure, 
   validateCSVQuick, 
@@ -432,7 +433,7 @@ export const useFormValidation = (initialValues = {}, validationRules = {}) => {
       try {
         await onSubmit(values);
       } catch (error) {
-        console.error('Form submission error:', error);
+        logger.error('表单提交错误:', error);
       }
     }
 

@@ -9,6 +9,7 @@ import { exportToCSV, exportFullDataToCSV, exportToJSON, exportToExcel } from '.
 import { calculateImprovement } from '../../utils/statistics';
 import { formatIndustrialNumber } from '../../utils/formatters';
 import { TABLE_STYLES, getDetailRowStyle, getImpColorClass } from '../../utils/tableStyles';
+import { logger } from '../../utils/logger';
 import { CheckSquare, Square, ArrowDown, AlertTriangle, Download, Search, MoreVertical, FileSpreadsheet, FileJson, X } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
 
@@ -158,7 +159,7 @@ const TableView = ({
                   setShowExportMenu(false); 
                   toast.success('导出成功', 'CSV文件已下载'); 
                 } catch (err) {
-                  console.error('Export CSV error:', err);
+                  logger.error('导出CSV失败:', err);
                   toast.error('导出失败', err.message);
                 }
               }}
@@ -180,7 +181,7 @@ const TableView = ({
                   setShowExportMenu(false); 
                   toast.success('导出成功', '完整CSV文件已下载'); 
                 } catch (err) {
-                  console.error('Export full CSV error:', err);
+                  logger.error('导出完整CSV失败:', err);
                   toast.error('导出失败', err.message);
                 }
               }}
@@ -202,7 +203,7 @@ const TableView = ({
                   setShowExportMenu(false); 
                   toast.success('导出成功', 'TSV文件已下载'); 
                 } catch (err) {
-                  console.error('Export Excel error:', err);
+                  logger.error('导出Excel失败:', err);
                   toast.error('导出失败', err.message);
                 }
               }}
@@ -224,7 +225,7 @@ const TableView = ({
                   setShowExportMenu(false); 
                   toast.success('导出成功', 'JSON文件已下载'); 
                 } catch (err) {
-                  console.error('Export JSON error:', err);
+                  logger.error('导出JSON失败:', err);
                   toast.error('导出失败', err.message);
                 }
               }}

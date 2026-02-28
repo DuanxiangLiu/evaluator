@@ -1,4 +1,4 @@
-import { API_TIMEOUT_MS, DEFAULT_LLM_CONFIG } from '../utils/constants';
+import { API_TIMEOUT_MS, DEFAULT_LLM_CONFIG, CORRELATION_ANALYSIS_PROMPT } from '../utils/constants';
 
 export const fetchWithTimeout = async (url, options, timeout = API_TIMEOUT_MS) => {
   const controller = new AbortController();
@@ -138,6 +138,89 @@ export const generateAIInsights = async (config, baseAlgo, compareAlgo, activeMe
           model: config.model,
           messages: [
             { role: 'system', content: config.systemPrompt },
+            { role: 'user', content: promptPayload }
+          ],
+          temperature: 0.7
+        })
+      });
+      
+      if (response.status === 401) {
+        throw new Error("API Key 无效或未授权 (401错误)。请检查 API Key 设置。");
+      }
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      text = result.choices?.[0]?.message?.content;
+    }
+    
+    if (!text) {
+      throw new Error('API 未返回有效的文本内容。');
+    }
+    
+    return text;
+  } catch (error) {
+    throw new Error(`调用失败: ${error.message}`);
+  }
+};
+
+export const generateCorrelationInsight = async (config, params) => {
+  const { corrX, corrY, pearsonR, spearmanR, slope, rSquared, outlierCount, dataPoints, distributionInfo } = params;
+  
+  if (config.provider !== 'gemini' && !config.apiKey) {
+    throw new Error(`请先配置 ${config.provider} API Key`);
+  }
+  
+  const systemPrompt = CORRELATION_ANALYSIS_PROMPT.systemPrompt;
+  const promptPayload = CORRELATION_ANALYSIS_PROMPT.userPrompt
+    .replace(/{{corrX}}/g, corrX)
+    .replace(/{{corrY}}/g, corrY)
+    .replace(/{{dataPoints}}/g, dataPoints)
+    .replace(/{{pearsonR}}/g, pearsonR !== null ? pearsonR.toFixed(3) : 'N/A')
+    .replace(/{{spearmanR}}/g, spearmanR !== null ? spearmanR.toFixed(3) : 'N/A')
+    .replace(/{{slope}}/g, slope !== null ? slope.toFixed(4) : 'N/A')
+    .replace(/{{rSquared}}/g, rSquared !== null ? rSquared.toFixed(3) : 'N/A')
+    .replace(/{{outlierCount}}/g, outlierCount)
+    .replace(/{{distributionInfo}}/g, distributionInfo || '无特殊分布特征');
+  
+  try {
+    let text = '';
+    
+    if (config.provider === 'gemini') {
+      const response = await fetchWithTimeout(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${config.apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptPayload }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] }
+          })
+        }
+      );
+      
+      if (response.status === 401) {
+        throw new Error("API Key 无效或未授权 (401错误)。请点击配置重新填入。");
+      }
+      if (!response.ok) {
+        throw new Error(`Gemini API Error: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    } else {
+      const url = `${config.baseUrl.replace(/\/$/, '')}/chat/completions`;
+      const response = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: promptPayload }
           ],
           temperature: 0.7

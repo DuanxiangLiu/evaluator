@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { Scale, TrendingUp, TrendingDown, Minus, Target, Award, Settings2, Check, AlertCircle, Info } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartLegend } from '../common/ChartContainer';
@@ -101,7 +102,7 @@ const QoRSimulator = ({
           </div>
           <div className="text-center">
             <p className="font-semibold text-gray-500">请先加载数据</p>
-            <p className="text-sm text-gray-400 mt-1">以使用 QoR 综合评估模拟器</p>
+            <p className="text-sm text-gray-400 mt-1">以使用 QoR 多目标权重评估</p>
           </div>
         </div>
       </ChartContainer>
@@ -115,13 +116,13 @@ const QoRSimulator = ({
   return (
     <ChartContainer>
       <ChartHeader
-        title="QoR 综合评估模拟器"
+        title="QoR 多目标权重评估"
         variant="primary"
         icon={Scale}
         helpContent={
           <div className="space-y-3">
             <div>
-              <h3 className="font-bold text-indigo-400 text-sm mb-2">QoR 综合评估模拟器</h3>
+              <h3 className="font-bold text-indigo-400 text-sm mb-2">QoR 多目标权重评估</h3>
               <p className="text-gray-300 text-xs mb-2">
                 QoR（Quality of Results）综合评估帮助您根据实际需求，对不同指标赋予不同权重，得出算法的综合得分排名。
               </p>
@@ -314,6 +315,21 @@ const QoRSimulator = ({
       ]} />
     </ChartContainer>
   );
+};
+
+QoRSimulator.propTypes = {
+  allMetricsStats: PropTypes.arrayOf(PropTypes.shape({
+    metric: PropTypes.string.isRequired,
+    stats: PropTypes.object
+  })).isRequired,
+  availableMetrics: PropTypes.arrayOf(PropTypes.string).isRequired,
+  availableAlgos: PropTypes.arrayOf(PropTypes.string).isRequired,
+  baseAlgo: PropTypes.string.isRequired,
+  compareAlgo: PropTypes.string,
+  qorWeights: PropTypes.objectOf(PropTypes.number).isRequired,
+  setQorWeights: PropTypes.func.isRequired,
+  parsedData: PropTypes.arrayOf(PropTypes.object).isRequired,
+  selectedCases: PropTypes.object.isRequired
 };
 
 export default QoRSimulator;

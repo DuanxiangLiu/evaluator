@@ -8,6 +8,154 @@ export const normalCDF = (x) => {
   return x > 0 ? 1 - p : p;
 };
 
+export const calculatePearsonCorrelation = (x, y) => {
+  const n = x.length;
+  if (n !== y.length || n < 2) return null;
+  
+  const validPairs = [];
+  for (let i = 0; i < n; i++) {
+    if (x[i] != null && y[i] != null && !isNaN(x[i]) && !isNaN(y[i])) {
+      validPairs.push([x[i], y[i]]);
+    }
+  }
+  
+  if (validPairs.length < 2) return null;
+  
+  const validX = validPairs.map(p => p[0]);
+  const validY = validPairs.map(p => p[1]);
+  const m = validPairs.length;
+  
+  const sumX = validX.reduce((a, b) => a + b, 0);
+  const sumY = validY.reduce((a, b) => a + b, 0);
+  const sumXY = validX.reduce((acc, xi, i) => acc + xi * validY[i], 0);
+  const sumX2 = validX.reduce((acc, xi) => acc + xi * xi, 0);
+  const sumY2 = validY.reduce((acc, yi) => acc + yi * yi, 0);
+  
+  const numerator = m * sumXY - sumX * sumY;
+  const denominator = Math.sqrt((m * sumX2 - sumX * sumX) * (m * sumY2 - sumY * sumY));
+  
+  if (denominator === 0) return 0;
+  
+  const r = numerator / denominator;
+  return Math.max(-1, Math.min(1, r));
+};
+
+export const calculateSpearmanCorrelation = (x, y) => {
+  const n = x.length;
+  if (n !== y.length || n < 2) return null;
+  
+  const validPairs = [];
+  for (let i = 0; i < n; i++) {
+    if (x[i] != null && y[i] != null && !isNaN(x[i]) && !isNaN(y[i])) {
+      validPairs.push([x[i], y[i]]);
+    }
+  }
+  
+  if (validPairs.length < 2) return null;
+  
+  const assignRanks = (arr) => {
+    const sorted = arr.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v);
+    const ranks = new Array(arr.length);
+    let i = 0;
+    while (i < sorted.length) {
+      let j = i;
+      while (j < sorted.length - 1 && sorted[j].v === sorted[j + 1].v) {
+        j++;
+      }
+      const avgRank = (i + j) / 2 + 1;
+      for (let k = i; k <= j; k++) {
+        ranks[sorted[k].i] = avgRank;
+      }
+      i = j + 1;
+    }
+    return ranks;
+  };
+  
+  const validX = validPairs.map(p => p[0]);
+  const validY = validPairs.map(p => p[1]);
+  
+  const ranksX = assignRanks(validX);
+  const ranksY = assignRanks(validY);
+  
+  return calculatePearsonCorrelation(ranksX, ranksY);
+};
+
+export const calculateLinearRegression = (x, y) => {
+  const n = x.length;
+  if (n !== y.length || n < 2) return null;
+  
+  const validPairs = [];
+  for (let i = 0; i < n; i++) {
+    if (x[i] != null && y[i] != null && !isNaN(x[i]) && !isNaN(y[i])) {
+      validPairs.push([x[i], y[i]]);
+    }
+  }
+  
+  if (validPairs.length < 2) return null;
+  
+  const validX = validPairs.map(p => p[0]);
+  const validY = validPairs.map(p => p[1]);
+  const m = validPairs.length;
+  
+  const sumX = validX.reduce((a, b) => a + b, 0);
+  const sumY = validY.reduce((a, b) => a + b, 0);
+  const sumXY = validX.reduce((acc, xi, i) => acc + xi * validY[i], 0);
+  const sumX2 = validX.reduce((acc, xi) => acc + xi * xi, 0);
+  
+  const denominator = m * sumX2 - sumX * sumX;
+  if (denominator === 0) return null;
+  
+  const slope = (m * sumXY - sumX * sumY) / denominator;
+  const intercept = (sumY - slope * sumX) / m;
+  
+  const meanY = sumY / m;
+  let ssTotal = 0, ssResidual = 0;
+  for (let i = 0; i < m; i++) {
+    const predicted = slope * validX[i] + intercept;
+    ssTotal += Math.pow(validY[i] - meanY, 2);
+    ssResidual += Math.pow(validY[i] - predicted, 2);
+  }
+  
+  const rSquared = ssTotal === 0 ? 0 : 1 - ssResidual / ssTotal;
+  
+  return { slope, intercept, rSquared };
+};
+
+export const detectOutliers = (values, threshold = 1.5) => {
+  if (!values || values.length < 4) return [];
+  
+  const sorted = [...values].filter(v => v != null && !isNaN(v)).sort((a, b) => a - b);
+  const q1 = quantile(sorted, 0.25);
+  const q3 = quantile(sorted, 0.75);
+  const iqr = q3 - q1;
+  
+  const lowerBound = q1 - threshold * iqr;
+  const upperBound = q3 + threshold * iqr;
+  
+  return values.map((v, i) => {
+    if (v == null || isNaN(v)) return null;
+    if (v < lowerBound || v > upperBound) {
+      return { index: i, value: v, type: v < lowerBound ? 'low' : 'high' };
+    }
+    return null;
+  }).filter(Boolean);
+};
+
+export const interpretCorrelation = (r) => {
+  const absR = Math.abs(r);
+  let strength, direction;
+  
+  if (absR >= 0.9) strength = '极强';
+  else if (absR >= 0.7) strength = '强';
+  else if (absR >= 0.5) strength = '中等';
+  else if (absR >= 0.3) strength = '弱';
+  else strength = '极弱或无';
+  
+  direction = r > 0 ? '正相关' : r < 0 ? '负相关' : '无相关';
+  
+  return { strength, direction, absR };
+};
+
 export const calculateWilcoxonPValue = (diffs) => {
   const nonZeroDiffs = diffs.filter(d => d !== 0);
   const n = nonZeroDiffs.length;

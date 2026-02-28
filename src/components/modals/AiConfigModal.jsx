@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { X, Settings, Key, Globe, Cpu, FileText, CheckCircle, AlertCircle, AlertTriangle, Eye, EyeOff, HelpCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Settings, Key, Globe, Cpu, CheckCircle, AlertCircle, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { useFormValidation } from '../../hooks/useInputValidation';
 import { useToast } from '../common/Toast';
 import HelpIcon from '../common/HelpIcon';
@@ -244,7 +244,6 @@ const AiConfigModal = ({ isOpen, config, onConfigChange, onClose }) => {
     validationRules
   );
 
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
@@ -310,7 +309,7 @@ const AiConfigModal = ({ isOpen, config, onConfigChange, onClose }) => {
                     <div>
                       <h3 className="font-bold text-indigo-400 text-sm mb-2">AI 服务配置</h3>
                       <p className="text-gray-300 text-xs mb-2">
-                        配置大语言模型 API，启用智能诊断功能。
+                        配置大语言模型 API，启用 AI 智能诊断功能。
                       </p>
                     </div>
                     
@@ -407,46 +406,17 @@ const AiConfigModal = ({ isOpen, config, onConfigChange, onClose }) => {
             </>
           )}
 
-          <div>
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1"
-            >
-              {showAdvanced ? '隐藏' : '显示'}高级选项
-            </button>
-          </div>
-
-          {showAdvanced && (
-            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-              <TextAreaField
-                label="系统提示词"
-                icon={FileText}
-                value={values.systemPrompt || ''}
-                onChange={(e) => setValue('systemPrompt', e.target.value)}
-                onBlur={() => setTouchedField('systemPrompt')}
-                rows={3}
-                helperText="定义 AI 的角色和行为"
-              />
-
-              <TextAreaField
-                label="用户提示词模板"
-                value={values.userPrompt || ''}
-                onChange={(e) => setValue('userPrompt', e.target.value)}
-                onBlur={() => setTouchedField('userPrompt')}
-                rows={6}
-                isMono
-                helperText="使用 {{变量名}} 插入动态内容"
-              />
-            </div>
-          )}
-
           {hasErrors && Object.values(errors).some(Boolean) && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-700 flex items-center gap-2">
+              <p className="text-sm text-red-700 flex items-center gap-2 mb-2">
                 <AlertCircle className="w-4 h-4" />
-                请修复表单中的错误后再保存
+                请完善以下配置项：
               </p>
+              <ul className="text-sm text-red-600 ml-6 list-disc space-y-1">
+                {errors.apiKey && <li>API Key：{errors.apiKey}</li>}
+                {errors.baseUrl && <li>Base URL：{errors.baseUrl}</li>}
+                {errors.model && <li>模型名称：{errors.model}</li>}
+              </ul>
             </div>
           )}
         </div>

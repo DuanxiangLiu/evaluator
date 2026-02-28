@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Bot, Settings, Zap, Loader2, AlertTriangle, Sparkles, FileText, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+import { Bot, Settings, Zap, Loader2, AlertTriangle, Sparkles, FileText, Clock, AlertCircle, CheckCircle, MessageSquare } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
 import { renderMarkdownText } from '../../services/aiService.jsx';
 
@@ -12,6 +12,7 @@ const AIAnalysisView = ({
   displayInsights,
   aiError,
   setShowAiConfig,
+  setShowPromptConfig,
   handleGenerateAIInsights,
   isOutdated,
   savedTimestamp
@@ -30,10 +31,11 @@ const AIAnalysisView = ({
   const actionButtons = (
     <div className="flex items-center gap-2">
       <button 
-        onClick={() => setShowAiConfig(true)} 
+        onClick={() => setShowPromptConfig(true)} 
         className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white/90 font-medium rounded-lg border border-white/20 flex items-center gap-1.5 transition-all duration-200 text-sm"
+        title="配置提示词模板"
       >
-        <Settings className="w-3.5 h-3.5" /> 配置
+        <MessageSquare className="w-3.5 h-3.5" /> 提示词
       </button>
       <button 
         onClick={handleGenerateAIInsights} 
@@ -52,11 +54,11 @@ const AIAnalysisView = ({
           </>
         ) : aiInsights ? (
           <>
-            <Sparkles className="w-4 h-4" /> 重新诊断
+            <Sparkles className="w-4 h-4" /> AI 重新诊断
           </>
         ) : (
           <>
-            <Zap className="w-4 h-4" /> 生成诊断报告
+            <Zap className="w-4 h-4" /> AI 生成诊断报告
           </>
         )}
       </button>
@@ -67,7 +69,7 @@ const AIAnalysisView = ({
     <div className="h-full flex flex-col p-4">
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col overflow-hidden w-full min-h-0">
         <ChartHeader
-          title="EDA 算法智能诊断"
+          title="EDA 算法 AI 智能诊断"
           variant="primary"
           icon={Bot}
           helpContent={
@@ -101,7 +103,7 @@ const AIAnalysisView = ({
                 <h4 className="font-semibold text-amber-300 text-xs">使用步骤</h4>
                 <ol className="text-gray-300 text-xs space-y-1 list-decimal list-inside">
                   <li>点击「配置」按钮设置 API 密钥</li>
-                  <li>点击「生成诊断报告」开始分析</li>
+                  <li>点击「AI 生成诊断报告」开始分析</li>
                   <li>查看生成的诊断报告</li>
                 </ol>
               </div>
@@ -182,7 +184,7 @@ const AIAnalysisView = ({
             <div className="text-center max-w-md">
               <p className="font-bold text-lg text-gray-600">AI 智能诊断</p>
               <p className="text-sm text-gray-500 mt-2">
-                点击上方「生成诊断报告」按钮，AI 将基于当前统计数据生成专业的算法评估报告
+                点击上方「AI 生成诊断报告」按钮，AI 将基于当前统计数据生成专业的算法评估报告
               </p>
               <div className="mt-4 flex items-center justify-center gap-4 text-xs text-gray-400">
                 <span className="flex items-center gap-1">
@@ -212,6 +214,7 @@ AIAnalysisView.propTypes = {
   displayInsights: PropTypes.string,
   aiError: PropTypes.string,
   setShowAiConfig: PropTypes.func.isRequired,
+  setShowPromptConfig: PropTypes.func.isRequired,
   handleGenerateAIInsights: PropTypes.func.isRequired,
   isOutdated: PropTypes.bool,
   savedTimestamp: PropTypes.number

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { CheckSquare, Square } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartArea, ChartLegend } from '../common/ChartContainer';
@@ -232,6 +233,18 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
       ]} />
     </ChartContainer>
   );
+};
+
+RadarChart.propTypes = {
+  allMetricsStats: PropTypes.arrayOf(PropTypes.shape({
+    metric: PropTypes.string.isRequired,
+    stats: PropTypes.object
+  })).isRequired,
+  availableAlgos: PropTypes.arrayOf(PropTypes.string).isRequired,
+  baseAlgo: PropTypes.string.isRequired,
+  compareAlgo: PropTypes.string,
+  parsedData: PropTypes.arrayOf(PropTypes.object).isRequired,
+  selectedCases: PropTypes.object.isRequired
 };
 
 export default RadarChart;

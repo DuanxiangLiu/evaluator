@@ -1,3 +1,5 @@
+import { logger } from './logger';
+
 const STORAGE_KEYS = {
   SAVED_DATASETS: 'eda_saved_datasets',
   CURRENT_DATASET_ID: 'eda_current_dataset_id'
@@ -13,7 +15,7 @@ export const datasetStorage = {
       const data = localStorage.getItem(STORAGE_KEYS.SAVED_DATASETS);
       return data ? JSON.parse(data) : [];
     } catch (error) {
-      console.error('Error reading saved datasets:', error);
+      logger.error('读取保存的数据集失败:', error);
       return [];
     }
   },
@@ -52,7 +54,7 @@ export const datasetStorage = {
       localStorage.setItem(STORAGE_KEYS.SAVED_DATASETS, JSON.stringify(datasets));
       return newDataset;
     } catch (error) {
-      console.error('Error saving dataset:', error);
+      logger.error('保存数据集失败:', error);
       throw error;
     }
   },
@@ -64,7 +66,7 @@ export const datasetStorage = {
       localStorage.setItem(STORAGE_KEYS.SAVED_DATASETS, JSON.stringify(filtered));
       return true;
     } catch (error) {
-      console.error('Error deleting dataset:', error);
+      logger.error('删除数据集失败:', error);
       return false;
     }
   },
@@ -85,7 +87,7 @@ export const datasetStorage = {
       }
       return null;
     } catch (error) {
-      console.error('Error updating dataset:', error);
+      logger.error('更新数据集失败:', error);
       return null;
     }
   },
@@ -99,7 +101,7 @@ export const datasetStorage = {
       localStorage.removeItem(STORAGE_KEYS.SAVED_DATASETS);
       return true;
     } catch (error) {
-      console.error('Error clearing datasets:', error);
+      logger.error('清空数据集失败:', error);
       return false;
     }
   },
@@ -112,7 +114,7 @@ export const datasetStorage = {
         localStorage.removeItem(STORAGE_KEYS.CURRENT_DATASET_ID);
       }
     } catch (error) {
-      console.error('Error setting current dataset id:', error);
+      logger.error('设置当前数据集ID失败:', error);
     }
   },
 
@@ -120,7 +122,7 @@ export const datasetStorage = {
     try {
       return localStorage.getItem(STORAGE_KEYS.CURRENT_DATASET_ID);
     } catch (error) {
-      console.error('Error getting current dataset id:', error);
+      logger.error('获取当前数据集ID失败:', error);
       return null;
     }
   },
@@ -144,7 +146,7 @@ export const datasetStorage = {
         name: `${dataset.name} (导入)`
       });
     } catch (error) {
-      console.error('Error importing dataset:', error);
+      logger.error('导入数据集失败:', error);
       throw error;
     }
   }
