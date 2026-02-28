@@ -1,6 +1,8 @@
 import React from 'react';
-import HelpIcon from '../common/HelpIcon';
+import PropTypes from 'prop-types';
+import ChartHeader from '../common/ChartHeader';
 import { Circle } from 'lucide-react';
+import { calculateImprovement } from '../../utils/statistics';
 
 const ParetoChart = ({ 
   parsedData, selectedCases, availableMetrics, 
@@ -9,7 +11,52 @@ const ParetoChart = ({
   baseAlgo, compareAlgo,
   onCaseClick
 }) => {
-  if (parsedData.length === 0) return null;
+  if (parsedData.length === 0 || !paretoX || !paretoY) {
+    return (
+      <div className="p-4 h-full flex flex-col" onMouseMove={handleChartMouseMove}>
+        <ChartHeader
+          title="Pareto Front 多维气泡分析"
+          helpContent={
+            <div className="space-y-2">
+              <p className="font-bold text-indigo-400">Pareto Front 多维气泡分析</p>
+              <div className="text-xs space-y-1">
+                <p>帕累托图揭示了目标之间的竞争关系 (Trade-off)。</p>
+                <p><b>右上角 (绿色)：</b>双赢点，两个指标同时优化</p>
+                <p><b>左下角 (红色)：</b>双输点，两个指标同时退化</p>
+                <p><b>气泡大小：</b>可选择第三个指标映射为气泡大小</p>
+                <p><b>双击数据点：</b>打开深度分析模态框</p>
+              </div>
+            </div>
+          }
+          helpWidth="w-[32rem]"
+          helpPosition="right-center"
+        >
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-semibold text-white/80">X:</span>
+            <select value={paretoX} onChange={(e) => setParetoX(e.target.value)} className="font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 text-xs">
+              <option value="">--</option>
+              {availableMetrics.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <span className="font-semibold text-white/80 ml-1">Y:</span>
+            <select value={paretoY} onChange={(e) => setParetoY(e.target.value)} className="font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 text-xs">
+              <option value="">--</option>
+              {availableMetrics.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <span className="font-semibold text-amber-200 ml-1 flex items-center gap-0.5">
+              <Circle className="w-2.5 h-2.5"/>Z:
+            </span>
+            <select value={paretoZ} onChange={(e) => setParetoZ(e.target.value)} className="font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-amber-100 text-amber-800 text-xs">
+              <option value="">关闭</option>
+              {availableMetrics.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+        </ChartHeader>
+        <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-sm p-3 min-h-[300px] flex items-center justify-center text-gray-400 font-medium text-sm">
+          请选择 X 轴与 Y 轴进行分析
+        </div>
+      </div>
+    );
+  }
 
   const validPoints = parsedData.filter(d => selectedCases.has(d.Case)).map(d => {
     const bx = d.raw[paretoX]?.[baseAlgo], cx = d.raw[paretoX]?.[compareAlgo];
@@ -20,10 +67,11 @@ const ParetoChart = ({
 
     if(bx==null || cx==null || by==null || cy==null || (paretoZ && (bz==null||cz==null))) return null;
     
-    let impX = bx===0 ? (cx===0?0:-100) : ((bx-cx)/bx)*100;
-    let impY = by===0 ? (cy===0?0:-100) : ((by-cy)/by)*100;
-    let impZ = 0;
-    if (paretoZ) impZ = bz===0 ? (cz===0?0:-100) : ((bz-cz)/bz)*100;
+    const impX = calculateImprovement(bx, cx);
+    const impY = calculateImprovement(by, cy);
+    const impZ = paretoZ ? calculateImprovement(bz, cz) : 0;
+
+    if (impX === null || impY === null || (paretoZ && impZ === null)) return null;
 
     return { case: d.Case, impX, impY, impZ, raw: d };
   }).filter(p => p !== null);
@@ -31,8 +79,8 @@ const ParetoChart = ({
   const xVals = validPoints.map(p => p.impX);
   const yVals = validPoints.map(p => p.impY);
   
-  const maxAbsX = Math.max(...xVals.map(v => Math.abs(v)), 10) * 1.2;
-  const maxAbsY = Math.max(...yVals.map(v => Math.abs(v)), 10) * 1.2;
+  const maxAbsX = xVals.length > 0 ? Math.max(...xVals.map(v => Math.abs(v)), 10) * 1.2 : 12;
+  const maxAbsY = yVals.length > 0 ? Math.max(...yVals.map(v => Math.abs(v)), 10) * 1.2 : 12;
   const maxAbs = Math.max(maxAbsX, maxAbsY);
 
   let minZ = 0, maxZ = 0;
@@ -56,23 +104,23 @@ const ParetoChart = ({
 
   return (
     <div className="p-4 h-full flex flex-col" onMouseMove={handleChartMouseMove}>
-      <div className="flex justify-between items-center mb-3 bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 rounded-lg shadow-md">
-        <h3 className="font-bold text-white text-sm flex items-center gap-1.5">
-          Pareto Front 多维气泡分析
-          <HelpIcon content={
-            <div className="space-y-2">
-              <p className="font-bold text-indigo-400">Pareto Front 多维气泡分析</p>
-              <div className="text-xs space-y-1">
-                <p>帕累托图揭示了目标之间的竞争关系 (Trade-off)。</p>
-                <p><b>右上角 (绿色)：</b>双赢点，两个指标同时优化</p>
-                <p><b>左下角 (红色)：</b>双输点，两个指标同时退化</p>
-                <p><b>气泡大小：</b>可选择第三个指标映射为气泡大小</p>
-                <p><b>双击数据点：</b>打开深度分析模态框</p>
-              </div>
+      <ChartHeader
+        title="Pareto Front 多维气泡分析"
+        helpContent={
+          <div className="space-y-2">
+            <p className="font-bold text-indigo-400">Pareto Front 多维气泡分析</p>
+            <div className="text-xs space-y-1">
+              <p>帕累托图揭示了目标之间的竞争关系 (Trade-off)。</p>
+              <p><b>右上角 (绿色)：</b>双赢点，两个指标同时优化</p>
+              <p><b>左下角 (红色)：</b>双输点，两个指标同时退化</p>
+              <p><b>气泡大小：</b>可选择第三个指标映射为气泡大小</p>
+              <p><b>双击数据点：</b>打开深度分析模态框</p>
             </div>
-          } tooltipWidth="w-[32rem]" position="right-center" className="w-3.5 h-3.5 text-white/70 hover:text-white"/>
-        </h3>
-        
+          </div>
+        }
+        helpWidth="w-[32rem]"
+        helpPosition="right-center"
+      >
         <div className="flex items-center gap-2 text-xs">
           <span className="font-semibold text-white/80">X:</span>
           <select value={paretoX} onChange={(e) => setParetoX(e.target.value)} className="font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 text-xs">
@@ -92,7 +140,7 @@ const ParetoChart = ({
             {availableMetrics.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
-      </div>
+      </ChartHeader>
 
       <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-sm p-3 min-h-[300px]">
         {paretoX && paretoY && sortedPoints.length > 0 ? (
@@ -182,6 +230,25 @@ const ParetoChart = ({
       </div>
     </div>
   );
+};
+
+ParetoChart.propTypes = {
+  parsedData: PropTypes.array.isRequired,
+  selectedCases: PropTypes.instanceOf(Set).isRequired,
+  availableMetrics: PropTypes.array.isRequired,
+  paretoX: PropTypes.string,
+  paretoY: PropTypes.string,
+  paretoZ: PropTypes.string,
+  setParetoX: PropTypes.func.isRequired,
+  setParetoY: PropTypes.func.isRequired,
+  setParetoZ: PropTypes.func.isRequired,
+  handleChartMouseMove: PropTypes.func.isRequired,
+  hoveredCase: PropTypes.string,
+  setHoveredCase: PropTypes.func.isRequired,
+  setTooltipState: PropTypes.func.isRequired,
+  baseAlgo: PropTypes.string.isRequired,
+  compareAlgo: PropTypes.string.isRequired,
+  onCaseClick: PropTypes.func
 };
 
 export default ParetoChart;

@@ -1,25 +1,23 @@
-const DEFAULT_PROMPTS = {
-  systemPrompt: '你是一位顶级的EDA物理设计与算法评估专家。请基于提供的数据输出结构化的诊断报告，务必将最终推荐结论放在最前面。请使用Markdown排版。',
-  userPrompt: `我正在评估EDA新算法。Baseline = {{baseAlgo}}, Compare = {{compareAlgo}}。
+import { API_TIMEOUT_MS, DEFAULT_LLM_CONFIG } from '../utils/constants';
 
-【焦点指标 ({{activeMetric}}) 异常预警】
-{{badCases}}
-
-【全局多目标表现 (全面权衡)】
-{{allMetricsSummary}}
-
-请按以下结构输出报告：
-### 1. 🏆 最终对比判定
-（明确结论：【推荐采用 {{compareAlgo}}】、【建议保持 {{baseAlgo}}】 或 【需修复重测】）
-
-### 2. 📊 全局 Trade-off 分析
-（总体得失，是否在特定指标间存在拆东墙补西墙？）
-
-### 3. 🚨 异常深潜诊断
-（推测退化陷阱及物理原因）
-
-### 4. 🏢 扩展性评估
-（基于巨型设计评估在大规模 Instance 下的鲁棒性）`
+export const fetchWithTimeout = async (url, options, timeout = API_TIMEOUT_MS) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error(`请求超时 (${timeout / 1000}秒)，请检查网络连接或稍后重试`);
+    }
+    throw error;
+  }
 };
 
 export const generateAIInsights = async (config, baseAlgo, compareAlgo, activeMetric, stats, allMetricsStats, parsedData, selectedCases, metaColumns) => {
@@ -74,14 +72,17 @@ export const generateAIInsights = async (config, baseAlgo, compareAlgo, activeMe
     let text = '';
     
     if (config.provider === 'gemini') {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${config.apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: promptPayload }] }],
-          systemInstruction: { parts: [{ text: config.systemPrompt }] }
-        })
-      });
+      const response = await fetchWithTimeout(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${config.apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptPayload }] }],
+            systemInstruction: { parts: [{ text: config.systemPrompt }] }
+          })
+        }
+      );
       
       if (response.status === 401) {
         throw new Error("API Key 无效或未授权 (401错误)。请点击配置重新填入。");
@@ -94,7 +95,7 @@ export const generateAIInsights = async (config, baseAlgo, compareAlgo, activeMe
       text = result.candidates?.[0]?.content?.parts?.[0]?.text;
     } else {
       const url = `${config.baseUrl.replace(/\/$/, '')}/chat/completions`;
-      const response = await fetch(url, {
+      const response = await fetchWithTimeout(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${config.apiKey}`,
@@ -163,4 +164,4 @@ export const renderMarkdownText = (text) => {
   });
 };
 
-export { DEFAULT_PROMPTS };
+export { DEFAULT_LLM_CONFIG };

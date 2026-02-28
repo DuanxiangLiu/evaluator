@@ -1,6 +1,9 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { X, Search, Box } from 'lucide-react';
 import { getMetricConfig } from '../../services/dataService';
+import { calculateImprovement } from '../../utils/statistics';
+import { CHART_BASE_RADIUS, CHART_MAX_IMPROVEMENT } from '../../utils/constants';
 
 const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetrics, onClose }) => {
   if (!isOpen || !caseData) return null;
@@ -9,7 +12,7 @@ const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetri
     const bVal = caseData.raw[m]?.[baseAlgo];
     const cVal = caseData.raw[m]?.[compareAlgo];
     if (bVal == null || cVal == null) return null;
-    const imp = bVal === 0 ? (cVal === 0 ? 0 : -100) : ((bVal - cVal) / bVal) * 100;
+    const imp = calculateImprovement(bVal, cVal);
     return { metric: m, bVal, cVal, imp };
   }).filter(d => d !== null);
 
@@ -62,8 +65,8 @@ const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetri
                     const N = radarData.length;
                     if (N < 3) return <text x="0" y="0" textAnchor="middle" fill="#9ca3af" fontSize="10">需要至少3个指标</text>;
                     
-                    const baseRadius = 60;
-                    const maxImp = 20;
+                    const baseRadius = CHART_BASE_RADIUS;
+                    const maxImp = CHART_MAX_IMPROVEMENT;
                     const getPoint = (angle, r) => ({ x: r * Math.sin(angle), y: -r * Math.cos(angle) });
 
                     const rings = [0.33, 0.67, 1.0, 1.33];
@@ -166,6 +169,15 @@ const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetri
       </div>
     </div>
   );
+};
+
+DeepDiveModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  caseData: PropTypes.object,
+  baseAlgo: PropTypes.string.isRequired,
+  compareAlgo: PropTypes.string.isRequired,
+  availableMetrics: PropTypes.array.isRequired,
+  onClose: PropTypes.func.isRequired
 };
 
 export default DeepDiveModal;

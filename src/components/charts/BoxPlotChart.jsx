@@ -1,49 +1,45 @@
 import React from 'react';
-import HelpIcon from '../common/HelpIcon';
+import PropTypes from 'prop-types';
+import ChartHeader from '../common/ChartHeader';
+import { calculateImprovement } from '../../utils/statistics';
+import { CHART_Y_PADDING } from '../../utils/constants';
 
 const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, setHoveredCase, setTooltipState, onCaseClick, parsedData }) => {
   if (!stats) return null;
 
-  const yMax = Math.max(Math.abs(stats.maxImp), Math.abs(stats.minImp)) + 5;
+  const yMax = Math.max(Math.abs(stats.maxImp), Math.abs(stats.minImp)) + CHART_Y_PADDING;
   const mapY = (val) => 50 - (val / yMax) * 50;
+
+  const legendItems = [
+    { color: '#f87171', label: '严重退化' },
+    { color: '#a855f7', label: '显著优化' },
+    { color: '#a5b4fc', label: '正常范围' }
+  ];
 
   return (
     <div className="p-4 h-full flex flex-col justify-center" onMouseMove={handleChartMouseMove}>
       <div className="bg-white p-5 rounded-xl border border-gray-200 max-w-4xl mx-auto w-full shadow-sm">
-        <div className="flex justify-between items-center mb-4 bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 -mx-5 -mt-5 rounded-t-xl">
-          <h3 className="font-bold text-white text-sm flex items-center gap-1.5">
-            改进率分布箱线图
-            <span className="text-xs text-amber-200 bg-amber-500/20 px-2 py-0.5 rounded">{activeMetric}</span>
-            <HelpIcon content={
-              <div className="space-y-2">
-                <p className="font-bold text-indigo-400">改进率分布箱线图</p>
-                <div className="text-xs space-y-1">
-                  <p>箱线图直观展示了单个指标在所有 Case 中的宏观分布情况。</p>
-                  <p><b>蓝色阴影区 (IQR)：</b>覆盖 50% 的核心密集区，从 Q1 到 Q3</p>
-                  <p><b>虚线 (中位数)：</b>所有 Case 改进率的中位数</p>
-                  <p><b>零线：</b>改进率为 0% 的基准线</p>
-                  <p><b>紫色点：</b>显著优化离群点</p>
-                  <p><b>红色点：</b>严重退化离群点</p>
-                  <p><b>双击数据点：</b>打开深度分析模态框</p>
-                </div>
+        <ChartHeader
+          title="改进率分布箱线图"
+          metric={activeMetric}
+          legendItems={legendItems}
+          helpContent={
+            <div className="space-y-2">
+              <p className="font-bold text-indigo-400">改进率分布箱线图</p>
+              <div className="text-xs space-y-1">
+                <p>箱线图直观展示了单个指标在所有 Case 中的宏观分布情况。</p>
+                <p><b>蓝色阴影区 (IQR)：</b>覆盖 50% 的核心密集区，从 Q1 到 Q3</p>
+                <p><b>虚线 (中位数)：</b>所有 Case 改进率的中位数</p>
+                <p><b>零线：</b>改进率为 0% 的基准线</p>
+                <p><b>紫色点：</b>显著优化离群点</p>
+                <p><b>红色点：</b>严重退化离群点</p>
+                <p><b>双击数据点：</b>打开深度分析模态框</p>
               </div>
-            } tooltipWidth="w-[36rem]" position="right-center" className="w-3.5 h-3.5 text-white/70 hover:text-white"/>
-          </h3>
-          <div className="flex items-center gap-3 text-xs">
-            <span className="flex items-center gap-1 text-white/80">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-              <span>严重退化</span>
-            </span>
-            <span className="flex items-center gap-1 text-white/80">
-              <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
-              <span>显著优化</span>
-            </span>
-            <span className="flex items-center gap-1 text-white/80">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-300"></span>
-              <span>正常范围</span>
-            </span>
-          </div>
-        </div>
+            </div>
+          }
+          helpWidth="w-[36rem]"
+          helpPosition="right-center"
+        />
 
         <div className="flex">
           <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-bold text-gray-500 w-10">
@@ -122,6 +118,17 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
       </div>
     </div>
   );
+};
+
+BoxPlotChart.propTypes = {
+  stats: PropTypes.object,
+  activeMetric: PropTypes.string.isRequired,
+  handleChartMouseMove: PropTypes.func.isRequired,
+  hoveredCase: PropTypes.string,
+  setHoveredCase: PropTypes.func.isRequired,
+  setTooltipState: PropTypes.func.isRequired,
+  onCaseClick: PropTypes.func,
+  parsedData: PropTypes.array
 };
 
 export default BoxPlotChart;

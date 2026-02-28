@@ -20,3 +20,15 @@ export const formatNumber = (value, decimals = 2) => {
   if (isNaN(num)) return '-';
   return num.toFixed(decimals);
 };
+
+export const formatPValue = (value) => {
+  if (value == null) return '-';
+  const num = Number(value);
+  if (isNaN(num)) return '-';
+  return num.toFixed(3);
+};
+
+export const formatConfidenceInterval = (lower, upper) => {
+  if (lower == null || upper == null) return '-';
+  return `[${lower.toFixed(1)}%, ${upper.toFixed(1)}%]`;
+};

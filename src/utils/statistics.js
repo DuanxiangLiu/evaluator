@@ -1,7 +1,10 @@
+import { NORMAL_CDF_COEFFICIENTS, Z_SCORE_95_PERCENT, OUTLIER_MULTIPLIER } from './constants';
+
 export const normalCDF = (x) => {
-  const t = 1 / (1 + 0.2316419 * Math.abs(x));
-  const d = 0.3989423 * Math.exp(-x * x / 2);
-  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  const { T_COEFFICIENT, D_COEFFICIENT, P_COEFFICIENTS } = NORMAL_CDF_COEFFICIENTS;
+  const t = 1 / (1 + T_COEFFICIENT * Math.abs(x));
+  const d = D_COEFFICIENT * Math.exp(-x * x / 2);
+  const p = d * t * (P_COEFFICIENTS[0] + t * (P_COEFFICIENTS[1] + t * (P_COEFFICIENTS[2] + t * (P_COEFFICIENTS[3] + t * P_COEFFICIENTS[4]))));
   return x > 0 ? 1 - p : p;
 };
 
@@ -42,21 +45,11 @@ export const quantile = (arr, q) => {
   return sorted[base];
 };
 
-export const formatIndustrialNumber = (val) => {
-  if (val === null || val === undefined || val === '') return val;
-  const num = Number(val);
-  if (isNaN(num)) return val;
-  if (Math.abs(num) >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-  if (Math.abs(num) >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-  return num.toString();
-};
-
 export const calculateImprovement = (baseVal, compareVal) => {
   if (baseVal == null || compareVal == null) return null;
   if (baseVal === 0 && compareVal === 0) return 0;
-  if (baseVal === 0 && compareVal > 0) return -100;
-  if (baseVal > 0) return ((baseVal - compareVal) / baseVal) * 100;
-  return null;
+  if (baseVal === 0) return -100;
+  return ((baseVal - compareVal) / baseVal) * 100;
 };
 
 export const calculateRatio = (baseVal, compareVal) => {
@@ -64,4 +57,20 @@ export const calculateRatio = (baseVal, compareVal) => {
   if (baseVal === 0 && compareVal === 0) return 1;
   if (baseVal === 0) return 2;
   return compareVal / baseVal;
+};
+
+export const calculateOutlierBounds = (q1, q3) => {
+  const iqr = q3 - q1;
+  return {
+    lower: q1 - OUTLIER_MULTIPLIER * iqr,
+    upper: q3 + OUTLIER_MULTIPLIER * iqr
+  };
+};
+
+export const calculateConfidenceInterval = (mean, variance, n) => {
+  const ciDelta = Z_SCORE_95_PERCENT * (Math.sqrt(variance) / Math.sqrt(n));
+  return {
+    lower: mean - ciDelta,
+    upper: mean + ciDelta
+  };
 };

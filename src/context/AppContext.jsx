@@ -2,38 +2,12 @@ import React, { createContext, useContext, useState, useMemo, useCallback, useEf
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { parseCSV, computeStatistics, updateDataValue, dataToCSVString } from '../services/dataService';
 import { generateDefaultDataset } from '../utils/dataGenerator';
+import { DEFAULT_LLM_CONFIG } from '../utils/constants';
+import { calculateImprovement } from '../utils/statistics';
 
 const AppContext = createContext(null);
 
 const DEFAULT_CSV = generateDefaultDataset();
-
-const DEFAULT_LLM_CONFIG = {
-  provider: 'deepseek',
-  apiKey: '',
-  baseUrl: 'https://api.deepseek.com/v1',
-  model: 'deepseek-chat',
-  systemPrompt: '你是一位顶级的EDA物理设计与算法评估专家。请基于提供的数据输出结构化的诊断报告，务必将最终推荐结论放在最前面。请使用Markdown排版。',
-  userPrompt: `我正在评估EDA新算法。Baseline = {{baseAlgo}}, Compare = {{compareAlgo}}。
-
-【焦点指标 ({{activeMetric}}) 异常预警】
-{{badCases}}
-
-【全局多目标表现 (全面权衡)】
-{{allMetricsSummary}}
-
-请按以下结构输出报告：
-### 1. 🏆 最终对比判定
-（明确结论：【推荐采用 {{compareAlgo}}】、【建议保持 {{baseAlgo}}】 或 【需修复重测】）
-
-### 2. 📊 全局 Trade-off 分析
-（总体得失，是否在特定指标间存在拆东墙补西墙？）
-
-### 3. 🚨 异常深潜诊断
-（推测退化陷阱及物理原因）
-
-### 4. 🏢 扩展性评估
-（基于巨型设计评估在大规模 Instance 下的鲁棒性）`
-};
 
 export const AppProvider = ({ children }) => {
   const [csvInput, setCsvInput] = useLocalStorage('eda_csv_input', DEFAULT_CSV);
@@ -102,11 +76,20 @@ export const AppProvider = ({ children }) => {
     setAiInsights('');
     setDisplayInsights('');
     setAiError('');
-  }, [csvInput, baseAlgo, compareAlgo, activeMetric, paretoX, paretoY, paretoZ]);
+  }, [csvInput, baseAlgo, compareAlgo, activeMetric]);
 
   useEffect(() => {
     runAnalysis();
   }, []);
+
+  useEffect(() => {
+    if (availableMetrics.length > 0 && !paretoX) {
+      setParetoX(availableMetrics[0]);
+    }
+    if (availableMetrics.length > 1 && !paretoY) {
+      setParetoY(availableMetrics[1] || availableMetrics[0]);
+    }
+  }, [availableMetrics, paretoX, paretoY]);
 
   useEffect(() => {
     if (availableMetrics.length > 0) {
@@ -162,15 +145,8 @@ export const AppProvider = ({ children }) => {
         const bBase = b.raw[activeMetric]?.[baseAlgo];
         const bComp = b.raw[activeMetric]?.[compareAlgo];
         
-        const getImp = (bv, cv) => {
-          if (bv == null || cv == null) return -Infinity;
-          if (bv === 0 && cv === 0) return 0;
-          if (bv === 0 && cv > 0) return -100;
-          return ((bv - cv) / bv) * 100;
-        };
-        
-        aVal = getImp(aBase, aComp);
-        bVal = getImp(bBase, bComp);
+        aVal = aBase == null || aComp == null ? -Infinity : calculateImprovement(aBase, aComp) ?? -Infinity;
+        bVal = bBase == null || bComp == null ? -Infinity : calculateImprovement(bBase, bComp) ?? -Infinity;
       } else {
         aVal = a.raw[activeMetric]?.[sortConfig.key] == null ? -Infinity : a.raw[activeMetric][sortConfig.key];
         bVal = b.raw[activeMetric]?.[sortConfig.key] == null ? -Infinity : b.raw[activeMetric][sortConfig.key];
@@ -184,6 +160,11 @@ export const AppProvider = ({ children }) => {
     return sortableItems;
   }, [parsedData, sortConfig, activeMetric, baseAlgo, compareAlgo, metaColumns]);
 
+  const validCasesMap = useMemo(() => {
+    if (!stats?.validCases) return new Map();
+    return new Map(stats.validCases.map(v => [v.Case, v]));
+  }, [stats]);
+
   const filteredTableData = useMemo(() => {
     return sortedTableData.filter(d => {
       const isChecked = selectedCases.has(d.Case);
@@ -191,21 +172,20 @@ export const AppProvider = ({ children }) => {
       const cVal = d.raw[activeMetric]?.[compareAlgo];
       const isNull = bVal == null || cVal == null;
       
-      let imp = 0;
-      let outlierType = 'normal';
-      
-      if (!isNull) {
-        imp = bVal === 0 ? (cVal === 0 ? 0 : -100) : ((bVal - cVal) / bVal) * 100;
-        const validMatch = stats?.validCases.find(v => v.Case === d.Case);
-        if (validMatch) outlierType = validMatch.outlierType;
+      if (isNull || !isChecked) {
+        return tableFilter === 'filtered';
       }
+      
+      const imp = calculateImprovement(bVal, cVal);
+      const validMatch = validCasesMap.get(d.Case);
+      const outlierType = validMatch?.outlierType || 'normal';
 
-      if (tableFilter === 'degraded') return !isNull && imp < 0;
+      if (tableFilter === 'degraded') return imp != null && imp < 0;
       if (tableFilter === 'outlier') return outlierType === 'positive' || outlierType === 'negative';
-      if (tableFilter === 'filtered') return isNull || !isChecked;
+      if (tableFilter === 'filtered') return false;
       return true;
     });
-  }, [sortedTableData, tableFilter, activeMetric, baseAlgo, compareAlgo, stats, selectedCases]);
+  }, [sortedTableData, tableFilter, activeMetric, baseAlgo, compareAlgo, validCasesMap, selectedCases]);
 
   const toggleCase = useCallback((caseName) => {
     setSelectedCases(prev => {
@@ -287,6 +267,7 @@ export const AppProvider = ({ children }) => {
     allMetricsStats,
     sortedTableData,
     filteredTableData,
+    validCasesMap,
     runAnalysis,
     handleSort,
     toggleCase,

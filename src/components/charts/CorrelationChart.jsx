@@ -1,6 +1,8 @@
 import React from 'react';
-import HelpIcon from '../common/HelpIcon';
+import PropTypes from 'prop-types';
+import ChartHeader from '../common/ChartHeader';
 import { formatIndustrialNumber } from '../../utils/formatters';
+import { calculateImprovement } from '../../utils/statistics';
 
 const CorrelationChart = ({ 
   parsedData, selectedCases, metaColumns, availableMetrics, 
@@ -18,7 +20,7 @@ const CorrelationChart = ({
       const bxX = d.raw[corrX]?.[baseAlgo];
       const cxX = d.raw[corrX]?.[compareAlgo];
       if (bxX == null || cxX == null) return null;
-      xValRaw = bxX === 0 ? (cxX === 0 ? 0 : -100) : ((bxX - cxX) / bxX) * 100;
+      xValRaw = calculateImprovement(bxX, cxX);
     } else {
       xValRaw = d.meta[corrX];
     }
@@ -29,18 +31,19 @@ const CorrelationChart = ({
     const bx = d.raw[corrY]?.[baseAlgo], cx = d.raw[corrY]?.[compareAlgo];
     if(bx==null || cx==null) return null;
     
-    let impY = bx===0 ? (cx===0?0:-100) : ((bx-cx)/bx)*100;
+    const impY = calculateImprovement(bx, cx);
+    if (impY === null) return null;
     return { case: d.Case, xVal, impY, bx, cx, raw: d };
   }).filter(p => p !== null);
 
   const xVals = points.map(p => p.xVal);
   const yVals = points.map(p => p.impY);
   
-  const minX = Math.min(...xVals);
-  const maxX = Math.max(...xVals);
+  const minX = xVals.length > 0 ? Math.min(...xVals) : 0;
+  const maxX = xVals.length > 0 ? Math.max(...xVals) : 1;
   const xRange = maxX - minX || 1;
   
-  const maxAbsY = Math.max(...yVals.map(v => Math.abs(v)), 10) * 1.2;
+  const maxAbsY = yVals.length > 0 ? Math.max(...yVals.map(v => Math.abs(v)), 10) * 1.2 : 12;
 
   const mapX = (val) => ((val - minX) / xRange) * 90 + 5;
   const mapY = (val) => 50 - (val / maxAbsY) * 45;
@@ -62,22 +65,22 @@ const CorrelationChart = ({
 
   return (
     <div className="p-4 h-full flex flex-col" onMouseMove={handleChartMouseMove}>
-      <div className="flex justify-between items-center mb-3 bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 rounded-lg shadow-md">
-        <h3 className="font-bold text-white text-sm flex items-center gap-1.5">
-          特征相关性散点分析
-          <HelpIcon content={
-            <div className="space-y-2">
-              <p className="font-bold text-indigo-400">特征相关性散点分析</p>
-              <div className="text-xs space-y-1">
-                <p>发现深层物理规律：</p>
-                <p><b>属性 vs 指标：</b>如规模越大时序是否越差？</p>
-                <p><b>指标 vs 指标：</b>如 HPWL 优化是否必然伴随功耗上升？</p>
-                <p><b>双击数据点：</b>打开深度分析模态框</p>
-              </div>
+      <ChartHeader
+        title="特征相关性散点分析"
+        helpContent={
+          <div className="space-y-2">
+            <p className="font-bold text-indigo-400">特征相关性散点分析</p>
+            <div className="text-xs space-y-1">
+              <p>发现深层物理规律：</p>
+              <p><b>属性 vs 指标：</b>如规模越大时序是否越差？</p>
+              <p><b>指标 vs 指标：</b>如 HPWL 优化是否必然伴随功耗上升？</p>
+              <p><b>双击数据点：</b>打开深度分析模态框</p>
             </div>
-          } tooltipWidth="w-[32rem]" position="right-center" className="w-3.5 h-3.5 text-white/70 hover:text-white"/>
-        </h3>
-        
+          </div>
+        }
+        helpWidth="w-[32rem]"
+        helpPosition="right-center"
+      >
         <div className="flex items-center gap-2 text-xs">
           <span className="font-semibold text-white/80">X:</span>
           <select value={corrX} onChange={(e) => setCorrX(e.target.value)} className="font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 text-xs">
@@ -93,7 +96,7 @@ const CorrelationChart = ({
             {availableMetrics.map(m => <option key={`ty-${m}`} value={m}>{m}</option>)}
           </select>
         </div>
-      </div>
+      </ChartHeader>
 
       <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-sm p-3 min-h-[300px]">
         {corrX && corrY && points.length > 0 ? (
@@ -174,6 +177,24 @@ const CorrelationChart = ({
       </div>
     </div>
   );
+};
+
+CorrelationChart.propTypes = {
+  parsedData: PropTypes.array.isRequired,
+  selectedCases: PropTypes.instanceOf(Set).isRequired,
+  metaColumns: PropTypes.array.isRequired,
+  availableMetrics: PropTypes.array.isRequired,
+  corrX: PropTypes.string,
+  corrY: PropTypes.string,
+  setCorrX: PropTypes.func.isRequired,
+  setCorrY: PropTypes.func.isRequired,
+  handleChartMouseMove: PropTypes.func.isRequired,
+  hoveredCase: PropTypes.string,
+  setHoveredCase: PropTypes.func.isRequired,
+  setTooltipState: PropTypes.func.isRequired,
+  baseAlgo: PropTypes.string.isRequired,
+  compareAlgo: PropTypes.string.isRequired,
+  onCaseClick: PropTypes.func
 };
 
 export default CorrelationChart;
