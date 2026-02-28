@@ -1,8 +1,8 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { 
   FileText, Play, ChevronUp, ChevronDown, Copy, Check, 
   ChevronLeft, ChevronRight, Loader2, CheckCircle, 
-  AlertCircle, Pencil, Plus, Trash2
+  AlertCircle, Pencil, Plus, Trash2, Search, X, ArrowUpDown, ArrowUp, ArrowDown
 } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
 import ValidationResultPanel, { CompactValidationStatus } from '../common/ValidationResultPanel';
@@ -10,6 +10,7 @@ import SavedDataSelector from '../common/SavedDataSelector';
 import { useInputValidation, useFileUpload, INPUT_STATUS } from '../../hooks/useInputValidation';
 import { useToast } from '../common/Toast';
 import { getValidationSuggestions, detectDelimiter } from '../../utils/validationUtils';
+import { PREVIEW_TABLE_STYLES, getPreviewRowStyle } from '../../utils/tableStyles';
 
 const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const [isVisible, setIsVisible] = useState(true);
@@ -19,10 +20,17 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const [editingCell, setEditingCell] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [isEditingMode, setIsEditingMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [lastAnalyzedCsv, setLastAnalyzedCsv] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const rowsPerPage = 20;
   const editInputRef = useRef(null);
+  const searchInputRef = useRef(null);
 
   const toast = useToast();
+
+  const dataChanged = lastAnalyzedCsv !== null && csvInput !== lastAnalyzedCsv;
 
   const {
     status: validationStatus,
@@ -45,6 +53,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
       onCsvChange(content);
       const result = validateImmediate(content);
       if (result.valid) {
+        setLastAnalyzedCsv(content);
         onRunAnalysis(content);
         if (result.warnings.length > 0) {
           toast.warning('数据验证通过', `发现 ${result.warnings.length} 个警告`);
@@ -67,7 +76,10 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const handleLoadDataset = useCallback((csvData) => {
     onCsvChange(csvData);
     const result = validateImmediate(csvData);
-    if (result.valid) onRunAnalysis(csvData);
+    if (result.valid) {
+      setLastAnalyzedCsv(csvData);
+      onRunAnalysis(csvData);
+    }
     setCurrentPage(1);
   }, [onCsvChange, onRunAnalysis, validateImmediate]);
 
@@ -80,6 +92,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
       onCsvChange(content);
       const result = validateImmediate(content);
       if (result.valid) {
+        setLastAnalyzedCsv(content);
         onRunAnalysis(content);
         toast.success('上传成功', `${result.stats?.totalRows || 0} 行数据`);
       } else {
@@ -95,6 +108,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
     onCsvChange(data);
     const result = validateImmediate(data);
     if (result.valid) {
+      setLastAnalyzedCsv(data);
       onRunAnalysis(data);
       toast.success('应用成功', `${result.stats?.totalRows || 0} 行数据`);
     } else {
@@ -118,8 +132,13 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
     }
     const result = validateImmediate(csvInput);
     if (result.valid) {
-      onRunAnalysis();
-      toast.success('分析开始', '正在处理...');
+      setIsAnalyzing(true);
+      setTimeout(() => {
+        setLastAnalyzedCsv(csvInput);
+        onRunAnalysis();
+        setIsAnalyzing(false);
+        toast.success('分析完成', '数据处理完成');
+      }, 300);
     } else {
       setShowValidationPanel(true);
       toast.error('验证失败', '请修复错误后重试');
@@ -192,9 +211,70 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
     }
   }, [editingCell]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sortConfig]);
+
   const { headers, rows } = parseCSV(csvInput);
-  const totalPages = Math.ceil(rows.length / rowsPerPage);
-  const displayRows = rows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+  const handleSort = useCallback((columnIdx) => {
+    setSortConfig(prev => {
+      if (prev.key === columnIdx) {
+        return { key: columnIdx, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key: columnIdx, direction: 'asc' };
+    });
+  }, []);
+
+  const filteredAndSortedRows = useMemo(() => {
+    let result = rows.map((row, idx) => ({ row, originalIdx: idx }));
+
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      result = result.filter(({ row }) => 
+        row.some(cell => cell.toLowerCase().includes(term))
+      );
+    }
+
+    if (sortConfig.key !== null) {
+      result.sort((a, b) => {
+        const aVal = a.row[sortConfig.key] || '';
+        const bVal = b.row[sortConfig.key] || '';
+        const aNum = parseFloat(aVal);
+        const bNum = parseFloat(bVal);
+        
+        let comparison = 0;
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          comparison = aNum - bNum;
+        } else {
+          comparison = aVal.localeCompare(bVal, 'zh-CN');
+        }
+        
+        return sortConfig.direction === 'asc' ? comparison : -comparison;
+      });
+    }
+
+    return result;
+  }, [rows, searchTerm, sortConfig]);
+
+  const totalPages = Math.ceil(filteredAndSortedRows.length / rowsPerPage);
+  const displayRows = filteredAndSortedRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
+  const getSortIcon = (columnIdx) => {
+    if (sortConfig.key !== columnIdx) {
+      return <ArrowUpDown className="w-3 h-3 text-gray-300 inline ml-1 opacity-50 cursor-pointer hover:opacity-100" />;
+    }
+    return sortConfig.direction === 'asc' 
+      ? <ArrowUp className="w-3 h-3 text-indigo-600 inline ml-1" /> 
+      : <ArrowDown className="w-3 h-3 text-indigo-600 inline ml-1" />;
+  };
+
+  const clearSearch = useCallback(() => {
+    setSearchTerm('');
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, []);
 
   const getStatusIcon = () => {
     switch (validationStatus) {
@@ -253,11 +333,61 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
 
           {csvInput && headers.length > 0 && (
             <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <div className="bg-gray-50 px-3 py-1.5 border-b border-gray-200 flex items-center justify-between">
-                <span className="text-xs text-gray-500">预览 第{currentPage}/{totalPages || 1}页</span>
+              <div className={PREVIEW_TABLE_STYLES.toolbar}>
                 <div className="flex items-center gap-2">
-                  <button onClick={handleRunAnalysis} disabled={!csvInput || !csvInput.trim() || !isValidData} className="text-xs px-3 py-1 rounded font-bold bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 disabled:bg-gray-300 disabled:from-gray-300 disabled:to-gray-300 shadow-sm flex items-center gap-1">
-                    <Play className="w-3 h-3" />运行分析
+                  <span className="text-xs text-gray-500">预览 第{currentPage}/{totalPages || 1}页</span>
+                  <span className="text-xs text-gray-400">|</span>
+                  <span className="text-xs text-gray-500">
+                    {searchTerm ? `搜索结果: ${filteredAndSortedRows.length}/${rows.length} 条` : `共 ${rows.length} 条`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="搜索..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="text-xs pl-6 pr-6 py-1 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 w-32"
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={clearSearch}
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  <button 
+                    onClick={handleRunAnalysis} 
+                    disabled={!csvInput || !csvInput.trim() || !isValidData || isAnalyzing} 
+                    className={`text-xs px-4 py-1.5 rounded-lg font-bold shadow-md flex items-center gap-1.5 transition-all duration-200 ${
+                      isAnalyzing 
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-blue-200 cursor-wait' 
+                        : dataChanged 
+                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 animate-pulse shadow-orange-200' 
+                          : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-emerald-200'
+                    } disabled:bg-gray-300 disabled:from-gray-300 disabled:to-gray-300 disabled:shadow-none disabled:animate-none`}
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        数据分析中
+                      </>
+                    ) : dataChanged ? (
+                      <>
+                        <Play className="w-3.5 h-3.5" />
+                        数据待分析
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        数据已分析
+                      </>
+                    )}
                   </button>
                   <button onClick={() => setIsEditingMode(!isEditingMode)} className={`text-xs px-2 py-0.5 rounded ${isEditingMode ? 'bg-indigo-600 text-white' : 'text-indigo-600 hover:bg-indigo-50'}`}>
                     <Pencil className="w-3 h-3 inline mr-1" />{isEditingMode ? '完成' : '编辑'}
@@ -269,44 +399,59 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
                 </div>
               </div>
               {isEditingMode && (
-                <div className="bg-indigo-50 px-3 py-1.5 border-b border-indigo-100 flex items-center gap-2">
+                <div className={PREVIEW_TABLE_STYLES.editToolbar}>
                   <button onClick={() => handleAddRow('start')} className="text-xs px-2 py-0.5 bg-white border border-indigo-200 text-indigo-700 rounded hover:bg-indigo-100"><Plus className="w-3 h-3 inline" /> 开头添加</button>
                   <button onClick={() => handleAddRow('end')} className="text-xs px-2 py-0.5 bg-white border border-indigo-200 text-indigo-700 rounded hover:bg-indigo-100"><Plus className="w-3 h-3 inline" /> 末尾添加</button>
                   <span className="text-[10px] text-indigo-500">双击编辑 | Enter保存 | Esc取消</span>
                 </div>
               )}
-              <div className="overflow-x-auto max-h-[250px]">
-                <table className="min-w-full text-xs">
-                  <thead className="bg-indigo-50 text-indigo-900 sticky top-0">
+              <div className={PREVIEW_TABLE_STYLES.wrapper}>
+                <table className={PREVIEW_TABLE_STYLES.table}>
+                  <thead className={PREVIEW_TABLE_STYLES.thead}>
                     <tr>
                       {isEditingMode && <th className="px-2 py-1.5 w-8 border-r border-indigo-100">操作</th>}
-                      {headers.map((h, i) => <th key={i} className="px-2 py-1.5 whitespace-nowrap border-r border-indigo-100 last:border-r-0">{h}</th>)}
+                      {headers.map((h, i) => (
+                        <th 
+                          key={i} 
+                          className={`${PREVIEW_TABLE_STYLES.theadCell} cursor-pointer select-none hover:bg-indigo-100`}
+                          onClick={() => handleSort(i)}
+                        >
+                          {h} {getSortIcon(i)}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {displayRows.map((row, rowIdx) => (
-                      <tr key={rowIdx} className={`hover:bg-indigo-50/30 ${isEditingMode ? 'group' : ''}`}>
-                        {isEditingMode && (
-                          <td className="px-2 py-1.5 border-r border-gray-100">
-                            <button onClick={() => handleDeleteRow(rowIdx)} className="p-0.5 text-red-500 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100"><Trash2 className="w-3 h-3" /></button>
-                          </td>
-                        )}
-                        {row.map((cell, cellIdx) => {
-                          const actualRowIdx = (currentPage - 1) * rowsPerPage + rowIdx;
-                          const isEditing = editingCell?.rowIdx === actualRowIdx && editingCell?.cellIdx === cellIdx;
-                          return (
-                            <td key={cellIdx} className={`px-2 py-1.5 font-mono text-gray-600 border-r border-gray-100 last:border-r-0 ${isEditingMode ? 'cursor-pointer hover:bg-indigo-100' : ''}`} onDoubleClick={() => isEditingMode && handleCellDoubleClick(rowIdx, cellIdx, cell)}>
-                              {isEditing ? <input ref={editInputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleCellEditKeyDown} onBlur={handleCellEditSave} className="w-full px-1 py-0.5 text-xs font-mono border border-indigo-400 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" /> : cell}
-                            </td>
-                          );
-                        })}
+                  <tbody className={PREVIEW_TABLE_STYLES.tbody}>
+                    {displayRows.length === 0 ? (
+                      <tr>
+                        <td colSpan={headers.length + (isEditingMode ? 1 : 0)} className="px-4 py-8 text-center text-gray-400 text-xs">
+                          {searchTerm ? '没有找到匹配的数据' : '暂无数据'}
+                        </td>
                       </tr>
-                    ))}
+                    ) : (
+                      displayRows.map(({ row, originalIdx }, rowIdx) => (
+                        <tr key={rowIdx} className={getPreviewRowStyle(isEditingMode)}>
+                          {isEditingMode && (
+                            <td className="px-2 py-1.5 border-r border-gray-100">
+                              <button onClick={() => handleDeleteRow(originalIdx)} className="p-0.5 text-red-500 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100"><Trash2 className="w-3 h-3" /></button>
+                            </td>
+                          )}
+                          {row.map((cell, cellIdx) => {
+                            const isEditing = editingCell?.rowIdx === originalIdx && editingCell?.cellIdx === cellIdx;
+                            return (
+                              <td key={cellIdx} className={`${PREVIEW_TABLE_STYLES.cell} ${isEditingMode ? PREVIEW_TABLE_STYLES.cellEditable : ''}`} onDoubleClick={() => isEditingMode && handleCellDoubleClick(originalIdx, cellIdx, cell)}>
+                                {isEditing ? <input ref={editInputRef} type="text" value={editValue} onChange={(e) => setEditValue(e.target.value)} onKeyDown={handleCellEditKeyDown} onBlur={handleCellEditSave} className="w-full px-1 py-0.5 text-xs font-mono border border-indigo-400 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" /> : cell}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
               {totalPages > 1 && (
-                <div className="bg-gray-50 px-3 py-1.5 border-t border-gray-200 flex items-center justify-between">
+                <div className={PREVIEW_TABLE_STYLES.pagination}>
                   <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-2 py-1 text-xs bg-white border border-gray-200 rounded disabled:opacity-50"><ChevronLeft className="w-3 h-3" /></button>
                   <div className="flex gap-1">
                     {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {

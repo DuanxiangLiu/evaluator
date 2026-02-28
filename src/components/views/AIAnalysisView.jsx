@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Bot, Settings, Zap, Loader2, AlertTriangle } from 'lucide-react';
+import ChartHeader from '../common/ChartHeader';
 import { renderMarkdownText } from '../../services/aiService.jsx';
 
 const AIAnalysisView = ({
@@ -13,27 +14,28 @@ const AIAnalysisView = ({
   setShowAiConfig,
   handleGenerateAIInsights
 }) => {
+  const actionButtons = (
+    <div className="flex items-center gap-2">
+      <button onClick={() => setShowAiConfig(true)} className="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 font-bold rounded-lg border border-gray-200 flex items-center gap-2 transition-colors shadow-sm">
+        <Settings className="w-4 h-4" /> AI 配置
+      </button>
+      <button onClick={handleGenerateAIInsights} disabled={isAnalyzing} className="px-4 py-2 bg-white/20 hover:bg-white/30 disabled:bg-gray-400/50 text-white font-bold rounded-lg transition-colors flex items-center gap-2 shadow-sm border border-white/30">
+        {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+        {aiInsights ? '重新诊断' : '生成诊断报告'}
+      </button>
+    </div>
+  );
+
   return (
     <div className="h-full flex flex-col">
-      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 border-b border-purple-100 flex-shrink-0">
-        <div className="flex justify-between items-center">
-          <div>
-            <h3 className="font-bold text-xl text-gray-900 flex items-center gap-2">
-              <Bot className="w-6 h-6 text-purple-600" /> EDA 架构师智能诊断
-            </h3>
-            <p className="text-sm text-gray-500 mt-1">基于 {baseAlgo} vs {compareAlgo} 的深度分析报告</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowAiConfig(true)} className="px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 font-bold rounded-lg border border-gray-200 flex items-center gap-2 transition-colors shadow-sm">
-              <Settings className="w-4 h-4" /> AI 配置
-            </button>
-            <button onClick={handleGenerateAIInsights} disabled={isAnalyzing} className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 text-white font-bold rounded-lg transition-colors flex items-center gap-2 shadow-sm">
-              {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-              {aiInsights ? '重新诊断' : '生成诊断报告'}
-            </button>
-          </div>
-        </div>
-      </div>
+      <ChartHeader
+        title="EDA 架构师智能诊断"
+        variant="ai"
+        icon={Bot}
+        rightContent={actionButtons}
+      >
+        <span className="text-white/70 text-xs">基于 {baseAlgo} vs {compareAlgo} 的深度分析报告</span>
+      </ChartHeader>
 
       <div className="flex-1 overflow-y-auto p-6 bg-slate-50 custom-scrollbar">
         {isAnalyzing ? (

@@ -134,7 +134,8 @@ const AppContent = () => {
     displayInsights, setDisplayInsights, aiError, setAiError,
     showAiConfig, setShowAiConfig,
     stats, allMetricsStats, filteredTableData,
-    validCasesMap, runAnalysis, toggleCase, toggleAll, handleSort, handleChartMouseMove
+    validCasesMap, runAnalysis, toggleCase, toggleAll, handleSort, handleChartMouseMove,
+    tableSearchTerm, setTableSearchTerm
   } = useAppContext();
 
   useEffect(() => { runAnalysis(); }, []);
@@ -257,6 +258,8 @@ const AppContent = () => {
                 validCasesMap={validCasesMap}
                 setDeepDiveCase={setDeepDiveCase}
                 stats={stats}
+                tableSearchTerm={tableSearchTerm}
+                setTableSearchTerm={setTableSearchTerm}
               />
             )}
 

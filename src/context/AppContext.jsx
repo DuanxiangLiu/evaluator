@@ -32,6 +32,7 @@ export const AppProvider = ({ children }) => {
   const [paretoZ, setParetoZ] = useState('');
   const [selectedCases, setSelectedCases] = useState(new Set());
   const [sortConfig, setSortConfig] = useState({ key: 'Case', direction: 'asc' });
+  const [tableSearchTerm, setTableSearchTerm] = useState('');
   const [tooltipState, setTooltipState] = useState({ visible: false, x: 0, y: 0, title: '', lines: [] });
   const [deepDiveCase, setDeepDiveCase] = useState(null);
   const [hoveredCase, setHoveredCase] = useState(null);
@@ -67,9 +68,16 @@ export const AppProvider = ({ children }) => {
     }
     setParetoZ('');
     
-    const instanceCol = metas.find(c => c.toLowerCase() === 'instances' || c.toLowerCase() === 'instance');
-    if (instanceCol) {
-      setSortConfig({ key: instanceCol, direction: 'desc' });
+    const instCol = metas.find(c => 
+      c.toLowerCase() === 'inst' || 
+      c.toLowerCase() === 'instance' || 
+      c.toLowerCase() === 'instances' ||
+      c.toLowerCase() === '#inst'
+    );
+    if (instCol) {
+      setSortConfig({ key: instCol, direction: 'desc' });
+    } else {
+      setSortConfig({ key: null, direction: 'asc' });
     }
     
     setSelectedCases(new Set(data.map(d => d.Case)));
@@ -129,6 +137,10 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   const sortedTableData = useMemo(() => {
+    if (sortConfig.key === null) {
+      return [...parsedData];
+    }
+    
     const sortableItems = [...parsedData];
     sortableItems.sort((a, b) => {
       let aVal, bVal;
@@ -166,7 +178,26 @@ export const AppProvider = ({ children }) => {
   }, [stats]);
 
   const filteredTableData = useMemo(() => {
-    return sortedTableData.filter(d => {
+    let result = sortedTableData;
+
+    if (tableSearchTerm.trim()) {
+      const term = tableSearchTerm.toLowerCase().trim();
+      result = result.filter(d => {
+        if (d.Case.toLowerCase().includes(term)) return true;
+        for (const mc of metaColumns) {
+          const val = d.meta[mc];
+          if (val && String(val).toLowerCase().includes(term)) return true;
+        }
+        for (const metric of Object.values(d.raw)) {
+          for (const val of Object.values(metric)) {
+            if (val != null && String(val).toLowerCase().includes(term)) return true;
+          }
+        }
+        return false;
+      });
+    }
+
+    return result.filter(d => {
       const isChecked = selectedCases.has(d.Case);
       const bVal = d.raw[activeMetric]?.[baseAlgo];
       const cVal = d.raw[activeMetric]?.[compareAlgo];
@@ -185,7 +216,7 @@ export const AppProvider = ({ children }) => {
       if (tableFilter === 'filtered') return false;
       return true;
     });
-  }, [sortedTableData, tableFilter, activeMetric, baseAlgo, compareAlgo, validCasesMap, selectedCases]);
+  }, [sortedTableData, tableFilter, tableSearchTerm, activeMetric, baseAlgo, compareAlgo, validCasesMap, selectedCases, metaColumns]);
 
   const toggleCase = useCallback((caseName) => {
     setSelectedCases(prev => {
@@ -254,6 +285,7 @@ export const AppProvider = ({ children }) => {
     qorWeights, setQorWeights,
     selectedCases, setSelectedCases,
     sortConfig, setSortConfig,
+    tableSearchTerm, setTableSearchTerm,
     tooltipState, setTooltipState,
     deepDiveCase, setDeepDiveCase,
     hoveredCase, setHoveredCase,
