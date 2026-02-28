@@ -166,8 +166,21 @@ export const generateAIInsights = async (config, baseAlgo, compareAlgo, activeMe
 };
 
 export const renderMarkdownText = (text) => {
-  return text.split('\n').map((line, i) => {
-    if (line.trim() === '') return <br key={i} />;
+  let lines = text.split('\n');
+  
+  let startIndex = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith('###') || line.startsWith('##') || line.startsWith('🎯') || line.startsWith('📊')) {
+      startIndex = i;
+      break;
+    }
+  }
+  
+  lines = lines.slice(startIndex);
+  
+  return lines.map((line, i) => {
+    if (line.trim() === '') return null;
     
     if (line.startsWith('### ')) {
       return (
@@ -192,9 +205,11 @@ export const renderMarkdownText = (text) => {
       );
     }
     
+    if (line.trim() === '---') return null;
+    
     const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-900 font-bold">$1</strong>');
     return <p key={i} className="mb-2 text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: formattedLine }} />;
-  });
+  }).filter(Boolean);
 };
 
 export { DEFAULT_LLM_CONFIG };

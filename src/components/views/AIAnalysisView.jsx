@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Bot, Settings, Zap, Loader2, AlertTriangle, Sparkles, FileText } from 'lucide-react';
+import { Bot, Settings, Zap, Loader2, AlertTriangle, Sparkles, FileText, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
 import { renderMarkdownText } from '../../services/aiService.jsx';
 
@@ -12,8 +12,21 @@ const AIAnalysisView = ({
   displayInsights,
   aiError,
   setShowAiConfig,
-  handleGenerateAIInsights
+  handleGenerateAIInsights,
+  isOutdated,
+  savedTimestamp
 }) => {
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const actionButtons = (
     <div className="flex items-center gap-2">
       <button 
@@ -51,20 +64,31 @@ const AIAnalysisView = ({
   );
 
   return (
-    <div className="h-full flex flex-col">
-      <ChartHeader
-        title="EDA 算法智能诊断"
-        variant="ai"
-        icon={Bot}
-        rightContent={actionButtons}
-      >
-        <span className="text-white/70 text-xs flex items-center gap-1.5">
-          <FileText className="w-3 h-3" />
-          {baseAlgo} vs {compareAlgo} 深度分析
-        </span>
-      </ChartHeader>
+    <div className="h-full flex flex-col p-4">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col overflow-hidden w-full min-h-0">
+        <ChartHeader
+          title="EDA 算法智能诊断"
+          variant="primary"
+          icon={Bot}
+          helpContent={
+            <div className="space-y-1">
+              <p className="font-bold text-indigo-400">AI 智能诊断</p>
+              <div className="text-xs space-y-0.5">
+                <p>基于大语言模型的智能算法性能分析</p>
+                <p>自动生成结构化诊断报告</p>
+                <p>支持 DeepSeek、Gemini、OpenAI 等主流 LLM</p>
+              </div>
+            </div>
+          }
+          rightContent={actionButtons}
+        >
+          <span className="text-white/70 text-xs flex items-center gap-1.5">
+            <FileText className="w-3 h-3" />
+            {baseAlgo} vs {compareAlgo} 深度分析
+          </span>
+        </ChartHeader>
 
-      <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-slate-50 to-slate-100 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-slate-50 to-slate-100 custom-scrollbar max-w-5xl mx-auto w-full">
         {isAnalyzing ? (
           <div className="flex flex-col items-center justify-center h-full text-purple-500 space-y-4">
             <div className="relative">
@@ -92,8 +116,31 @@ const AIAnalysisView = ({
             </div>
           </div>
         ) : displayInsights ? (
-          <div className="prose prose-sm prose-indigo max-w-4xl mx-auto text-sm text-gray-800 leading-relaxed bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-            {renderMarkdownText(displayInsights)}
+          <div className="max-w-4xl mx-auto space-y-4">
+            {isOutdated && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-xl flex items-center gap-3 text-sm shadow-sm">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-500" />
+                <div className="flex-1">
+                  <p className="font-semibold">数据已更新</p>
+                  <p className="text-xs text-amber-600">当前诊断报告基于旧数据生成，建议点击「重新诊断」获取最新分析</p>
+                </div>
+              </div>
+            )}
+            {!isOutdated && savedTimestamp && (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-xl flex items-center gap-3 text-sm shadow-sm">
+                <CheckCircle className="w-5 h-5 flex-shrink-0 text-emerald-500" />
+                <div className="flex-1 flex items-center gap-2">
+                  <span className="font-semibold">诊断报告为最新</span>
+                  <span className="text-xs text-emerald-600 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    生成于 {formatTimestamp(savedTimestamp)}
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="prose prose-sm prose-indigo text-sm text-gray-800 leading-relaxed bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+              {renderMarkdownText(displayInsights)}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-5">
@@ -120,6 +167,7 @@ const AIAnalysisView = ({
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
@@ -133,7 +181,9 @@ AIAnalysisView.propTypes = {
   displayInsights: PropTypes.string,
   aiError: PropTypes.string,
   setShowAiConfig: PropTypes.func.isRequired,
-  handleGenerateAIInsights: PropTypes.func.isRequired
+  handleGenerateAIInsights: PropTypes.func.isRequired,
+  isOutdated: PropTypes.bool,
+  savedTimestamp: PropTypes.number
 };
 
 export default AIAnalysisView;

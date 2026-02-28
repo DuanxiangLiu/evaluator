@@ -48,6 +48,7 @@ const ChartsView = ({
           setTooltipState={setTooltipState}
           onCaseClick={setDeepDiveCase}
           parsedData={parsedData}
+          metaColumns={metaColumns}
         />
       )}
 

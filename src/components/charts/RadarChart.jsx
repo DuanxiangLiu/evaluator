@@ -43,6 +43,10 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
     });
   };
 
+  const selectAllAlgos = () => {
+    setSelectedAlgos(new Set(availableAlgos));
+  };
+
   const algoStatsMap = useMemo(() => {
     if (!parsedData || parsedData.length === 0 || !baseAlgo || !selectedCases) return {};
     const statsMap = {};
@@ -66,6 +70,8 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
 
   if (!allMetricsStats || allMetricsStats.length === 0) return null;
 
+  const allSelected = selectedAlgos.size === availableAlgos.length;
+
   return (
     <ChartContainer>
       <ChartHeader
@@ -82,34 +88,42 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
         }
         helpWidth="w-56"
       >
-        <div className="flex flex-wrap gap-1.5">
-          {availableAlgos.map((algo, index) => {
-            const isSelected = selectedAlgos.has(algo);
-            const color = getAlgoColor(algo, index);
+        <div className="flex items-center gap-2">
+          <div className="flex flex-wrap gap-1">
+            {availableAlgos.map((algo, index) => {
+              const isSelected = selectedAlgos.has(algo);
+              const color = getAlgoColor(algo, index);
 
-            return (
-              <button
-                key={algo}
-                onClick={() => toggleAlgoSelection(algo)}
-                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all flex items-center gap-1 ${isSelected ? 'shadow-sm' : 'opacity-50 hover:opacity-75'
-                  }`}
-                style={{
-                  backgroundColor: isSelected ? color.fill : '#f3f4f6',
-                  borderColor: color.stroke,
-                  borderWidth: 1.5,
-                  borderStyle: 'solid',
-                  color: isSelected ? color.stroke : '#6b7280'
-                }}
-              >
-                {isSelected ? <CheckSquare className="w-2.5 h-2.5" /> : <Square className="w-2.5 h-2.5" />}
-                {algo}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={algo}
+                  onClick={() => toggleAlgoSelection(algo)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all flex items-center gap-1 ${isSelected ? 'shadow-sm' : 'opacity-50 hover:opacity-75'
+                    }`}
+                  style={{
+                    backgroundColor: isSelected ? color.fill : '#f3f4f6',
+                    borderColor: color.stroke,
+                    borderWidth: 1.5,
+                    borderStyle: 'solid',
+                    color: isSelected ? color.stroke : '#6b7280'
+                  }}
+                >
+                  {isSelected ? <CheckSquare className="w-2.5 h-2.5" /> : <Square className="w-2.5 h-2.5" />}
+                  {algo}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={selectAllAlgos}
+            className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all border ${allSelected ? 'bg-white/30 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}
+          >
+            全选
+          </button>
         </div>
       </ChartHeader>
       
-      <ChartArea className="bg-gradient-to-br from-indigo-50/30 to-purple-50/30">
+      <ChartArea className="bg-gradient-to-br from-indigo-50/30 to-purple-50/30 max-w-5xl mx-auto w-full">
         <svg className="w-full h-full" viewBox="-200 -200 400 400" preserveAspectRatio="xMidYMid meet">
           {(() => {
             const N = validMetrics.length;
@@ -187,20 +201,6 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
             return (<>{renderRings()}{renderAxes()}{renderAlgoPolygons()}</>);
           })()}
         </svg>
-        
-        <div className="absolute top-2 left-2 flex flex-col gap-0.5 text-[9px] font-medium text-gray-600 bg-white/90 p-1.5 rounded border border-gray-200/50 shadow-sm">
-          <div className="text-[8px] text-gray-400 font-semibold">图例</div>
-          {Array.from(selectedAlgos).map(algo => {
-            const color = getAlgoColor(algo, availableAlgos.indexOf(algo));
-            const isBaseline = algo === baseAlgo;
-            return (
-              <div key={algo} className="flex items-center gap-1">
-                <span className="w-2.5 h-1.5 rounded-sm" style={{ backgroundColor: isBaseline ? 'transparent' : color.fill, borderColor: isBaseline ? '#9ca3af' : color.stroke, borderWidth: 1.5, borderStyle: isBaseline ? 'dashed' : 'solid' }}></span>
-                <span>{algo}{isBaseline ? '(基准)' : ''}</span>
-              </div>
-            );
-          })}
-        </div>
       </ChartArea>
 
       <ChartLegend items={[

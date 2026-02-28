@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { parseCSV, computeStatistics, updateDataValue, dataToCSVString } from '../services/dataService';
 import { generateDefaultDataset } from '../utils/dataGenerator';
@@ -14,6 +14,7 @@ export const AppProvider = ({ children }) => {
   const [llmConfig, setLlmConfig] = useLocalStorage('eda_llm_config', DEFAULT_LLM_CONFIG);
   const [activeMetric, setActiveMetric] = useLocalStorage('eda_active_metric', '');
   const [qorWeights, setQorWeights] = useLocalStorage('eda_qor_weights', {});
+  const [savedAiInsights, setSavedAiInsights] = useLocalStorage('eda_ai_insights', {});
   
   const [parsedData, setParsedData] = useState([]);
   const [availableMetrics, setAvailableMetrics] = useState([]);
@@ -42,6 +43,9 @@ export const AppProvider = ({ children }) => {
   const [aiError, setAiError] = useState('');
   const [showAiConfig, setShowAiConfig] = useState(false);
   const [showAiPanel, setShowAiPanel] = useState(false);
+  
+  const dataVersionRef = useRef(0);
+  const lastAnalysisParamsRef = useRef('');
 
   const runAnalysis = useCallback((inputData = csvInput) => {
     const { data, algos, metrics, metaColumns: metas } = parseCSV(inputData);
@@ -50,6 +54,8 @@ export const AppProvider = ({ children }) => {
     setAvailableAlgos(algos);
     setAvailableMetrics(metrics);
     setMetaColumns(metas);
+    
+    dataVersionRef.current += 1;
     
     if (algos.length > 0 && !algos.includes(baseAlgo)) {
       setBaseAlgo(algos[0]);
@@ -86,6 +92,41 @@ export const AppProvider = ({ children }) => {
     setAiError('');
   }, [csvInput, baseAlgo, compareAlgo, activeMetric]);
 
+  const getAiInsightsKey = useCallback((base, compare) => {
+    const dataHash = csvInput.slice(0, 100) + dataVersionRef.current;
+    return `${base}_${compare}_${dataHash.length}`;
+  }, [csvInput]);
+
+  const saveAiInsights = useCallback((base, compare, insights) => {
+    const key = getAiInsightsKey(base, compare);
+    setSavedAiInsights(prev => ({
+      ...prev,
+      [key]: {
+        insights,
+        timestamp: Date.now(),
+        dataVersion: dataVersionRef.current,
+        baseAlgo: base,
+        compareAlgo: compare
+      }
+    }));
+  }, [getAiInsightsKey, setSavedAiInsights]);
+
+  const getSavedAiInsights = useCallback((base, compare) => {
+    const key = getAiInsightsKey(base, compare);
+    const saved = savedAiInsights[key];
+    if (saved && saved.dataVersion === dataVersionRef.current) {
+      return saved;
+    }
+    return null;
+  }, [getAiInsightsKey, savedAiInsights]);
+
+  const isInsightsOutdated = useCallback((base, compare) => {
+    const key = getAiInsightsKey(base, compare);
+    const saved = savedAiInsights[key];
+    if (!saved) return false;
+    return saved.dataVersion !== dataVersionRef.current;
+  }, [getAiInsightsKey, savedAiInsights]);
+
   useEffect(() => {
     runAnalysis();
   }, []);
@@ -101,20 +142,20 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     if (availableMetrics.length > 0) {
-      const newWeights = { ...qorWeights };
-      let changed = false;
+      const newWeights = {};
+      let needInit = false;
       const avg = +(100 / availableMetrics.length).toFixed(2);
       
       availableMetrics.forEach(m => {
-        if (newWeights[m] === undefined) {
-          newWeights[m] = avg;
-          changed = true;
+        if (qorWeights[m] === undefined) {
+          needInit = true;
         }
+        newWeights[m] = qorWeights[m] !== undefined ? qorWeights[m] : avg;
       });
       
-      if (changed) setQorWeights(newWeights);
+      if (needInit) setQorWeights(newWeights);
     }
-  }, [availableMetrics]);
+  }, [availableMetrics, qorWeights, setQorWeights]);
 
   const stats = useMemo(() => {
     if (parsedData.length === 0 || !activeMetric || !baseAlgo || !compareAlgo) return null;
@@ -306,7 +347,10 @@ export const AppProvider = ({ children }) => {
     toggleAll,
     equalizeWeights,
     handleChartMouseMove,
-    handleEditDataValue
+    handleEditDataValue,
+    saveAiInsights,
+    getSavedAiInsights,
+    isInsightsOutdated
   };
 
   return (

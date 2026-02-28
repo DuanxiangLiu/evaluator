@@ -244,14 +244,19 @@ const AiConfigModal = ({ isOpen, config, onConfigChange, onClose }) => {
   );
 
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    if (isOpen && config) {
+    if (isOpen && config && !initialized) {
       Object.keys(config).forEach(key => {
         setValue(key, config[key]);
       });
+      setInitialized(true);
     }
-  }, [isOpen, config, setValue]);
+    if (!isOpen) {
+      setInitialized(false);
+    }
+  }, [isOpen, config, setValue, initialized]);
 
   if (!isOpen) return null;
 
@@ -398,7 +403,7 @@ const AiConfigModal = ({ isOpen, config, onConfigChange, onClose }) => {
             </div>
           )}
 
-          {hasErrors && (
+          {hasErrors && Object.values(errors).some(Boolean) && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-700 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4" />

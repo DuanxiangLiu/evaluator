@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Scale, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Scale, TrendingUp, TrendingDown, Minus, Target, Award, Settings2, Check, AlertCircle, Info } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartLegend } from '../common/ChartContainer';
 import { getMetricConfig, computeStatistics } from '../../services/dataService';
@@ -15,7 +15,7 @@ const QoRSimulator = ({
   parsedData,
   selectedCases
 }) => {
-  const [selectedAlgos, setSelectedAlgos] = useState(availableAlgos.filter(a => a !== baseAlgo));
+  const [showWeightHelp, setShowWeightHelp] = useState(false);
 
   const algoMetricsStats = useMemo(() => {
     if (!parsedData || parsedData.length === 0 || !baseAlgo) return {};
@@ -37,74 +37,72 @@ const QoRSimulator = ({
     return statsMap;
   }, [parsedData, selectedCases, availableMetrics, availableAlgos, baseAlgo]);
 
-  const calculateScore = (algo) => {
+  const getMetricScore = (algo, metric) => {
     const statsForAlgo = algoMetricsStats[algo];
-    if (!statsForAlgo || statsForAlgo.length === 0) return 0;
+    if (!statsForAlgo) return { imp: 0, weighted: 0 };
     
-    let totalScore = 0;
-    let totalWeight = 0;
+    const metricStat = statsForAlgo.find(m => m.metric === metric);
+    const config = getMetricConfig(metric);
+    const weight = qorWeights[metric] || 0;
     
-    statsForAlgo.forEach(m => {
-      if (m.stats && m.stats.validCases) {
-        const config = getMetricConfig(m.metric);
-        const weight = qorWeights[m.metric] || 0;
-        
-        let improvement = 0;
-        if (algo === baseAlgo) {
-          improvement = 0;
-        } else {
-          improvement = m.stats.geomeanImp || 0;
-        }
-        
-        const adjustedImprovement = config.better === 'lower' ? improvement : -improvement;
-        
-        totalScore += adjustedImprovement * weight;
-        totalWeight += weight;
-      }
-    });
+    let imp = 0;
+    if (algo === baseAlgo) {
+      imp = 0;
+    } else {
+      imp = metricStat?.stats?.geomeanImp || 0;
+    }
     
-    return totalWeight > 0 ? totalScore / totalWeight : 0;
+    const adjustedImp = config.better === 'lower' ? imp : -imp;
+    const weighted = (adjustedImp * weight) / 100;
+    
+    return { imp, adjustedImp, weighted };
   };
 
   const algoScores = useMemo(() => {
     const scores = {};
+    
     availableAlgos.forEach(algo => {
-      scores[algo] = calculateScore(algo);
+      let totalScore = 0;
+      let totalWeight = 0;
+      
+      availableMetrics.forEach(metric => {
+        const { adjustedImp } = getMetricScore(algo, metric);
+        const weight = qorWeights[metric] || 0;
+        totalScore += adjustedImp * weight;
+        totalWeight += weight;
+      });
+      
+      scores[algo] = totalWeight > 0 ? totalScore / totalWeight : 0;
     });
+    
     return scores;
-  }, [algoMetricsStats, qorWeights, availableAlgos]);
+  }, [algoMetricsStats, qorWeights, availableAlgos, baseAlgo, availableMetrics]);
 
   const handleWeightChange = (metric, value) => {
-    const newWeights = { ...qorWeights };
-    newWeights[metric] = parseFloat(value) || 0;
-    setQorWeights(newWeights);
+    const numValue = Math.max(0, Math.min(100, parseFloat(value) || 0));
+    setQorWeights(prev => ({ ...prev, [metric]: numValue }));
   };
 
   const equalizeWeights = () => {
-    const newWeights = {};
     const avgWeight = 100 / availableMetrics.length;
+    const newWeights = {};
     availableMetrics.forEach(m => {
       newWeights[m] = avgWeight;
     });
     setQorWeights(newWeights);
   };
 
-  const toggleAlgoSelection = (algo) => {
-    if (algo === baseAlgo) return;
-    setSelectedAlgos(prev => {
-      if (prev.includes(algo)) {
-        return prev.filter(a => a !== algo);
-      } else {
-        return [...prev, algo];
-      }
-    });
-  };
-
   if (!parsedData || parsedData.length === 0 || Object.keys(algoMetricsStats).length === 0) {
     return (
       <ChartContainer>
-        <div className="flex-1 flex items-center justify-center text-gray-400 font-medium text-sm">
-          请先加载数据以使用 QoR 模拟器
+        <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+            <Scale className="w-8 h-8 text-slate-400" />
+          </div>
+          <div className="text-center">
+            <p className="font-semibold text-gray-500">请先加载数据</p>
+            <p className="text-sm text-gray-400 mt-1">以使用 QoR 综合评估模拟器</p>
+          </div>
         </div>
       </ChartContainer>
     );
@@ -112,6 +110,7 @@ const QoRSimulator = ({
 
   const weightSum = availableMetrics.reduce((sum, m) => sum + (qorWeights[m] || 0), 0);
   const isWeightValid = Math.abs(weightSum - 100) < 1;
+  const rankedAlgos = [...availableAlgos].sort((a, b) => (algoScores[b] || 0) - (algoScores[a] || 0));
 
   return (
     <ChartContainer>
@@ -120,158 +119,175 @@ const QoRSimulator = ({
         variant="primary"
         icon={Scale}
         helpContent={
-          <div className="space-y-1">
-            <p className="font-bold text-indigo-400">QoR 综合评估</p>
-            <div className="text-xs space-y-0.5">
-              <p>调整权重综合评估算法性能</p>
-              <p><b>权重总和应为 100%</b></p>
+          <div className="space-y-2">
+            <p className="font-semibold text-indigo-300">QoR 综合评估</p>
+            <div className="text-xs space-y-1 text-gray-300">
+              <p>调整各指标权重，综合评估算法性能</p>
+              <p className="text-amber-300">权重总和应为 100%</p>
             </div>
           </div>
         }
-        helpWidth="w-56"
+        helpWidth="w-60"
       >
-        <div className="flex items-center gap-2">
-          <span className={`text-[10px] font-bold ${isWeightValid ? 'text-amber-200' : 'text-red-300'}`}>
-            权重: {weightSum.toFixed(0)}%
-          </span>
-          <button onClick={equalizeWeights} className="px-2 py-0.5 bg-white/20 hover:bg-white/30 text-white rounded text-[10px] font-bold border border-white/30">
-            均衡
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div 
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold cursor-help ${isWeightValid ? 'bg-emerald-500/20 text-emerald-200' : 'bg-red-500/20 text-red-200'}`}
+              onMouseEnter={() => setShowWeightHelp(true)}
+              onMouseLeave={() => setShowWeightHelp(false)}
+            >
+              {isWeightValid ? <Check className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+              <span>{weightSum.toFixed(0)}%</span>
+              <Info className="w-3 h-3 opacity-60" />
+            </div>
+            {showWeightHelp && (
+              <div className="absolute top-full right-0 mt-2 w-72 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-xl z-50 border border-slate-700">
+                <p className="font-semibold mb-2 text-amber-300">权重计算说明</p>
+                <div className="space-y-1.5 text-slate-300">
+                  <p><span className="text-white font-medium">综合得分</span> = Σ(指标得分 × 权重%) / 100</p>
+                  <p>• 指标得分：相对于基线的改进百分比</p>
+                  <p>• 权重：各指标的重要程度占比</p>
+                  {!isWeightValid && (
+                    <p className="text-red-300 pt-1 border-t border-slate-600 mt-2">
+                      ⚠️ 当前权重总和为 {weightSum.toFixed(0)}%，建议调整为 100%
+                    </p>
+                  )}
+                </div>
+                <div className="absolute -top-1 right-4 w-2 h-2 bg-slate-800 border-l border-t border-slate-700 transform -rotate-45" />
+              </div>
+            )}
+          </div>
+          <button 
+            onClick={equalizeWeights} 
+            className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white/90 rounded-full text-xs font-medium transition-all border border-white/10 hover:border-white/20 flex items-center gap-1"
+          >
+            <Settings2 className="w-3 h-3" />
+            均衡分配
           </button>
         </div>
       </ChartHeader>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3">
-        <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-          <span className="text-[10px] font-bold text-gray-600 mb-2 block">指标权重配置</span>
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-            {availableMetrics.map(metric => {
-              const config = getMetricConfig(metric);
-              const weight = qorWeights[metric] || 0;
-              
-              return (
-                <div key={metric} className="bg-white p-2 rounded border border-gray-200">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-bold text-gray-700">{metric}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 max-w-5xl mx-auto w-full">
+        <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-transparent">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center">
+                <Target className="w-3.5 h-3.5 text-indigo-600" />
+              </div>
+              <span className="text-sm font-semibold text-slate-700">指标权重配置</span>
+            </div>
+          </div>
+          <div className="p-4">
+            <div className="flex flex-wrap gap-3">
+              {availableMetrics.map(metric => {
+                const weight = qorWeights[metric] || 0;
+                
+                return (
+                  <div key={metric} className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 px-3 py-2">
+                    <span className="text-xs font-bold text-slate-700">{metric}</span>
                     <input
                       type="number"
                       min="0"
                       max="100"
                       value={weight.toFixed(0)}
                       onChange={(e) => handleWeightChange(metric, e.target.value)}
-                      className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded text-center font-semibold"
+                      className="w-14 px-2 py-1 text-xs font-semibold text-center border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
-                    <span className="text-[10px] text-gray-500">%</span>
+                    <span className="text-xs text-slate-500">%</span>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-bold text-gray-600">算法选择</span>
-              <div className="flex flex-wrap gap-1">
-                {availableAlgos.map(algo => {
-                  const isSelected = algo === baseAlgo || selectedAlgos.includes(algo);
-                  const score = algoScores[algo] || 0;
-
-                  return (
-                    <button
-                      key={algo}
-                      onClick={() => toggleAlgoSelection(algo)}
-                      disabled={algo === baseAlgo}
-                      className={`px-2 py-0.5 rounded font-bold text-[9px] transition-all ${isSelected
-                        ? algo === baseAlgo
-                          ? 'bg-gray-200 text-gray-700 cursor-not-allowed'
-                          : 'bg-indigo-600 text-white shadow'
-                        : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'
-                        }`}
-                    >
-                      {algo}
-                      {isSelected && <span className="ml-0.5">({score > 0 ? '+' : ''}{score.toFixed(1)}%)</span>}
-                    </button>
-                  );
-                })}
+        <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-transparent">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center">
+                <Award className="w-3.5 h-3.5 text-amber-600" />
               </div>
-            </div>
-            <span className="text-[10px] font-bold text-gray-600 mb-1 block">综合得分排名</span>
-            <div className="space-y-1">
-              {[...availableAlgos]
-                .filter(algo => algo === baseAlgo || selectedAlgos.includes(algo))
-                .sort((a, b) => (algoScores[b] || 0) - (algoScores[a] || 0))
-                .map((algo, index) => {
-                  const score = algoScores[algo] || 0;
-                  const isBaseline = algo === baseAlgo;
-                  
-                  return (
-                    <div key={algo} className={`p-2 rounded flex items-center justify-between ${isBaseline ? 'bg-white border border-gray-200' : 'bg-indigo-50 border border-indigo-100'}`}>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-sm font-black ${index === 0 && !isBaseline ? 'text-yellow-500' : 'text-gray-400'}`}>#{index + 1}</span>
-                        <span className="text-[10px] font-bold text-gray-800">{algo}</span>
-                        {isBaseline && <span className="text-[8px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded">基线</span>}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {score > 0 ? <TrendingUp className="w-3 h-3 text-green-500" /> : score < 0 ? <TrendingDown className="w-3 h-3 text-red-500" /> : <Minus className="w-3 h-3 text-gray-400" />}
-                        <span className={`text-sm font-black ${score > 0 ? 'text-green-600' : score < 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                          {score > 0 ? '+' : ''}{score.toFixed(2)}%
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+              <span className="text-sm font-semibold text-slate-700">综合排名</span>
             </div>
           </div>
-
-          <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-            <span className="text-[10px] font-bold text-gray-600 mb-1.5 block">各指标详细得分</span>
-            <div className="overflow-x-auto max-h-[180px] custom-scrollbar">
-              <table className="min-w-full text-[10px]">
-                <thead className="bg-white sticky top-0">
-                  <tr>
-                    <th className="px-2 py-1 text-left font-bold text-gray-600">指标</th>
-                    <th className="px-2 py-1 text-center font-bold text-gray-600">权重</th>
-                    {availableAlgos.filter(algo => algo === baseAlgo || selectedAlgos.includes(algo)).map(algo => (
-                      <th key={algo} className="px-2 py-1 text-center font-bold text-gray-600">{algo}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {availableMetrics.map(metric => {
-                    const weight = qorWeights[metric] || 0;
-                    
-                    return (
-                      <tr key={metric} className="hover:bg-white/50">
-                        <td className="px-2 py-1 font-bold text-gray-800">{metric}</td>
-                        <td className="px-2 py-1 text-center text-gray-600">{weight.toFixed(0)}%</td>
-                        {availableAlgos.filter(algo => algo === baseAlgo || selectedAlgos.includes(algo)).map(algo => {
-                          const statsForAlgo = algoMetricsStats[algo];
-                          const metricStat = statsForAlgo?.find(m => m.metric === metric);
-                          const imp = metricStat?.stats?.geomeanImp || 0;
-                          return (
-                            <td key={algo} className="px-2 py-1 text-center">
-                              <span className={`font-bold ${imp > 0 ? 'text-green-600' : imp < 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                                {imp > 0 ? '+' : ''}{imp.toFixed(1)}%
-                              </span>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          
+          <div className="p-4">
+            <div className="space-y-3">
+              {rankedAlgos.map((algo, index) => {
+                const score = algoScores[algo] || 0;
+                const isBaseline = algo === baseAlgo;
+                const isFirst = index === 0 && !isBaseline;
+                
+                const metricDetails = availableMetrics.map(metric => {
+                  const { imp, adjustedImp, weighted } = getMetricScore(algo, metric);
+                  const weight = qorWeights[metric] || 0;
+                  return { metric, weight, imp, adjustedImp, weighted };
+                });
+                
+                return (
+                  <div 
+                    key={algo} 
+                    className={`relative overflow-hidden rounded-xl transition-all duration-200 ${
+                      isFirst 
+                        ? 'bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-200 shadow-sm' 
+                        : isBaseline 
+                          ? 'bg-slate-50 border border-slate-200' 
+                          : 'bg-white border border-slate-200'
+                    }`}
+                  >
+                    <div className="px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm shrink-0 ${
+                          isFirst 
+                            ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-white shadow-md' 
+                            : 'bg-slate-200 text-slate-500'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <span className="font-black text-base text-slate-800">{algo}</span>
+                        {isBaseline && (
+                          <span className="text-[10px] px-2 py-0.5 bg-slate-200 text-slate-600 rounded font-medium">基线</span>
+                        )}
+                        {isFirst && (
+                          <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-medium flex items-center gap-0.5">
+                            <Award className="w-3 h-3" />最优
+                          </span>
+                        )}
+                        
+                        <span className="text-slate-300 font-bold mx-1">=</span>
+                        
+                        {score > 0 ? (
+                          <TrendingUp className="w-4 h-4 text-emerald-500" />
+                        ) : score < 0 ? (
+                          <TrendingDown className="w-4 h-4 text-red-500" />
+                        ) : (
+                          <Minus className="w-4 h-4 text-slate-400" />
+                        )}
+                        <span className={`font-black text-lg ${score > 0 ? 'text-emerald-600' : score < 0 ? 'text-red-500' : 'text-slate-500'}`}>
+                          {score > 0 ? '+' : ''}{score.toFixed(2)}%
+                        </span>
+                        
+                        <span className="text-slate-300 font-bold mx-1">=</span>
+                        
+                        {metricDetails.map((m, i) => (
+                          <span key={m.metric} className="text-slate-600">
+                            <span className="font-bold">{m.metric}</span>:<span className="text-indigo-600 font-semibold">{m.weight.toFixed(0)}%</span>×<span className={`font-semibold ${m.adjustedImp > 0 ? 'text-emerald-600' : m.adjustedImp < 0 ? 'text-red-500' : 'text-slate-500'}`}>{m.adjustedImp > 0 ? '+' : ''}{m.adjustedImp.toFixed(1)}%</span>=<span className={`font-bold ${m.weighted > 0 ? 'text-emerald-600' : m.weighted < 0 ? 'text-red-500' : 'text-slate-500'}`}>{m.weighted > 0 ? '+' : ''}{m.weighted.toFixed(2)}%</span>
+                            {i < metricDetails.length - 1 && <span className="text-slate-400 font-bold"> + </span>}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       </div>
 
       <ChartLegend items={[
-        { label: '绿色 = 优化', color: '#059669' },
-        { label: '红色 = 退化', color: '#dc2626' }
+        { label: '优化', color: '#10b981' },
+        { label: '退化', color: '#ef4444' }
       ]} />
     </ChartContainer>
   );

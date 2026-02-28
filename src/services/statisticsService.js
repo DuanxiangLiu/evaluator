@@ -49,6 +49,7 @@ export const computeStatistics = (metricName, base, comp, casesData, selectedCas
   const pValue = calculateWilcoxonPValue(diffs);
 
   const variance = improvements.reduce((a, b) => a + Math.pow(b - meanImp, 2), 0) / (n - 1 || 1);
+  const std = Math.sqrt(variance);
   const { lower: ciLower, upper: ciUpper } = calculateConfidenceInterval(meanImp, variance, n);
 
   const degradedCount = improvements.filter(imp => imp < 0).length;
@@ -69,6 +70,7 @@ export const computeStatistics = (metricName, base, comp, casesData, selectedCas
   return {
     geomeanImp,
     meanImp,
+    std,
     pValue,
     ciLower,
     ciUpper,

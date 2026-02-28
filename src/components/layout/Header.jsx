@@ -1,5 +1,22 @@
 import React from 'react';
-import { Activity, Github, Zap } from 'lucide-react';
+import { Activity, Github } from 'lucide-react';
+import HelpIcon from '../common/HelpIcon';
+
+const helpContent = (
+  <div className="space-y-3">
+    <div>
+      <h3 className="font-bold text-indigo-300 mb-2">系统简介</h3>
+      <p className="text-gray-300">
+        EDA算法评估器是一款用于评估和比较EDA算法性能的工具，支持CSV数据导入、统计分析、可视化图表展示及AI辅助分析等功能。
+      </p>
+    </div>
+    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+      <p className="text-amber-200 text-sm">
+        ⚠️ 本系统代码由AI生成，未经完善测试，使用时请注意风险。
+      </p>
+    </div>
+  </div>
+);
 
 const Header = () => {
   return (
@@ -18,6 +35,11 @@ const Header = () => {
             <h1 className="text-base font-bold text-white tracking-tight">
               EDA 算法评估器
             </h1>
+            <HelpIcon 
+              content={helpContent}
+              className="w-4 h-4 text-white/70 hover:text-white transition-colors"
+              tooltipWidth="w-[28rem]"
+            />
             <span className="text-[10px] text-amber-200 font-semibold bg-amber-500/20 px-1.5 py-0.5 rounded-full">
               v1.2
             </span>

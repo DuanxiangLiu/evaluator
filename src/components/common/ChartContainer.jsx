@@ -11,7 +11,7 @@ const ChartContainer = ({
       className={`p-4 h-full flex flex-col min-h-0 ${className}`}
       onMouseMove={onMouseMove}
     >
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col overflow-hidden max-w-5xl mx-auto w-full min-h-0">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col overflow-hidden w-full min-h-0">
         {children}
       </div>
     </div>

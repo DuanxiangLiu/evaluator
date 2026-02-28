@@ -36,37 +36,12 @@ const TabButton = ({ tab, isActive, onClick }) => (
   >
     <tab.icon className="w-3.5 h-3.5" />
     <span>{tab.label}</span>
-    <HelpIcon
-      content={<TabHelpContent tabId={tab.id} />}
-      tooltipWidth="w-[40rem]"
-      position="bottom-center"
-      className="w-3.5 h-3.5 text-gray-400 hover:text-indigo-500"
-    />
   </button>
 );
 
-const TabHelpContent = ({ tabId }) => {
-  const helpTexts = {
-    table: { title: '详细数据视图', items: ['展示所有测试案例的原始数据和改进率', '支持行选择、列排序、数据过滤和导出', '自动识别并标注显著优化和严重退化的案例'] },
-    single: { title: '箱线图分析', items: ['展示当前焦点指标的数据分布情况', '显示中位数、四分位数、最大值、最小值等', '箱体外部的点表示异常值'] },
-    correlation: { title: '特征相关性分析', items: ['分析不同特征之间的相关性关系', '使用散点图展示两个特征的关系', '可选择任意两个特征进行相关性分析'] },
-    multi: { title: '帕累托投影分析', items: ['三维可视化展示多个指标的综合表现', '基于帕累托法则的多维度数据投影', '可自由选择三个维度进行投影分析'] },
-    all_metrics: { title: '全局多维雷达分析', items: ['展示所有指标在不同算法下的综合表现', '多维度数据可视化，每个轴代表一个指标', '快速评估算法在多个指标上的综合优劣'] },
-    ai_analysis: { title: 'AI 智能诊断', items: ['基于大语言模型的智能算法性能分析', '自动生成结构化诊断报告：最终判定、Trade-off分析、退化诊断、扩展性评估', '支持 DeepSeek、Gemini、OpenAI 等主流 LLM', '提供可执行的优化建议和风险预警'] },
-    qor_simulator: { title: 'QoR 模拟器', items: ['Quality of Result 模拟器，自定义权重计算综合评分', '可为不同指标设置自定义权重', '根据业务需求自定义评估标准'] }
-  };
-  const help = helpTexts[tabId] || { title: '', items: [] };
-  return (
-    <div className="space-y-3">
-      <p className="font-bold text-indigo-400 text-lg">{help.title}</p>
-      <div className="space-y-2 text-sm">
-        {help.items.map((item, i) => <p key={i}><b>•</b> {item}</p>)}
-      </div>
-    </div>
-  );
-};
-
 const StatsCards = ({ stats }) => {
+  const [showAuxiliary, setShowAuxiliary] = useState(true);
+
   if (!stats) {
     return (
       <div className="bg-amber-50 border border-amber-200 text-amber-700 p-3 rounded-lg flex items-center gap-2 text-sm">
@@ -76,28 +51,117 @@ const StatsCards = ({ stats }) => {
     );
   }
 
-  const cards = [
+  const improvedCount = stats.nValid - stats.degradedCount;
+  const improvedRate = stats.nValid > 0 ? (improvedCount / stats.nValid * 100) : 0;
+  const degradedRate = stats.nValid > 0 ? (stats.degradedCount / stats.nValid * 100) : 0;
+  const cv = (stats.meanImp !== 0 && !isNaN(stats.std) && stats.meanImp !== null) 
+    ? (stats.std / Math.abs(stats.meanImp)) 
+    : null;
+
+  const iqr = stats.q3 - stats.q1;
+
+  const mainCards = [
     { label: 'Geomean 改进', value: stats.geomeanImp, isPositive: stats.geomeanImp > 0, helpId: 'geomean' },
     { label: 'Arith Mean (算术)', value: stats.meanImp, isPositive: stats.meanImp > 0, helpId: 'arith' },
     { label: 'P-Value', value: stats.pValue, isPositive: stats.pValue < 0.05, format: 'pvalue', helpId: 'pvalue' },
-    { label: '95% 置信区间', value: `[${stats.ciLower.toFixed(1)}%, ${stats.ciUpper.toFixed(1)}%]`, helpId: 'ci' },
-    { label: '退化案例数', value: stats.degradedCount, isPositive: stats.degradedCount === 0, helpId: 'degraded' },
-    { label: '最大退化幅度', value: stats.minImp < 0 ? `${stats.minImp.toFixed(2)}%` : '无', isPositive: stats.minImp >= 0, helpId: 'wns' }
+    { label: '95% 置信区间', value: `[${stats.ciLower.toFixed(1)}%, ${stats.ciUpper.toFixed(1)}%]`, isPositive: stats.ciLower > 0, helpId: 'ci' },
+    { 
+      label: '退化案例', 
+      value: stats.degradedCount, 
+      suffix: `/${stats.nValid}`,
+      subValue: `(${degradedRate.toFixed(1)}%)`,
+      isPositive: stats.degradedCount === 0, 
+      helpId: 'degraded' 
+    },
+    { 
+      label: '极值范围', 
+      value: stats.maxImp, 
+      minImp: stats.minImp,
+      isPositive: stats.maxImp > Math.abs(stats.minImp || 0), 
+      helpId: 'extreme',
+      format: 'range'
+    }
+  ];
+
+  const auxiliaryCards = [
+    { label: '中位数', value: stats.median, isPositive: stats.median > 0, helpId: 'median', description: '改进率的中位数值' },
+    { label: '标准差', value: stats.std, isPositive: true, neutral: true, helpId: 'std', description: '数据离散程度的度量' },
+    { label: '变异系数', value: cv, std: stats.std, meanImp: stats.meanImp, isPositive: true, neutral: true, format: 'cv', helpId: 'cv', description: '标准差/均值，衡量相对离散程度' },
+    { label: 'IQR', value: iqr, isPositive: iqr > 0, helpId: 'iqr', description: '四分位距 Q3-Q1，中间50%数据的范围' }
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-      {cards.map((card, i) => (
-        <div key={i} className={`p-3 rounded-xl border ${card.isPositive ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
-          <div className={`text-xs font-bold mb-1 flex items-center ${card.isPositive ? 'text-emerald-800' : 'text-red-800'}`}>
-            {card.label}
-            <HelpIcon content={<StatHelpContent helpId={card.helpId} />} position="bottom-right" tooltipWidth="w-[36rem]" className="w-3 h-3 ml-0.5" />
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+        {mainCards.map((card, i) => (
+          <div key={i} className={`p-3 rounded-xl border ${card.isPositive ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+            <div className={`text-xs font-bold mb-1 flex items-center ${card.isPositive ? 'text-emerald-800' : 'text-red-800'}`}>
+              {card.label}
+              <HelpIcon content={<StatHelpContent helpId={card.helpId} />} position="bottom-right" tooltipWidth="w-[36rem]" className="w-3 h-3 ml-0.5" />
+            </div>
+            <div className={`text-2xl font-black ${card.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+              {card.format === 'pvalue' && typeof card.value === 'number' 
+                ? card.value.toFixed(3) 
+                : card.format === 'range'
+                  ? <span className="flex items-center gap-1 text-lg">
+                      <span className="text-red-600">{card.minImp.toFixed(1)}%</span>
+                      <span className="text-gray-400 text-sm">~</span>
+                      <span className="text-emerald-600">+{card.value.toFixed(1)}%</span>
+                    </span>
+                  : card.format === 'integer'
+                    ? <span>{card.value}{card.suffix || ''} <span className="text-sm font-medium">{card.subValue}</span></span>
+                    : card.suffix && card.subValue
+                      ? <span>{card.value}{card.suffix} <span className="text-sm font-medium">{card.subValue}</span></span>
+                      : typeof card.value === 'number' 
+                        ? `${card.value > 0 ? '+' : ''}${card.value.toFixed(2)}%`
+                        : card.value}
+            </div>
           </div>
-          <div className={`text-2xl font-black ${card.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
-            {card.format === 'pvalue' && typeof card.value === 'number' ? card.value.toFixed(3) : (typeof card.value === 'number' ? `${card.value > 0 ? '+' : ''}${card.value.toFixed(2)}%` : card.value)}
-          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setShowAuxiliary(!showAuxiliary)}
+          className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition-colors"
+        >
+          {showAuxiliary ? '收起' : '展开'}辅助指标
+          <svg className={`w-3 h-3 transition-transform ${showAuxiliary ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <span className="text-[10px] text-gray-400">中位数、标准差、变异系数、IQR</span>
+      </div>
+
+      {showAuxiliary && (
+        <div className="flex flex-wrap gap-1.5 animate-in slide-in-from-top-2 duration-200">
+          {auxiliaryCards.map((card, i) => (
+            <div key={i} className={`px-2.5 py-1.5 rounded border ${card.neutral ? 'bg-gray-50 border-gray-200' : card.isPositive ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+              <div className={`text-[10px] font-bold flex items-center ${card.neutral ? 'text-gray-600' : card.isPositive ? 'text-emerald-700' : 'text-red-700'}`}>
+                {card.label}
+                <HelpIcon content={
+                  <div className="space-y-1">
+                    <p className="font-bold text-indigo-400">{card.label}</p>
+                    <p className="text-xs">{card.description}</p>
+                  </div>
+                } position="bottom-right" tooltipWidth="w-48" className="w-2 h-2 ml-0.5" />
+              </div>
+              <div className={`text-base font-black ${card.neutral ? 'text-gray-700' : card.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+                {card.format === 'cv'
+                  ? (card.value === null || isNaN(card.value) 
+                    ? 'N/A'
+                    : <span>
+                        <span className="text-xs font-normal text-gray-400">{card.std.toFixed(2)}/{Math.abs(card.meanImp).toFixed(2)}=</span>
+                        {card.value.toFixed(2)}
+                      </span>)
+                  : typeof card.value === 'number'
+                    ? `${card.value > 0 ? '+' : ''}${card.value.toFixed(2)}%`
+                    : card.value}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 };
@@ -108,8 +172,13 @@ const StatHelpContent = ({ helpId }) => {
     arith: { title: '算术平均改进率', items: ['公式：Σ(改进率)/n', '直观的算术平均值', '若远大于Geomean，说明个别测试集被异常放大'] },
     pvalue: { title: 'Wilcoxon 符号秩检验', items: ['非参数统计检验，不依赖数据分布', '判断数据分布改变是否真实有效', 'P<0.05 表示提升具有统计学显著性'] },
     ci: { title: '95% 置信区间', items: ['算法表现波动的95%上下限预测', '下限>0%：说明该算法极为稳健', '区间越窄：算法表现越稳定'] },
-    degraded: { title: '退化案例数', items: ['改进率<0%的案例总数', '参与计算的有效样本', '通常有严格的容忍度红线'] },
-    wns: { title: '最大退化幅度 (WNS)', items: ['Worst Case分析，"最坏能有多坏"', '评估算法在最差情况下的表现', '严重跌破底线的改动通常被驳回'] }
+    degraded: { title: '退化案例', items: ['改进率<0%的案例数量', '括号内为退化案例占总有效案例的百分比', '通常有严格的容忍度红线'] },
+    extreme: { title: '极值范围', items: ['最大退化幅度 ~ 最大改进幅度', '展示算法表现的上下边界', '评估算法在最好和最差情况下的表现'] },
+    improved_count: { title: '改进案例', items: ['改进率>0%的案例数量', '括号内为改进案例占总案例的百分比'] },
+    median: { title: '中位数', items: ['改进率的中位数值', '不受极端值影响', '反映典型案例的表现'] },
+    std: { title: '标准差', items: ['数据离散程度的度量', '越小表示算法表现越稳定', '过大说明存在较大波动'] },
+    cv: { title: '变异系数', items: ['公式：标准差/均值×100%', '衡量相对离散程度', '越小表示相对稳定性越好'] },
+    iqr: { title: '四分位距 (IQR)', items: ['公式：Q3 - Q1', '中间50%数据的分布范围', '不受极端值影响'] }
   };
   const help = helps[helpId] || { title: '', items: [] };
   return (
@@ -135,7 +204,8 @@ const AppContent = () => {
     showAiConfig, setShowAiConfig,
     stats, allMetricsStats, filteredTableData,
     validCasesMap, runAnalysis, toggleCase, toggleAll, handleSort, handleChartMouseMove,
-    tableSearchTerm, setTableSearchTerm
+    tableSearchTerm, setTableSearchTerm,
+    saveAiInsights, getSavedAiInsights, isInsightsOutdated
   } = useAppContext();
 
   useEffect(() => { runAnalysis(); }, []);
@@ -151,16 +221,19 @@ const AppContent = () => {
 
   useEffect(() => {
     if (!isAnalyzing && aiInsights && activeTab === 'ai_analysis') {
-      let i = 0;
-      setDisplayInsights('');
-      const interval = setInterval(() => {
-        setDisplayInsights(aiInsights.substring(0, i));
-        i += 3;
-        if (i > aiInsights.length) clearInterval(interval);
-      }, 10);
-      return () => clearInterval(interval);
+      setDisplayInsights(aiInsights);
     }
   }, [aiInsights, isAnalyzing, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'ai_analysis' && !aiInsights && !isAnalyzing) {
+      const saved = getSavedAiInsights(baseAlgo, compareAlgo);
+      if (saved) {
+        setAiInsights(saved.insights);
+        setDisplayInsights(saved.insights);
+      }
+    }
+  }, [activeTab, baseAlgo, compareAlgo, aiInsights, isAnalyzing, getSavedAiInsights]);
 
   const handleGenerateAIInsights = async () => {
     if (!stats || !activeMetric) return;
@@ -176,6 +249,7 @@ const AppContent = () => {
     try {
       const insights = await generateAIInsights(llmConfig, baseAlgo, compareAlgo, activeMetric, stats, allMetricsStats, parsedData, selectedCases, metaColumns);
       setAiInsights(insights);
+      saveAiInsights(baseAlgo, compareAlgo, insights);
     } catch (err) {
       setAiError(`调用失败: ${err.message}`);
     } finally {
@@ -306,6 +380,8 @@ const AppContent = () => {
                 aiError={aiError}
                 setShowAiConfig={setShowAiConfig}
                 handleGenerateAIInsights={handleGenerateAIInsights}
+                isOutdated={isInsightsOutdated(baseAlgo, compareAlgo)}
+                savedTimestamp={getSavedAiInsights(baseAlgo, compareAlgo)?.timestamp}
               />
             )}
           </div>

@@ -361,18 +361,25 @@ export const useFormValidation = (initialValues = {}, validationRules = {}) => {
   const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const valuesRef = useRef(values);
+  valuesRef.current = values;
+
   const setValue = useCallback((field, value) => {
-    setValues(prev => ({ ...prev, [field]: value }));
-    
-    if (validationRules[field]) {
-      const rule = validationRules[field];
-      const error = rule(value, values);
-      setErrors(prev => ({
-        ...prev,
-        [field]: error || null
-      }));
-    }
-  }, [validationRules, values]);
+    setValues(prev => {
+      const newValues = { ...prev, [field]: value };
+      
+      if (validationRules[field]) {
+        const rule = validationRules[field];
+        const error = rule(value, newValues);
+        setErrors(prevErrors => ({
+          ...prevErrors,
+          [field]: error || null
+        }));
+      }
+      
+      return newValues;
+    });
+  }, [validationRules]);
 
   const setTouchedField = useCallback((field) => {
     setTouched(prev => ({ ...prev, [field]: true }));
@@ -381,7 +388,8 @@ export const useFormValidation = (initialValues = {}, validationRules = {}) => {
   const validateField = useCallback((field, value) => {
     if (validationRules[field]) {
       const rule = validationRules[field];
-      const error = rule(value !== undefined ? value : values[field], values);
+      const fieldValue = value !== undefined ? value : valuesRef.current[field];
+      const error = rule(fieldValue, valuesRef.current);
       setErrors(prev => ({
         ...prev,
         [field]: error || null
@@ -389,7 +397,7 @@ export const useFormValidation = (initialValues = {}, validationRules = {}) => {
       return !error;
     }
     return true;
-  }, [validationRules, values]);
+  }, [validationRules]);
 
   const validateAll = useCallback(() => {
     const newErrors = {};
@@ -397,7 +405,7 @@ export const useFormValidation = (initialValues = {}, validationRules = {}) => {
 
     Object.keys(validationRules).forEach(field => {
       const rule = validationRules[field];
-      const error = rule(values[field], values);
+      const error = rule(valuesRef.current[field], valuesRef.current);
       if (error) {
         newErrors[field] = error;
         isValid = false;
@@ -406,7 +414,7 @@ export const useFormValidation = (initialValues = {}, validationRules = {}) => {
 
     setErrors(newErrors);
     return isValid;
-  }, [validationRules, values]);
+  }, [validationRules]);
 
   const handleSubmit = useCallback((onSubmit) => async (e) => {
     e?.preventDefault();

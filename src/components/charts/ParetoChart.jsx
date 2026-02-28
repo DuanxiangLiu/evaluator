@@ -62,7 +62,7 @@ const ParetoChart = ({
     }
 
     return (
-      <ChartBody>
+      <ChartBody className="max-w-5xl mx-auto w-full">
         <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0">
           {ticks.slice().reverse().map((tick, i) => (
             <span 
