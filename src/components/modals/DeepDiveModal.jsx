@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { X, Search, Box } from 'lucide-react';
 import { getMetricConfig } from '../../services/dataService';
-import { calculateImprovement } from '../../utils/statistics';
+import { calculateImprovementWithDirection } from '../../utils/statistics';
 import { CHART_BASE_RADIUS, CHART_MAX_IMPROVEMENT } from '../../utils/constants';
 
 const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetrics, onClose }) => {
@@ -12,15 +12,12 @@ const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetri
     const bVal = caseData.raw[m]?.[baseAlgo];
     const cVal = caseData.raw[m]?.[compareAlgo];
     if (bVal == null || cVal == null) return null;
-    const imp = calculateImprovement(bVal, cVal);
+    const config = getMetricConfig(m);
+    const imp = calculateImprovementWithDirection(bVal, cVal, config.better === 'higher');
     return { metric: m, bVal, cVal, imp };
   }).filter(d => d !== null);
 
-  const getNormalizedImp = (imp, metric) => {
-    const config = getMetricConfig(metric);
-    if (config.better === 'higher') {
-      return -imp;
-    }
+  const getNormalizedImp = (imp) => {
     return imp;
   };
 
@@ -79,7 +76,7 @@ const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetri
                     });
 
                     const dataPolygon = radarData.map((d, i) => {
-                      const normalizedImp = getNormalizedImp(d.imp, d.metric);
+                      const normalizedImp = getNormalizedImp(d.imp);
                       const scale = Math.max(0.3, Math.min(1.5, 1 + normalizedImp / maxImp));
                       const r = baseRadius * scale;
                       const pt = getPoint((Math.PI * 2 * i) / N, r);

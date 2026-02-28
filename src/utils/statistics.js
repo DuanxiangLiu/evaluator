@@ -200,6 +200,18 @@ export const calculateImprovement = (baseVal, compareVal) => {
   return ((baseVal - compareVal) / baseVal) * 100;
 };
 
+export const calculateImprovementWithDirection = (baseVal, compareVal, isHigherBetter = false) => {
+  if (baseVal == null || compareVal == null) return null;
+  
+  if (isHigherBetter) {
+    if (baseVal === 0 && compareVal === 0) return 0;
+    if (baseVal === 0) return 100;
+    return ((compareVal - baseVal) / Math.abs(baseVal)) * 100;
+  } else {
+    return calculateImprovement(baseVal, compareVal);
+  }
+};
+
 export const calculateRatio = (baseVal, compareVal) => {
   if (baseVal == null || compareVal == null) return null;
   if (baseVal === 0 && compareVal === 0) return 1;

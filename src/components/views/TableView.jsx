@@ -6,12 +6,14 @@ import SortIcon from '../common/SortIcon';
 import StatusBadge, { getStatusType } from '../common/StatusBadge';
 import { useToast } from '../common/Toast';
 import { exportToCSV, exportFullDataToCSV, exportToJSON, exportToExcel } from '../../services/dataService';
-import { calculateImprovement } from '../../utils/statistics';
+import { calculateImprovementWithDirection } from '../../utils/statistics';
+import { getMetricConfig } from '../../services/csvParser';
 import { formatIndustrialNumber } from '../../utils/formatters';
 import { TABLE_STYLES, getDetailRowStyle, getImpColorClass } from '../../utils/tableStyles';
 import { logger } from '../../utils/logger';
 import { CheckSquare, Square, ArrowDown, AlertTriangle, Download, Search, MoreVertical, FileSpreadsheet, FileJson, X } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
+import { ImprovementFormulaHelp } from '../common/HelpContents';
 
 const TableView = ({
   activeMetric,
@@ -256,16 +258,7 @@ const TableView = ({
               </p>
             </div>
             
-            <div className="space-y-2">
-              <h4 className="font-semibold text-emerald-300 text-xs">改进率计算</h4>
-              <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-300 font-mono">
-                改进率 = (基准值 - 对比值) / 基准值 × 100%
-              </div>
-              <ul className="text-gray-300 text-xs space-y-1 mt-2">
-                <li>• <span className="text-emerald-400">正值（绿色）</span>：对比算法优于基准算法</li>
-                <li>• <span className="text-red-400">负值（红色）</span>：对比算法劣于基准算法</li>
-              </ul>
-            </div>
+            <ImprovementFormulaHelp />
             
             <div className="space-y-2">
               <h4 className="font-semibold text-amber-300 text-xs">筛选功能</h4>
@@ -308,18 +301,7 @@ const TableView = ({
                 <div className="flex justify-end items-center text-indigo-900">
                   改进率 %
                   <HelpIcon 
-                    content={
-                      <div className="space-y-2">
-                        <h4 className="font-semibold text-indigo-300 text-xs">改进率计算公式</h4>
-                        <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-300 font-mono">
-                          改进率 = (基准值 - 对比值) / 基准值 × 100%
-                        </div>
-                        <ul className="text-gray-300 text-xs space-y-1">
-                          <li>• <span className="text-emerald-400">正值</span>：对比算法优于基准</li>
-                          <li>• <span className="text-red-400">负值</span>：对比算法劣于基准</li>
-                        </ul>
-                      </div>
-                    }
+                    content={<ImprovementFormulaHelp />}
                     className="w-3 h-3 text-indigo-600"
                   />
                   <SortIcon config={sortConfig} columnKey="imp" />
@@ -355,7 +337,8 @@ const TableView = ({
               const cVal = d.raw[activeMetric]?.[compareAlgo];
               const isNull = bVal == null || cVal == null;
 
-              const imp = calculateImprovement(bVal, cVal);
+              const metricConfig = getMetricConfig(activeMetric);
+              const imp = calculateImprovementWithDirection(bVal, cVal, metricConfig.better === 'higher');
               const validMatch = validCasesMap.get(d.Case);
               const outlierType = validMatch?.outlierType || 'normal';
 

@@ -1,5 +1,25 @@
 import React from 'react';
 
+export const ImprovementFormulaHelp = ({ showTitle = true, compact = false }) => (
+  <div className="space-y-2">
+    {showTitle && <h4 className="font-semibold text-indigo-300 text-xs">改进率计算公式</h4>}
+    <div className="space-y-1.5">
+      <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-300">
+        <div className="text-emerald-400 font-semibold mb-1">越小越好的指标（如 HPWL、Runtime）：</div>
+        <div className="font-mono">改进率 = (基准值 - 对比值) / 基准值 × 100%</div>
+      </div>
+      <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-300">
+        <div className="text-amber-400 font-semibold mb-1">越大越好的指标（如 TNS、Frequency）：</div>
+        <div className="font-mono">改进率 = (对比值 - 基准值) / |基准值| × 100%</div>
+      </div>
+    </div>
+    <ul className="text-gray-300 text-xs space-y-1">
+      <li>• <span className="text-emerald-400">正值</span>：对比算法优于基准</li>
+      <li>• <span className="text-red-400">负值</span>：对比算法劣于基准</li>
+    </ul>
+  </div>
+);
+
 export const KeyIndicatorHelpContent = () => (
   <div className="space-y-3">
     <div>
@@ -32,18 +52,7 @@ export const KeyIndicatorHelpContent = () => (
   </div>
 );
 
-export const ImprovementHelpContent = () => (
-  <div className="space-y-2">
-    <h4 className="font-semibold text-indigo-300 text-xs">改进率计算公式</h4>
-    <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-300 font-mono">
-      改进率 = (基准值 - 对比值) / 基准值 × 100%
-    </div>
-    <ul className="text-gray-300 text-xs space-y-1">
-      <li>• <span className="text-emerald-400">正值</span>：对比算法优于基准</li>
-      <li>• <span className="text-red-400">负值</span>：对比算法劣于基准</li>
-    </ul>
-  </div>
-);
+export const ImprovementHelpContent = () => <ImprovementFormulaHelp />;
 
 export const StatusHelpContent = () => (
   <div className="space-y-2">
@@ -68,16 +77,7 @@ export const TableHelpContent = () => (
       </p>
     </div>
     
-    <div className="space-y-2">
-      <h4 className="font-semibold text-emerald-300 text-xs">改进率计算</h4>
-      <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-300 font-mono">
-        改进率 = (基准值 - 对比值) / 基准值 × 100%
-      </div>
-      <ul className="text-gray-300 text-xs space-y-1 mt-2">
-        <li>• <span className="text-emerald-400">正值（绿色）</span>：对比算法优于基准算法</li>
-        <li>• <span className="text-red-400">负值（红色）</span>：对比算法劣于基准算法</li>
-      </ul>
-    </div>
+    <ImprovementFormulaHelp showTitle={true} />
     
     <div className="space-y-2">
       <h4 className="font-semibold text-amber-300 text-xs">筛选功能</h4>

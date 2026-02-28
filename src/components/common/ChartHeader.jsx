@@ -56,7 +56,7 @@ const ChartHeader = ({
     <div className={containerClass}>
       <div className="flex flex-wrap items-center gap-3">
         {leftContent}
-        <h3 className={`font-bold ${styles.title} text-base flex items-center gap-2`}>
+        <h3 className={`font-semibold ${styles.title} text-base flex items-center gap-2`}>
           {Icon && <Icon className="w-5 h-5" />}
           {title}
           {metric && (

@@ -3,7 +3,10 @@ import PropTypes from 'prop-types';
 import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartBody, ChartArea, ChartLegend, AreaLabel, EmptyState } from '../common/ChartContainer';
 import { Circle } from 'lucide-react';
-import { calculateImprovement } from '../../utils/statistics';
+import HelpIcon from '../common/HelpIcon';
+import { calculateImprovementWithDirection } from '../../utils/statistics';
+import { getMetricConfig } from '../../services/csvParser';
+import { ImprovementFormulaHelp } from '../common/HelpContents';
 import { CHART_WIDTH, CHART_HEADER_STYLES } from '../../utils/constants';
 
 const ParetoChart = ({ 
@@ -22,9 +25,13 @@ const ParetoChart = ({
 
     if(bx==null || cx==null || by==null || cy==null || (paretoZ && (bz==null||cz==null))) return null;
     
-    const impX = calculateImprovement(bx, cx);
-    const impY = calculateImprovement(by, cy);
-    const impZ = paretoZ ? calculateImprovement(bz, cz) : 0;
+    const configX = getMetricConfig(paretoX);
+    const configY = getMetricConfig(paretoY);
+    const configZ = paretoZ ? getMetricConfig(paretoZ) : null;
+    
+    const impX = calculateImprovementWithDirection(bx, cx, configX.better === 'higher');
+    const impY = calculateImprovementWithDirection(by, cy, configY.better === 'higher');
+    const impZ = paretoZ ? calculateImprovementWithDirection(bz, cz, configZ.better === 'higher') : 0;
 
     if (impX === null || impY === null || (paretoZ && impZ === null)) return null;
 
@@ -64,7 +71,8 @@ const ParetoChart = ({
 
     return (
       <ChartBody className={`${CHART_WIDTH.COMPACT} mx-auto w-full`}>
-        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0">
+        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0 relative">
+          <span className="text-gray-400 text-[9px] -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">{paretoY || 'Y'}</span>
           {ticks.slice().reverse().map((tick, i) => (
             <span 
               key={i} 
@@ -78,66 +86,87 @@ const ParetoChart = ({
           ))}
         </div>
         
-        <ChartArea className="border-l-2 border-b-2 border-gray-300 bg-gradient-to-br from-green-50/30 via-white to-red-50/30">
-          <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-bl from-green-100/20 to-transparent pointer-events-none"></div>
-          <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-red-100/20 to-transparent pointer-events-none"></div>
-          
-          <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <line x1="0" y1="50" x2="100" y2="50" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
-            <line x1="50" y1="0" x2="50" y2="100" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
+        <div className="flex-1 flex flex-col">
+          <ChartArea className="border-l-2 border-b-2 border-gray-300 flex-1 bg-gradient-to-br from-green-50/30 via-white to-red-50/30">
+            <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-bl from-green-100/20 to-transparent pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-red-100/20 to-transparent pointer-events-none"></div>
             
-            {ticks.map((tick, i) => (
-              <g key={`tick-${i}`}>
-                <line x1={tick.pos} y1="0" x2={tick.pos} y2="100" stroke="#e5e7eb" strokeWidth="0.2" strokeDasharray="1 2" />
-                <line x1="0" y1={tick.pos} x2="100" y2={tick.pos} stroke="#e5e7eb" strokeWidth="0.2" strokeDasharray="1 2" />
-              </g>
-            ))}
+            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <line x1="0" y1="50" x2="100" y2="50" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
+              <line x1="50" y1="0" x2="50" y2="100" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
+              
+              {ticks.map((tick, i) => (
+                <g key={`tick-${i}`}>
+                  <line x1={tick.pos} y1="0" x2={tick.pos} y2="100" stroke="#e5e7eb" strokeWidth="0.2" strokeDasharray="1 2" />
+                  <line x1="0" y1={tick.pos} x2="100" y2={tick.pos} stroke="#e5e7eb" strokeWidth="0.2" strokeDasharray="1 2" />
+                </g>
+              ))}
+              
+              {sortedPoints.map((p) => {
+                const isHovered = hoveredCase === p.case;
+                const scx = Math.max(5, Math.min(95, mapX(p.impX)));
+                const scy = Math.max(5, Math.min(95, mapY(p.impY)));
+                
+                let color = '#6366f1';
+                if (p.impX > 0 && p.impY > 0) color = '#059669';
+                else if (p.impX < 0 && p.impY < 0) color = '#dc2626';
+
+                let radius = 1;
+                if (paretoZ) {
+                  const zAbs = Math.abs(p.impZ);
+                  const maxZAbs = Math.max(Math.abs(minZ), Math.abs(maxZ)) || 1;
+                  radius = 0.6 + (zAbs / maxZAbs) * 2;
+                }
+                
+                let tooltipLines = [`${paretoX}: ${p.impX > 0 ? '+' : ''}${p.impX.toFixed(2)}%`, `${paretoY}: ${p.impY > 0 ? '+' : ''}${p.impY.toFixed(2)}%`];
+                if (paretoZ) tooltipLines.push(`${paretoZ}: ${p.impZ > 0 ? '+' : ''}${p.impZ.toFixed(2)}%`);
+
+                return (
+                  <g key={`pareto-${p.case}`}>
+                    <circle
+                      cx={scx} cy={scy} r="6"
+                      fill="transparent"
+                      className="cursor-pointer"
+                      onMouseEnter={(e) => {
+                        setHoveredCase(p.case);
+                        const rect = e.currentTarget.closest('.chart-area')?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
+                        setTooltipState({ visible: true, x: e.clientX - rect.left, y: e.clientY - rect.top, title: p.case, lines: tooltipLines });
+                      }}
+                      onMouseMove={(e) => {
+                        const rect = e.currentTarget.closest('.chart-area')?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
+                        setTooltipState(prev => ({ ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top }));
+                      }}
+                      onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setHoveredCase(null);
+                        setTooltipState(prev => ({...prev, visible: false}));
+                        if (onCaseClick) onCaseClick(p.case);
+                      }}
+                    />
+                    <circle
+                      cx={scx} cy={scy} 
+                      r={isHovered ? radius + 1 : radius} 
+                      fill={color} 
+                      stroke={isHovered ? "#fff" : "none"} 
+                      strokeWidth="0.3"
+                      fillOpacity={paretoZ ? 0.7 : 1}
+                      className={`transition-all duration-200 pointer-events-none ${isHovered ? 'animate-pulse' : ''}`}
+                    />
+                  </g>
+                );
+              })}
+            </svg>
             
-            {sortedPoints.map((p) => {
-              const isHovered = hoveredCase === p.case;
-              const scx = Math.max(5, Math.min(95, mapX(p.impX)));
-              const scy = Math.max(5, Math.min(95, mapY(p.impY)));
-              
-              let color = '#6366f1';
-              if (p.impX > 0 && p.impY > 0) color = '#059669';
-              else if (p.impX < 0 && p.impY < 0) color = '#dc2626';
-
-              let radius = 1;
-              if (paretoZ) {
-                const zAbs = Math.abs(p.impZ);
-                const maxZAbs = Math.max(Math.abs(minZ), Math.abs(maxZ)) || 1;
-                radius = 0.6 + (zAbs / maxZAbs) * 2;
-              }
-              
-              let tooltipLines = [`${paretoX}: ${p.impX > 0 ? '+' : ''}${p.impX.toFixed(2)}%`, `${paretoY}: ${p.impY > 0 ? '+' : ''}${p.impY.toFixed(2)}%`];
-              if (paretoZ) tooltipLines.push(`${paretoZ}: ${p.impZ > 0 ? '+' : ''}${p.impZ.toFixed(2)}%`);
-
-              return (
-                <circle
-                  key={`pareto-${p.case}`} 
-                  cx={scx} cy={scy} 
-                  r={isHovered ? radius + 1 : radius} 
-                  fill={color} 
-                  stroke={isHovered ? "#fff" : "none"} 
-                  strokeWidth="0.3"
-                  fillOpacity={paretoZ ? 0.7 : 1}
-                  className={`transition-all duration-200 cursor-pointer ${isHovered ? 'animate-pulse' : ''}`}
-                  onMouseEnter={() => {
-                    setHoveredCase(p.case);
-                    setTooltipState({ visible: true, x: 0, y: 0, title: p.case, lines: tooltipLines });
-                  }}
-                  onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
-                  onDoubleClick={() => {
-                    if (onCaseClick && p.raw) onCaseClick(p.raw);
-                  }}
-                />
-              );
-            })}
-          </svg>
+            <AreaLabel position="top-right" variant="success">双赢 ↑</AreaLabel>
+            <AreaLabel position="bottom-left" variant="danger">双输 ↓</AreaLabel>
+          </ChartArea>
           
-          <AreaLabel position="top-right" variant="success">双赢 ↑</AreaLabel>
-          <AreaLabel position="bottom-left" variant="danger">双输 ↓</AreaLabel>
-        </ChartArea>
+          <div className="text-center py-1 text-[10px] font-semibold text-gray-500">
+            {paretoX || 'X'}
+          </div>
+        </div>
       </ChartBody>
     );
   };
@@ -154,6 +183,8 @@ const ParetoChart = ({
                 同时观察两个或三个指标的改进情况，识别「双赢」或「Trade-off」的用例。
               </p>
             </div>
+            
+            <ImprovementFormulaHelp />
             
             <div className="space-y-2">
               <h4 className="font-semibold text-emerald-300 text-xs">象限解读</h4>
@@ -173,15 +204,8 @@ const ParetoChart = ({
               </ul>
             </div>
             
-            <div className="space-y-2">
-              <h4 className="font-semibold text-amber-300 text-xs">气泡大小</h4>
-              <p className="text-gray-300 text-xs">
-                开启 Z 轴后，气泡大小表示第三个指标的改进幅度，越大表示改进越明显。
-              </p>
-            </div>
-            
             <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
-              💡 <strong>提示</strong>：Pareto Front（帕累托前沿）上的点代表最优权衡解
+              💡 <strong>提示</strong>：气泡大小表示第三指标的改进幅度（可选）
             </div>
           </div>
         }
@@ -200,6 +224,25 @@ const ParetoChart = ({
           </select>
           <span className={`${CHART_HEADER_STYLES.LABEL_ACCENT} ml-1 flex items-center gap-0.5`}>
             <Circle className="w-2.5 h-2.5"/>Z:
+            <HelpIcon 
+              content={
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-indigo-300 text-xs">Z 轴 - 气泡大小</h4>
+                  <p className="text-gray-300 text-xs">
+                    Z 轴控制气泡的大小，表示第三个指标的改进幅度。
+                  </p>
+                  <ul className="text-gray-300 text-xs space-y-1">
+                    <li>• <strong>气泡越大</strong>：该指标改进幅度越大</li>
+                    <li>• <strong>气泡越小</strong>：该指标改进幅度越小或退化</li>
+                    <li>• <strong>关闭 Z 轴</strong>：所有气泡大小相同</li>
+                  </ul>
+                  <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
+                    💡 适合同时观察三个指标的综合表现
+                  </div>
+                </div>
+              }
+              className="w-3 h-3"
+            />
           </span>
           <select value={paretoZ} onChange={(e) => setParetoZ(e.target.value)} className={CHART_HEADER_STYLES.SELECT_ACCENT}>
             <option value="">关</option>
@@ -207,6 +250,87 @@ const ParetoChart = ({
           </select>
         </div>
       </ChartHeader>
+
+      {(() => {
+        if (!paretoX || !paretoY || validPoints.length === 0) return null;
+        
+        if (paretoZ) {
+          const tripleWin = validPoints.filter(p => p.impX > 0 && p.impY > 0 && p.impZ > 0).length;
+          const tripleLose = validPoints.filter(p => p.impX < 0 && p.impY < 0 && p.impZ < 0).length;
+          const doubleWin = validPoints.filter(p => {
+            const positives = [p.impX > 0, p.impY > 0, p.impZ > 0].filter(Boolean).length;
+            return positives === 2;
+          }).length;
+          const doubleLose = validPoints.filter(p => {
+            const negatives = [p.impX < 0, p.impY < 0, p.impZ < 0].filter(Boolean).length;
+            return negatives === 2;
+          }).length;
+          
+          return (
+            <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 border-b border-gray-200 text-xs flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span className="text-gray-500">三赢:</span>
+                <span className="font-semibold text-emerald-600">{tripleWin}</span>
+                <span className="text-gray-400">({((tripleWin / validPoints.length) * 100).toFixed(0)}%)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                <span className="text-gray-500">两赢一输:</span>
+                <span className="font-semibold text-emerald-500">{doubleWin}</span>
+                <span className="text-gray-400">({((doubleWin / validPoints.length) * 100).toFixed(0)}%)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <span className="text-gray-500">一赢两输:</span>
+                <span className="font-semibold text-amber-600">{doubleLose}</span>
+                <span className="text-gray-400">({((doubleLose / validPoints.length) * 100).toFixed(0)}%)</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                <span className="text-gray-500">三输:</span>
+                <span className="font-semibold text-red-500">{tripleLose}</span>
+                <span className="text-gray-400">({((tripleLose / validPoints.length) * 100).toFixed(0)}%)</span>
+              </div>
+              <div className="flex items-center gap-1.5 ml-auto">
+                <span className="text-gray-500">样本数:</span>
+                <span className="font-semibold text-gray-700">{validPoints.length}</span>
+              </div>
+            </div>
+          );
+        }
+        
+        const winWin = validPoints.filter(p => p.impX > 0 && p.impY > 0).length;
+        const loseLose = validPoints.filter(p => p.impX < 0 && p.impY < 0).length;
+        const tradeOff = validPoints.length - winWin - loseLose;
+        
+        return (
+          <div className="flex items-center gap-4 px-4 py-2 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 border-b border-gray-200 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span className="text-gray-500">双赢:</span>
+              <span className="font-semibold text-emerald-600">{winWin}</span>
+              <span className="text-gray-400">({((winWin / validPoints.length) * 100).toFixed(0)}%)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+              <span className="text-gray-500">双输:</span>
+              <span className="font-semibold text-red-500">{loseLose}</span>
+              <span className="text-gray-400">({((loseLose / validPoints.length) * 100).toFixed(0)}%)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+              <span className="text-gray-500">Trade-off:</span>
+              <span className="font-semibold text-indigo-600">{tradeOff}</span>
+              <span className="text-gray-400">({((tradeOff / validPoints.length) * 100).toFixed(0)}%)</span>
+            </div>
+            <div className="flex items-center gap-1.5 ml-auto">
+              <span className="text-gray-500">样本数:</span>
+              <span className="font-semibold text-gray-700">{validPoints.length}</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {renderContent()}
 

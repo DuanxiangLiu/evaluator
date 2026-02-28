@@ -4,6 +4,22 @@ import { parseCSV, computeStatistics, updateDataValue, dataToCSVString } from '.
 import { generateDefaultDataset } from '../utils/dataGenerator';
 import { DEFAULT_LLM_CONFIG } from '../utils/constants';
 import { calculateImprovement } from '../utils/statistics';
+import { getMetricConfig } from '../services/csvParser';
+
+const calculateImprovementWithDirection = (baseVal, compareVal, metricName) => {
+  if (baseVal == null || compareVal == null) return null;
+  
+  const config = getMetricConfig(metricName);
+  const isHigherBetter = config.better === 'higher';
+  
+  if (isHigherBetter) {
+    if (baseVal === 0 && compareVal === 0) return 0;
+    if (baseVal === 0) return 100;
+    return ((compareVal - baseVal) / Math.abs(baseVal)) * 100;
+  } else {
+    return calculateImprovement(baseVal, compareVal);
+  }
+};
 
 const AppContext = createContext(null);
 
@@ -196,8 +212,8 @@ export const AppProvider = ({ children }) => {
         const bBase = b.raw[activeMetric]?.[baseAlgo];
         const bComp = b.raw[activeMetric]?.[compareAlgo];
         
-        aVal = aBase == null || aComp == null ? -Infinity : calculateImprovement(aBase, aComp) ?? -Infinity;
-        bVal = bBase == null || bComp == null ? -Infinity : calculateImprovement(bBase, bComp) ?? -Infinity;
+        aVal = aBase == null || aComp == null ? -Infinity : calculateImprovementWithDirection(aBase, aComp, activeMetric) ?? -Infinity;
+        bVal = bBase == null || bComp == null ? -Infinity : calculateImprovementWithDirection(bBase, bComp, activeMetric) ?? -Infinity;
       } else {
         aVal = a.raw[activeMetric]?.[sortConfig.key] == null ? -Infinity : a.raw[activeMetric][sortConfig.key];
         bVal = b.raw[activeMetric]?.[sortConfig.key] == null ? -Infinity : b.raw[activeMetric][sortConfig.key];
@@ -246,7 +262,7 @@ export const AppProvider = ({ children }) => {
         return tableFilter === 'filtered';
       }
       
-      const imp = calculateImprovement(bVal, cVal);
+      const imp = calculateImprovementWithDirection(bVal, cVal, activeMetric);
       const validMatch = validCasesMap.get(d.Case);
       const outlierType = validMatch?.outlierType || 'normal';
 

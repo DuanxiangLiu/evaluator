@@ -4,6 +4,7 @@ import { AppProvider, useAppContext } from './context/AppContext';
 import Header from './components/layout/Header';
 import CsvDataSource from './components/layout/CsvDataSource';
 import HelpIcon from './components/common/HelpIcon';
+import { ImprovementFormulaHelp } from './components/common/HelpContents';
 import DeepDiveModal from './components/modals/DeepDiveModal';
 import AiConfigModal from './components/modals/AiConfigModal';
 import TableView from './components/views/TableView';
@@ -92,9 +93,9 @@ const StatsCards = ({ stats }) => {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+      <div className="flex flex-wrap gap-3">
         {mainCards.map((card, i) => (
-          <div key={i} className={`p-3 rounded-xl border ${card.isPositive ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+          <div key={i} className={`p-3 rounded-xl border min-w-[180px] flex-1 ${card.isPositive ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
             <div className={`text-xs font-bold mb-1 flex items-center ${card.isPositive ? 'text-emerald-800' : 'text-red-800'}`}>
               {card.label}
               <HelpIcon content={<StatHelpContent helpId={card.helpId} />} position="bottom-right" className="w-4 h-4 ml-0.5" />
@@ -486,29 +487,32 @@ const AppContent = () => {
               <div>
                 <h3 className="font-bold text-indigo-400 text-sm mb-2">关键指标概览</h3>
                 <p className="text-gray-300 text-xs mb-2">
-                  下方统计卡片展示当前选中指标的核心统计数据，帮助您快速了解算法性能。
+                  展示当前选中指标 ({activeMetric}) 的核心统计数据，帮助您快速评估 {compareAlgo} 相对于 {baseAlgo} 的性能表现。
                 </p>
               </div>
               
+              <ImprovementFormulaHelp />
+              
               <div className="space-y-2">
-                <h4 className="font-semibold text-emerald-300 text-xs">主要指标</h4>
-                <ul className="text-gray-300 text-xs space-y-1">
-                  <li>• <strong>Geomean</strong>：几何平均改进率，整体改进的标准度量</li>
-                  <li>• <strong>P-Value</strong>：统计显著性检验，小于0.05表示显著</li>
-                  <li>• <strong>置信区间</strong>：算法表现的波动范围预测</li>
+                <h4 className="font-semibold text-emerald-300 text-xs">核心指标</h4>
+                <ul className="text-gray-300 text-xs space-y-1.5">
+                  <li>• <strong>几何平均</strong>：整体改进的黄金标准，抗极端值干扰</li>
+                  <li>• <strong>算术平均</strong>：直观的平均改进率，易受极端值影响</li>
+                  <li>• <strong>P-Value</strong>：统计显著性，&lt;0.05 表示改进可信</li>
+                  <li>• <strong>置信区间</strong>：95% 概率下真实改进率的范围</li>
                 </ul>
               </div>
               
               <div className="space-y-2">
-                <h4 className="font-semibold text-amber-300 text-xs">切换方式</h4>
-                <ul className="text-gray-300 text-xs space-y-1">
-                  <li>• 使用「指标」下拉框切换不同评估指标</li>
-                  <li>• 使用「基线」和「对比」下拉框选择比较对象</li>
+                <h4 className="font-semibold text-amber-300 text-xs">风险指标</h4>
+                <ul className="text-gray-300 text-xs space-y-1.5">
+                  <li>• <strong>退化案例</strong>：改进率为负的案例数量和占比</li>
+                  <li>• <strong>极值范围</strong>：最差到最好表现的边界值</li>
                 </ul>
               </div>
               
               <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
-                💡 点击各指标旁的 <strong>?</strong> 图标可查看详细解释
+                💡 点击各指标旁的 <strong>?</strong> 图标可查看详细解释和计算公式
               </div>
             </div>} position="bottom-right" className="w-4 h-4 text-white/70 hover:text-white" />
           </span>

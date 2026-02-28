@@ -2,7 +2,9 @@ import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartBody, ChartArea, ChartLegend, AreaLabel } from '../common/ChartContainer';
-import { calculateImprovement } from '../../utils/statistics';
+import { ImprovementFormulaHelp } from '../common/HelpContents';
+import { calculateImprovementWithDirection } from '../../utils/statistics';
+import { getMetricConfig } from '../../services/csvParser';
 import { CHART_Y_PADDING, CHART_WIDTH } from '../../utils/constants';
 
 const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, setHoveredCase, setTooltipState, onCaseClick, parsedData, metaColumns }) => {
@@ -84,6 +86,8 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
               </p>
             </div>
             
+            <ImprovementFormulaHelp />
+            
             <div className="space-y-2">
               <h4 className="font-semibold text-emerald-300 text-xs">图表解读</h4>
               <ul className="text-gray-300 text-xs space-y-1.5">
@@ -102,16 +106,8 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
               </ul>
             </div>
             
-            <div className="space-y-2">
-              <h4 className="font-semibold text-amber-300 text-xs">特殊标记</h4>
-              <ul className="text-gray-300 text-xs space-y-1">
-                <li>• <span className="text-purple-400">紫色点</span>：显著优化（改进率超出正常范围）</li>
-                <li>• <span className="text-red-400">红色点</span>：严重退化（改进率为负且超出正常范围）</li>
-              </ul>
-            </div>
-            
             <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
-              💡 <strong>提示</strong>：双击任意数据点可查看该用例的详细分析
+              💡 <strong>提示</strong>：单击任意数据点可查看该用例的详细分析
             </div>
           </div>
         }
@@ -119,7 +115,8 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
       />
       
       <ChartBody className={`${CHART_WIDTH.COMPACT} mx-auto w-full`}>
-        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0">
+        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0 relative">
+          <span className="text-gray-400 text-[9px] -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">改进率</span>
           {yTicks.map((tick, i) => {
             const isMedian = tick.val === stats.median;
             const isQ3 = tick.val === stats.q3;
@@ -184,31 +181,54 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
               if (imp < stats.outlierLower) dotColor = "#dc2626";
               
               return (
-                <circle key={d.Case} cx={cx} cy={cy} r={isHovered ? "2.5" : (isOutlier ? "1.5" : "1")}
-                  fill={dotColor} stroke={isHovered ? "#fff" : "none"} strokeWidth={isHovered ? "0.3" : "0"}
-                  className={`transition-all duration-200 cursor-pointer ${isHovered ? 'animate-pulse' : ''}`}
-                  onMouseEnter={() => {
-                    setHoveredCase(d.Case);
-                    setTooltipState({ 
-                      visible: true, 
-                      x: 0, 
-                      y: 0, 
-                      title: d.Case, 
-                      lines: [
-                        `INST: ${instValue.toLocaleString()}`,
-                        `状态: ${isOutlier ? (imp > 0 ? '显著优化' : '严重退化') : (imp > 0 ? '优化' : '退化')}`, 
-                        `改进: ${imp > 0 ? '+' : ''}${imp.toFixed(2)}%`
-                      ] 
-                    });
-                  }}
-                  onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
-                  onDoubleClick={() => {
-                    if (onCaseClick && parsedData) {
-                      const caseData = parsedData.find(p => p.Case === d.Case);
-                      if (caseData) onCaseClick(caseData);
-                    }
-                  }}
-                />
+                <g key={d.Case}>
+                  <circle 
+                    cx={cx} cy={cy} r="6"
+                    fill="transparent"
+                    className="cursor-pointer"
+                    onMouseEnter={(e) => {
+                      setHoveredCase(d.Case);
+                      const rect = e.currentTarget.closest('.chart-area')?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
+                      setTooltipState({ 
+                        visible: true, 
+                        x: e.clientX - rect.left, 
+                        y: e.clientY - rect.top, 
+                        title: d.Case, 
+                        lines: [
+                          `#Inst: ${instValue.toLocaleString()}`,
+                          `状态: ${isOutlier ? (imp > 0 ? '显著优化' : '严重退化') : (imp > 0 ? '优化' : '退化')}`, 
+                          `改进: ${imp > 0 ? '+' : ''}${imp.toFixed(2)}%`
+                        ] 
+                      });
+                    }}
+                    onMouseMove={(e) => {
+                      const rect = e.currentTarget.closest('.chart-area')?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
+                      setTooltipState(prev => ({
+                        ...prev,
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top
+                      }));
+                    }}
+                    onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setHoveredCase(null);
+                      setTooltipState(prev => ({...prev, visible: false}));
+                      if (onCaseClick) {
+                        onCaseClick(d.Case);
+                      }
+                    }}
+                  />
+                  <circle 
+                    cx={cx} cy={cy} 
+                    r={isHovered ? "2.5" : (isOutlier ? "1.5" : "1")}
+                    fill={dotColor} 
+                    stroke={isHovered ? "#fff" : "none"} 
+                    strokeWidth={isHovered ? "0.3" : "0"}
+                    className={`transition-all duration-200 pointer-events-none ${isHovered ? 'animate-pulse' : ''}`}
+                  />
+                </g>
               );
             })}
           </svg>

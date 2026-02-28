@@ -14,7 +14,7 @@ export const TAB_CONFIG = [
 
 const TabButton = ({ tab, isActive, onClick }) => (
   <button
-    className={`px-4 py-4 text-sm font-bold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap ${
+    className={`px-5 py-3 text-sm font-semibold border-b-[3px] transition-colors flex items-center gap-2 whitespace-nowrap min-w-fit ${
       isActive 
         ? tab.id === 'ai_analysis' 
           ? 'border-purple-600 text-purple-700 bg-white' 
@@ -23,7 +23,7 @@ const TabButton = ({ tab, isActive, onClick }) => (
     }`}
     onClick={onClick}
   >
-    <tab.icon className="w-3.5 h-3.5" />
+    <tab.icon className="w-4 h-4 flex-shrink-0" />
     <span>{tab.label}</span>
   </button>
 );

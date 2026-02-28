@@ -2,6 +2,9 @@ import { calculateImprovement, calculateRatio, quantile, calculateWilcoxonPValue
 import { getMetricConfig } from './csvParser';
 
 export const computeStatistics = (metricName, base, comp, casesData, selectedCasesSet) => {
+  const metricConfig = getMetricConfig(metricName);
+  const isHigherBetter = metricConfig.better === 'higher';
+  
   const validCases = casesData
     .filter(d => selectedCasesSet.has(d.Case))
     .map(d => {
@@ -9,7 +12,14 @@ export const computeStatistics = (metricName, base, comp, casesData, selectedCas
       const cVal = d.raw[metricName]?.[comp];
       if (bVal == null || cVal == null) return null;
       
-      const imp = calculateImprovement(bVal, cVal);
+      let imp;
+      if (isHigherBetter) {
+        if (bVal === 0 && cVal === 0) imp = 0;
+        else if (bVal === 0) imp = 100;
+        else imp = ((cVal - bVal) / Math.abs(bVal)) * 100;
+      } else {
+        imp = calculateImprovement(bVal, cVal);
+      }
       const ratio = calculateRatio(bVal, cVal);
       
       return { Case: d.Case, bVal, cVal, imp, ratio, meta: d.meta };

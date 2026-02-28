@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { AlertTriangle } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
+import { ImprovementFormulaHelp } from '../common/HelpContents';
 
 const StatHelpContent = ({ helpId }) => {
   const helps = {
@@ -117,6 +118,8 @@ const StatHelpContent = ({ helpId }) => {
     }
   };
   const help = helps[helpId] || { title: '', description: '', formula: '', details: [], example: '' };
+  const showImprovementFormula = ['geomean', 'arith', 'degraded', 'extreme', 'median'].includes(helpId);
+  
   return (
     <div className="space-y-3">
       <div>
@@ -145,6 +148,8 @@ const StatHelpContent = ({ helpId }) => {
           💡 {help.example}
         </div>
       )}
+      
+      {showImprovementFormula && <ImprovementFormulaHelp showTitle={true} />}
     </div>
   );
 };

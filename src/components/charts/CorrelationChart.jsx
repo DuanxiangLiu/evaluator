@@ -1,14 +1,218 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Sparkles, Loader2, TrendingUp, TrendingDown, Minus, HelpCircle } from 'lucide-react';
+import { Sparkles, Loader2, TrendingUp, TrendingDown, Minus, HelpCircle, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartBody, ChartArea, ChartLegend, AreaLabel, EmptyState } from '../common/ChartContainer';
+import HelpIcon from '../common/HelpIcon';
 import { formatIndustrialNumber } from '../../utils/formatters';
-import { calculateImprovement, calculatePearsonCorrelation, calculateSpearmanCorrelation, calculateLinearRegression, detectOutliers, interpretCorrelation } from '../../utils/statistics';
+import { calculateImprovementWithDirection, calculatePearsonCorrelation, calculateSpearmanCorrelation, calculateLinearRegression, detectOutliers, interpretCorrelation } from '../../utils/statistics';
+import { getMetricConfig } from '../../services/csvParser';
 import { CHART_WIDTH, CHART_HEADER_STYLES } from '../../utils/constants';
 import { generateCorrelationInsight, renderMarkdownText } from '../../services/aiService';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../common/Toast';
+
+const STRONG_CORRELATION_THRESHOLD = 0.7;
+
+const CorrelationDiscovery = ({ parsedData, selectedCases, metaColumns, availableMetrics, baseAlgo, compareAlgo, onSelectCorrelation }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+  
+  const correlations = useMemo(() => {
+    const results = [];
+    const selectedData = parsedData.filter(d => selectedCases.has(d.Case));
+    const seenPairs = new Set();
+    
+    if (selectedData.length < 5) return results;
+    
+    const allXOptions = [...metaColumns, ...availableMetrics];
+    const allYOptions = [...availableMetrics];
+    
+    for (const xKey of allXOptions) {
+      for (const yKey of allYOptions) {
+        if (xKey === yKey) continue;
+        
+        const pairKey = [xKey, yKey].sort().join('|||');
+        if (seenPairs.has(pairKey)) continue;
+        seenPairs.add(pairKey);
+        
+        const isMetricX = availableMetrics.includes(xKey);
+        const isMetricY = availableMetrics.includes(yKey);
+        
+        const points = selectedData.map(d => {
+          let xValRaw;
+          if (isMetricX) {
+            const bx = d.raw[xKey]?.[baseAlgo];
+            const cx = d.raw[xKey]?.[compareAlgo];
+            if (bx == null || cx == null) return null;
+            const config = getMetricConfig(xKey);
+            xValRaw = calculateImprovementWithDirection(bx, cx, config.better === 'higher');
+          } else {
+            xValRaw = d.meta[xKey];
+          }
+          
+          let yValRaw;
+          if (isMetricY) {
+            const by = d.raw[yKey]?.[baseAlgo];
+            const cy = d.raw[yKey]?.[compareAlgo];
+            if (by == null || cy == null) return null;
+            const config = getMetricConfig(yKey);
+            yValRaw = calculateImprovementWithDirection(by, cy, config.better === 'higher');
+          } else {
+            yValRaw = d.meta[yKey];
+          }
+          
+          if (xValRaw == null || yValRaw == null) return null;
+          const xVal = parseFloat(xValRaw);
+          const yVal = parseFloat(yValRaw);
+          if (isNaN(xVal) || isNaN(yVal)) return null;
+          
+          return { xVal, yVal };
+        }).filter(p => p !== null);
+        
+        if (points.length < 5) continue;
+        
+        const xVals = points.map(p => p.xVal);
+        const yVals = points.map(p => p.yVal);
+        const pearsonR = calculatePearsonCorrelation(xVals, yVals);
+        
+        if (pearsonR !== null && Math.abs(pearsonR) >= STRONG_CORRELATION_THRESHOLD) {
+          results.push({
+            xKey,
+            yKey,
+            pearsonR,
+            isMetricX,
+            isMetricY,
+            type: isMetricX ? '指标' : '属性',
+            typeY: isMetricY ? '指标' : '属性'
+          });
+        }
+      }
+    }
+    
+    return results.sort((a, b) => Math.abs(b.pearsonR) - Math.abs(a.pearsonR));
+  }, [parsedData, selectedCases, metaColumns, availableMetrics, baseAlgo, compareAlgo]);
+  
+  if (correlations.length === 0) {
+    return (
+      <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+            <Search className="w-4 h-4" />
+            强相关性发现
+          </h4>
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          未发现强相关性 (|r| ≥ {STRONG_CORRELATION_THRESHOLD})，可能需要更多数据或不同的指标组合。
+        </p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="mt-3 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 rounded-lg border border-indigo-100">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full p-3 flex items-center justify-between hover:bg-indigo-50/50 transition-colors rounded-lg"
+      >
+        <h4 className="text-sm font-bold text-indigo-800 flex items-center gap-2">
+          <Search className="w-4 h-4" />
+          强相关性发现
+          <span className="text-xs font-normal text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
+            {correlations.length} 对
+          </span>
+          <HelpIcon
+            content={
+              <div className="space-y-3">
+                <div>
+                  <h3 className="font-bold text-indigo-400 text-sm mb-2">强相关性发现</h3>
+                  <p className="text-gray-300 text-xs mb-2">
+                    系统自动扫描所有属性与指标的组合，找出具有统计意义的相关关系。
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-emerald-300 text-xs">筛选标准</h4>
+                  <ul className="text-gray-300 text-xs space-y-1.5">
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-400">•</span>
+                      <span><strong>Pearson |r| ≥ 0.7</strong>：强线性相关</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-400">•</span>
+                      <span><strong>正相关</strong>：一个变量增大，另一个也增大</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-400">•</span>
+                      <span><strong>负相关</strong>：一个变量增大，另一个减小</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-amber-300 text-xs">相关性强度参考</h4>
+                  <ul className="text-gray-300 text-xs space-y-1">
+                    <li>• |r| ≥ 0.7：强相关</li>
+                    <li>• 0.4 ≤ |r| &lt; 0.7：中等相关</li>
+                    <li>• |r| &lt; 0.4：弱相关或无相关</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
+                  💡 点击相关组合可快速跳转查看散点图
+                </div>
+              </div>
+            }
+            className="w-3.5 h-3.5"
+          />
+        </h4>
+        {isExpanded ? <ChevronUp className="w-4 h-4 text-indigo-600" /> : <ChevronDown className="w-4 h-4 text-indigo-600" />}
+      </button>
+      
+      {isExpanded && (
+        <div className="px-3 pb-3">
+          <div className="max-h-48 overflow-y-auto space-y-1.5">
+            {correlations.map((c, i) => (
+              <button
+                key={`${c.xKey}-${c.yKey}`}
+                onClick={() => onSelectCorrelation(c.xKey, c.yKey)}
+                className="w-full flex items-center justify-between p-2 bg-white rounded border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${c.isMetricX ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                    {c.type}
+                  </span>
+                  <span className="text-xs font-medium text-gray-700">{c.xKey}</span>
+                  <span className="text-xs text-gray-400">vs</span>
+                  <span className="text-xs font-medium text-gray-700">{c.yKey}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {c.pearsonR > 0 ? (
+                    <TrendingUp className="w-3.5 h-3.5 text-green-500" />
+                  ) : (
+                    <TrendingDown className="w-3.5 h-3.5 text-red-500" />
+                  )}
+                  <span className={`text-xs font-bold ${c.pearsonR > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    {c.pearsonR.toFixed(3)}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+CorrelationDiscovery.propTypes = {
+  parsedData: PropTypes.array.isRequired,
+  selectedCases: PropTypes.instanceOf(Set).isRequired,
+  metaColumns: PropTypes.array.isRequired,
+  availableMetrics: PropTypes.array.isRequired,
+  baseAlgo: PropTypes.string.isRequired,
+  compareAlgo: PropTypes.string.isRequired,
+  onSelectCorrelation: PropTypes.func.isRequired
+};
 
 const CorrelationChart = ({ 
   parsedData, selectedCases, metaColumns, availableMetrics, 
@@ -24,10 +228,15 @@ const CorrelationChart = ({
   if (parsedData.length === 0) return null;
 
   const isMetricX = availableMetrics.includes(corrX);
+  const isMetricY = availableMetrics.includes(corrY);
   const isInstX = !isMetricX && (corrX?.toLowerCase() === 'inst' || 
     corrX?.toLowerCase() === 'instance' || 
     corrX?.toLowerCase() === 'instances' || 
     corrX?.toLowerCase() === '#inst');
+  const isInstY = !isMetricY && (corrY?.toLowerCase() === 'inst' || 
+    corrY?.toLowerCase() === 'instance' || 
+    corrY?.toLowerCase() === 'instances' || 
+    corrY?.toLowerCase() === '#inst');
   
   const points = parsedData.filter(d => selectedCases.has(d.Case)).map(d => {
     let xValRaw;
@@ -35,7 +244,8 @@ const CorrelationChart = ({
       const bxX = d.raw[corrX]?.[baseAlgo];
       const cxX = d.raw[corrX]?.[compareAlgo];
       if (bxX == null || cxX == null) return null;
-      xValRaw = calculateImprovement(bxX, cxX);
+      const configX = getMetricConfig(corrX);
+      xValRaw = calculateImprovementWithDirection(bxX, cxX, configX.better === 'higher');
     } else {
       xValRaw = d.meta[corrX];
     }
@@ -43,20 +253,31 @@ const CorrelationChart = ({
     const xVal = parseFloat(xValRaw);
     if (isNaN(xVal)) return null;
 
-    const bx = d.raw[corrY]?.[baseAlgo], cx = d.raw[corrY]?.[compareAlgo];
-    if(bx==null || cx==null) return null;
+    let yValRaw;
+    if (isMetricY) {
+      const bxY = d.raw[corrY]?.[baseAlgo];
+      const cxY = d.raw[corrY]?.[compareAlgo];
+      if (bxY == null || cxY == null) return null;
+      const configY = getMetricConfig(corrY);
+      yValRaw = calculateImprovementWithDirection(bxY, cxY, configY.better === 'higher');
+    } else {
+      yValRaw = d.meta[corrY];
+    }
+    if (yValRaw === undefined || yValRaw === null) return null;
+    const yVal = parseFloat(yValRaw);
+    if (isNaN(yVal)) return null;
     
-    const impY = calculateImprovement(bx, cx);
-    if (impY === null) return null;
-    return { case: d.Case, xVal, impY, bx, cx, raw: d };
+    return { case: d.Case, xVal, yVal, raw: d };
   }).filter(p => p !== null);
 
   if (isInstX) {
     points.sort((a, b) => b.xVal - a.xVal);
+  } else if (isInstY) {
+    points.sort((a, b) => b.yVal - a.yVal);
   }
 
   const xVals = points.map(p => p.xVal);
-  const yVals = points.map(p => p.impY);
+  const yVals = points.map(p => p.yVal);
   
   const stats = useMemo(() => {
     if (xVals.length < 2) return null;
@@ -81,16 +302,17 @@ const CorrelationChart = ({
   const maxX = xVals.length > 0 ? Math.max(...xVals) : 1;
   const xRange = maxX - minX || 1;
   
-  const maxAbsY = yVals.length > 0 ? Math.max(...yVals.map(v => Math.abs(v)), 10) * 1.2 : 12;
+  const minY = yVals.length > 0 ? Math.min(...yVals) : 0;
+  const maxY = yVals.length > 0 ? Math.max(...yVals) : 1;
+  const yRange = maxY - minY || 1;
 
   const mapX = (val) => ((val - minX) / xRange) * 90 + 5;
-  const mapY = (val) => 50 - (val / maxAbsY) * 45;
+  const mapY = (val) => ((maxY - val) / yRange) * 90 + 5;
 
   const yTickCount = 5;
-  const yMax = maxAbsY;
   const yTicks = [];
   for (let i = 0; i <= yTickCount; i++) {
-    const val = yMax - (2 * yMax) * (i / yTickCount);
+    const val = maxY - (yRange) * (i / yTickCount);
     yTicks.push({ val });
   }
 
@@ -109,7 +331,7 @@ const CorrelationChart = ({
     setAiInsight('');
     
     try {
-      const distributionInfo = `X轴范围: [${minX.toFixed(2)}, ${maxX.toFixed(2)}], Y轴范围: [${(-yMax).toFixed(1)}%, ${yMax.toFixed(1)}%]`;
+      const distributionInfo = `X轴范围: [${minX.toFixed(2)}, ${maxX.toFixed(2)}], Y轴范围: [${minY.toFixed(2)}, ${maxY.toFixed(2)}]`;
       
       const result = await generateCorrelationInsight(llmConfig, {
         corrX: corrX,
@@ -129,83 +351,136 @@ const CorrelationChart = ({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [llmConfig, stats, corrX, corrY, minX, maxX, yMax, points.length, toast, setShowAiConfig]);
+  }, [llmConfig, stats, corrX, corrY, minX, maxX, minY, maxY, points.length, toast, setShowAiConfig]);
 
   const renderContent = () => {
     if (!corrX || !corrY || points.length === 0) {
       return <EmptyState message="请选择 X 轴与 Y 轴进行分析" />;
     }
 
+    const formatYTick = (val) => {
+      if (isMetricY) {
+        return `${val > 0 ? '+' : ''}${val.toFixed(0)}%`;
+      }
+      return formatIndustrialNumber(val);
+    };
+
     return (
       <ChartBody className={`${CHART_WIDTH.COMPACT} mx-auto w-full`}>
-        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0">
+        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0 relative">
+          <span className="text-gray-400 text-[9px] -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">{corrY || 'Y'}</span>
           {yTicks.map((tick, i) => (
             <span 
               key={i} 
               className={`
-                ${tick.val > 0 ? 'text-green-600' : ''} 
-                ${tick.val < 0 ? 'text-red-500' : ''}
+                ${isMetricY && tick.val > 0 ? 'text-green-600' : ''} 
+                ${isMetricY && tick.val < 0 ? 'text-red-500' : ''}
               `}
             >
-              {tick.val > 0 ? '+' : ''}{tick.val.toFixed(0)}%
+              {formatYTick(tick.val)}
             </span>
           ))}
         </div>
         
-        <ChartArea className="border-l-2 border-b-2 border-gray-300 bg-gradient-to-b from-green-50/30 via-white to-red-50/30">
-          <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-green-100/20 to-transparent pointer-events-none"></div>
-          <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-red-100/20 to-transparent pointer-events-none"></div>
-          
-          <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <line x1="0" y1="50" x2="100" y2="50" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
-            
-            {stats && stats.slope != null && !isInstX && (
-              <line 
-                x1={mapX(minX)} 
-                y1={mapY(stats.slope * minX + stats.intercept)} 
-                x2={mapX(maxX)} 
-                y2={mapY(stats.slope * maxX + stats.intercept)} 
-                stroke="#6366f1" 
-                strokeWidth="0.5" 
-                strokeDasharray="1 1"
-                opacity="0.6"
-              />
+        <div className="flex-1 flex flex-col">
+          <ChartArea className={`border-l-2 border-b-2 border-gray-300 flex-1 ${isMetricY ? 'bg-gradient-to-b from-green-50/30 via-white to-red-50/30' : 'bg-gradient-to-b from-indigo-50/30 via-white to-purple-50/30'}`}>
+            {isMetricY && (
+              <>
+                <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-green-100/20 to-transparent pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-red-100/20 to-transparent pointer-events-none"></div>
+              </>
             )}
             
-            {points.map((p, i) => {
-              const isHovered = hoveredCase === p.case;
-              const cx = isInstX ? (5 + (i / (points.length - 1 || 1)) * 90) : mapX(p.xVal);
-              const cy = mapY(p.impY);
+            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+              {isMetricY && (
+                <line x1="0" y1={mapY(0)} x2="100" y2={mapY(0)} stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
+              )}
               
-              let color = '#6366f1';
-              if (p.impY > 0) color = '#059669';
-              if (p.impY < 0) color = '#dc2626';
-
-              return (
-                <circle
-                  key={`corr-${p.case}`} 
-                  cx={cx} cy={cy} 
-                  r={isHovered ? "2" : "1"} 
-                  fill={color} 
-                  stroke={isHovered ? "#fff" : "none"} 
-                  strokeWidth="0.3"
-                  className={`transition-all duration-200 cursor-pointer ${isHovered ? 'animate-pulse' : ''}`}
-                  onMouseEnter={() => {
-                    setHoveredCase(p.case);
-                    setTooltipState({ visible: true, x: 0, y: 0, title: p.case, lines: [`${corrX}: ${isMetricX ? `${p.xVal > 0 ? '+' : ''}${p.xVal.toFixed(2)}%` : formatIndustrialNumber(p.xVal)}`, `${corrY}: ${p.impY > 0 ? '+' : ''}${p.impY.toFixed(2)}%`] });
-                  }}
-                  onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
-                  onDoubleClick={() => {
-                    if (onCaseClick && p.raw) onCaseClick(p.raw);
-                  }}
+              {stats && stats.slope != null && !isInstX && !isInstY && (
+                <line 
+                  x1={mapX(minX)} 
+                  y1={mapY(stats.slope * minX + stats.intercept)} 
+                  x2={mapX(maxX)} 
+                  y2={mapY(stats.slope * maxX + stats.intercept)} 
+                  stroke="#6366f1" 
+                  strokeWidth="0.5" 
+                  strokeDasharray="1 1"
+                  opacity="0.6"
                 />
-              );
-            })}
-          </svg>
+              )}
+              
+              {points.map((p, i) => {
+                const isHovered = hoveredCase === p.case;
+                const cx = isInstX ? (5 + (i / (points.length - 1 || 1)) * 90) : mapX(p.xVal);
+                const cy = isInstY ? (5 + (i / (points.length - 1 || 1)) * 90) : mapY(p.yVal);
+                
+                let color = '#6366f1';
+                if (isMetricY) {
+                  if (p.yVal > 0) color = '#059669';
+                  if (p.yVal < 0) color = '#dc2626';
+                }
+
+                const formatTooltipValue = (val, isMetric) => {
+                  if (isMetric) {
+                    return `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
+                  }
+                  return formatIndustrialNumber(val);
+                };
+
+                return (
+                  <g key={`corr-${p.case}`}>
+                    <circle
+                      cx={cx} cy={cy} r="6"
+                      fill="transparent"
+                      className="cursor-pointer"
+                      onMouseEnter={(e) => {
+                        setHoveredCase(p.case);
+                        const rect = e.currentTarget.closest('.chart-area')?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
+                        setTooltipState({ visible: true, x: e.clientX - rect.left, y: e.clientY - rect.top, title: p.case, lines: [`${corrX}: ${formatTooltipValue(p.xVal, isMetricX)}`, `${corrY}: ${formatTooltipValue(p.yVal, isMetricY)}`] });
+                      }}
+                      onMouseMove={(e) => {
+                        const rect = e.currentTarget.closest('.chart-area')?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
+                        setTooltipState(prev => ({ ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top }));
+                      }}
+                      onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setHoveredCase(null);
+                        setTooltipState(prev => ({...prev, visible: false}));
+                        if (onCaseClick) onCaseClick(p.case);
+                      }}
+                    />
+                    <circle
+                      cx={cx} cy={cy} 
+                      r={isHovered ? "2" : "1"} 
+                      fill={color} 
+                      stroke={isHovered ? "#fff" : "none"} 
+                      strokeWidth="0.3"
+                      className={`transition-all duration-200 pointer-events-none ${isHovered ? 'animate-pulse' : ''}`}
+                    />
+                  </g>
+                );
+              })}
+            </svg>
+            
+            {isMetricY ? (
+              <>
+                <AreaLabel position="top-left" variant="success">优化 ↑</AreaLabel>
+                <AreaLabel position="bottom-left" variant="danger">退化 ↓</AreaLabel>
+              </>
+            ) : (
+              <>
+                <AreaLabel position="top-left" variant="info">大 ↑</AreaLabel>
+                <AreaLabel position="bottom-left" variant="info">小 ↓</AreaLabel>
+              </>
+            )}
+          </ChartArea>
           
-          <AreaLabel position="top-left" variant="success">优化 ↑</AreaLabel>
-          <AreaLabel position="bottom-left" variant="danger">退化 ↓</AreaLabel>
-        </ChartArea>
+          <div className="text-center py-1 text-[10px] font-semibold text-gray-500">
+            {corrX || 'X'}
+          </div>
+        </div>
       </ChartBody>
     );
   };
@@ -218,12 +493,6 @@ const CorrelationChart = ({
     
     return (
       <div className="flex items-center gap-4 px-4 py-2 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 border-b border-gray-200 text-xs">
-        <div className="flex items-center gap-1.5 group relative">
-          <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
-          <div className="absolute left-0 top-full mt-1 p-2 bg-gray-800 text-white text-[10px] rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 w-48 pointer-events-none">
-            统计指标由前端 JavaScript 实时计算，基于当前选中的数据点
-          </div>
-        </div>
         <div className="flex items-center gap-1.5">
           <TrendIcon className={`w-3.5 h-3.5 ${trendColor}`} />
           <span className="text-gray-500">Pearson:</span>
@@ -246,6 +515,40 @@ const CorrelationChart = ({
         <div className="flex items-center gap-1.5">
           <span className="text-gray-500">样本数:</span>
           <span className="font-semibold text-gray-700">{points.length}</span>
+        </div>
+        <div className="flex items-center gap-1.5 group relative">
+          <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+          <div className="absolute left-0 top-full mt-1 p-3 bg-gray-800 text-white text-[10px] rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 w-80 pointer-events-none">
+            <div className="space-y-2.5">
+              <p className="font-bold text-indigo-300 text-xs">统计指标说明</p>
+              
+              <div className="space-y-2">
+                <div className="border-l-2 border-indigo-400 pl-2">
+                  <p className="text-white font-semibold">Pearson 相关系数</p>
+                  <p className="text-gray-300 mt-0.5">衡量两个变量之间的<strong className="text-emerald-300">线性相关程度</strong>，取值范围 [-1, 1]。</p>
+                  <ul className="text-gray-400 mt-1 space-y-0.5">
+                    <li>• |r| ≥ 0.7：强相关</li>
+                    <li>• 0.4 ≤ |r| &lt; 0.7：中等相关</li>
+                    <li>• |r| &lt; 0.4：弱相关或无相关</li>
+                  </ul>
+                </div>
+                
+                <div className="border-l-2 border-purple-400 pl-2">
+                  <p className="text-white font-semibold">Spearman 相关系数</p>
+                  <p className="text-gray-300 mt-0.5">衡量变量间的<strong className="text-purple-300">单调关系</strong>，不要求线性，对异常值更稳健。</p>
+                </div>
+                
+                <div className="border-l-2 border-amber-400 pl-2">
+                  <p className="text-white font-semibold">R² 决定系数</p>
+                  <p className="text-gray-300 mt-0.5">回归模型的<strong className="text-amber-300">拟合优度</strong>，取值范围 [0, 1]。越接近 1 表示线性模型解释力越强。</p>
+                </div>
+              </div>
+              
+              <div className="bg-slate-700/50 rounded p-1.5 text-gray-400 border-t border-gray-600 pt-2">
+                💡 指标由前端实时计算，基于当前选中的数据点
+              </div>
+            </div>
+          </div>
         </div>
         {stats.pearsonInterpretation && (
           <div className="ml-auto px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[10px] font-medium">
@@ -327,7 +630,12 @@ const CorrelationChart = ({
           </select>
           <span className={`${CHART_HEADER_STYLES.LABEL} ml-1`}>Y:</span>
           <select value={corrY} onChange={(e) => { setCorrY(e.target.value); setAiInsight(''); }} className={CHART_HEADER_STYLES.SELECT}>
-            {availableMetrics.map(m => <option key={`ty-${m}`} value={m}>{m}</option>)}
+            <optgroup label="属性">
+              {metaColumns.map(m => <option key={`my-${m}`} value={m}>{m}</option>)}
+            </optgroup>
+            <optgroup label="指标">
+              {availableMetrics.map(m => <option key={`ty-${m}`} value={m}>{m}</option>)}
+            </optgroup>
           </select>
           <button
             onClick={handleAIAnalysis}
@@ -356,6 +664,21 @@ const CorrelationChart = ({
       </ChartHeader>
 
       {renderStats()}
+      
+      <CorrelationDiscovery 
+        parsedData={parsedData}
+        selectedCases={selectedCases}
+        metaColumns={metaColumns}
+        availableMetrics={availableMetrics}
+        baseAlgo={baseAlgo}
+        compareAlgo={compareAlgo}
+        onSelectCorrelation={(x, y) => {
+          setCorrX(x);
+          setCorrY(y);
+          setAiInsight('');
+        }}
+      />
+      
       {renderContent()}
 
       <ChartLegend items={[

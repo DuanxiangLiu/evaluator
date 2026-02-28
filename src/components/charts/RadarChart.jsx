@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { CheckSquare, Square } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
-import ChartContainer, { ChartArea, ChartLegend } from '../common/ChartContainer';
+import ChartContainer, { ChartBody, ChartArea, ChartLegend, AreaLabel, EmptyState } from '../common/ChartContainer';
 import { getMetricConfig, computeStatistics } from '../../services/dataService';
+import { ImprovementFormulaHelp } from '../common/HelpContents';
 import { CHART_WIDTH, CHART_HEADER_STYLES } from '../../utils/constants';
 
 const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, parsedData, selectedCases }) => {
@@ -84,12 +85,14 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
               </p>
             </div>
             
+            <ImprovementFormulaHelp />
+            
             <div className="space-y-2">
               <h4 className="font-semibold text-emerald-300 text-xs">图表解读</h4>
               <ul className="text-gray-300 text-xs space-y-1.5">
                 <li className="flex items-start gap-2">
                   <span className="text-indigo-400">•</span>
-                  <span><strong>基线（虚线框）</strong>：基准算法的参考线，形状为正多边形</span>
+                  <span><strong>基线（虚线框）</strong>：基准算法的参考线</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-400">•</span>
@@ -102,13 +105,8 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
               </ul>
             </div>
             
-            <div className="space-y-2">
-              <h4 className="font-semibold text-amber-300 text-xs">使用技巧</h4>
-              <ul className="text-gray-300 text-xs space-y-1">
-                <li>• 点击算法标签可显示/隐藏对应的多边形</li>
-                <li>• 形状越接近正多边形，说明各指标表现越均衡</li>
-                <li>• 某方向明显突出或凹陷，说明该指标表现突出或薄弱</li>
-              </ul>
+            <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
+              💡 点击算法标签可显示/隐藏对应的多边形
             </div>
           </div>
         }
@@ -207,12 +205,10 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
                   elements.push(<polygon key={`algo-${algo}`} points={basePolygon} fill="none" stroke="#9ca3af" strokeWidth={1.5} strokeDasharray="3 3" />);
                 } else {
                   const algoPolygon = validMetrics.map((m, i) => {
-                    const config = getMetricConfig(m.metric);
                     const statsForAlgo = algoStatsMap[algo];
                     const metricStat = statsForAlgo?.find(s => s.metric === m.metric);
                     const imp = metricStat?.stats?.geomeanImp || 0;
-                    let normalizedImp = config.better === 'higher' ? -imp : imp;
-                    const scale = Math.max(0.3, Math.min(1.5, 1 + normalizedImp / 20));
+                    const scale = Math.max(0.3, Math.min(1.5, 1 + imp / 20));
                     const pt = getPoint((Math.PI * 2 * i) / N, baseRadius * scale); 
                     return `${pt.x},${pt.y}`;
                   }).join(' ');

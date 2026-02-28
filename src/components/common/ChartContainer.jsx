@@ -36,7 +36,7 @@ ChartBody.propTypes = {
 };
 
 export const ChartArea = ({ children, className = '' }) => (
-  <div className={`flex-1 relative ${className}`}>
+  <div className={`flex-1 relative chart-area ${className}`}>
     {children}
   </div>
 );
@@ -104,7 +104,8 @@ export const AreaLabel = ({ children, position = 'top-left', variant = 'default'
   const variantClasses = {
     'default': 'bg-white/90 border border-gray-200/50',
     'success': 'bg-green-50/90 text-green-700',
-    'danger': 'bg-red-50/90 text-red-600'
+    'danger': 'bg-red-50/90 text-red-600',
+    'info': 'bg-indigo-50/90 text-indigo-700'
   };
   
   return (
@@ -117,7 +118,7 @@ export const AreaLabel = ({ children, position = 'top-left', variant = 'default'
 AreaLabel.propTypes = {
   children: PropTypes.node.isRequired,
   position: PropTypes.oneOf(['top-left', 'top-right', 'bottom-left', 'bottom-right']),
-  variant: PropTypes.oneOf(['default', 'success', 'danger'])
+  variant: PropTypes.oneOf(['default', 'success', 'danger', 'info'])
 };
 
 export const EmptyState = ({ message }) => (
