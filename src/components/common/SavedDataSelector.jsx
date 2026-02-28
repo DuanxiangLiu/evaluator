@@ -5,6 +5,7 @@ import {
   Upload, CheckCircle, Loader2, FolderOpen, Sparkles, FileDown, Clipboard, Play
 } from 'lucide-react';
 import { useToast } from '../common/Toast';
+import HelpIcon from './HelpIcon';
 import datasetStorage, { formatDatasetDate, formatDatasetSize, getDatasetRowCount } from '../../utils/datasetStorage';
 import { generateDefaultDataset } from '../../utils/dataGenerator';
 
@@ -18,7 +19,8 @@ const SavedDataSelector = ({
   onFileUpload,
   onPasteData,
   isFileLoading = false,
-  fileName = ''
+  fileName = '',
+  onOpenLogImporter
 }) => {
   const [datasets, setDatasets] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -270,6 +272,48 @@ const SavedDataSelector = ({
           <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
         </button>
 
+        <span className="w-px h-5 bg-gray-300 mx-1" />
+
+        <button
+          onClick={handleOpenFileDialog}
+          disabled={isFileLoading}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/80 backdrop-blur-sm border border-gray-200/80 rounded-xl text-xs font-medium text-gray-700 hover:bg-white hover:border-indigo-300 hover:shadow-md transition-all duration-200 disabled:opacity-50"
+          title="上传 CSV 文件"
+        >
+          {isFileLoading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-500" />
+          ) : (
+            <Upload className="w-3.5 h-3.5 text-emerald-500" />
+          )}
+          <span className="hidden lg:inline">上传 CSV</span>
+        </button>
+
+        <button
+          onClick={() => setShowPasteArea(!showPasteArea)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md ${
+            showPasteArea 
+              ? 'bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-violet-500/25' 
+              : 'bg-white/80 backdrop-blur-sm border border-gray-200/80 text-gray-700 hover:bg-white hover:border-indigo-300'
+          }`}
+          title="粘贴数据"
+        >
+          <Clipboard className="w-3.5 h-3.5" />
+          <span className="hidden lg:inline">粘贴数据</span>
+        </button>
+
+        {onOpenLogImporter && (
+          <button
+            onClick={onOpenLogImporter}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md bg-white/80 backdrop-blur-sm border border-gray-200/80 text-gray-700 hover:bg-white hover:border-indigo-300"
+            title="从日志文件提取数据"
+          >
+            <FolderOpen className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline">日志提取</span>
+          </button>
+        )}
+
+        <span className="w-px h-5 bg-gray-300 mx-1" />
+
         <button
           onClick={handleQuickSave}
           disabled={isSaving || !currentCsvData?.trim()}
@@ -300,33 +344,6 @@ const SavedDataSelector = ({
         >
           <FileDown className="w-3.5 h-3.5 text-blue-500" />
           <span className="hidden lg:inline">导出 CSV</span>
-        </button>
-
-        <button
-          onClick={handleOpenFileDialog}
-          disabled={isFileLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/80 backdrop-blur-sm border border-gray-200/80 rounded-xl text-xs font-medium text-gray-700 hover:bg-white hover:border-indigo-300 hover:shadow-md transition-all duration-200 disabled:opacity-50"
-          title="上传文件"
-        >
-          {isFileLoading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-500" />
-          ) : (
-            <Upload className="w-3.5 h-3.5 text-emerald-500" />
-          )}
-          <span className="hidden lg:inline">上传文件</span>
-        </button>
-
-        <button
-          onClick={() => setShowPasteArea(!showPasteArea)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md ${
-            showPasteArea 
-              ? 'bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-violet-500/25' 
-              : 'bg-white/80 backdrop-blur-sm border border-gray-200/80 text-gray-700 hover:bg-white hover:border-indigo-300'
-          }`}
-          title="粘贴数据"
-        >
-          <Clipboard className="w-3.5 h-3.5" />
-          <span className="hidden lg:inline">粘贴数据</span>
         </button>
 
         {fileName && (

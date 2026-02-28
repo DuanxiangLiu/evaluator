@@ -247,10 +247,37 @@ const TableView = ({
         metric={activeMetric}
         variant="table"
         helpContent={
-          <div className="space-y-2">
-            <p>展示所有测试用例的详细数据，包括基准算法和对比算法的指标值。</p>
-            <p><strong>改进率</strong> = (基准值 - 对比值) / 基准值 × 100%</p>
-            <p>正值表示改进，负值表示退化。</p>
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-bold text-indigo-400 text-sm mb-2">明细数据表格</h3>
+              <p className="text-gray-300 text-xs mb-2">
+                展示所有测试用例的详细数据，包括基准算法和对比算法的原始指标值及计算得出的改进率。
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-emerald-300 text-xs">改进率计算</h4>
+              <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-300 font-mono">
+                改进率 = (基准值 - 对比值) / 基准值 × 100%
+              </div>
+              <ul className="text-gray-300 text-xs space-y-1 mt-2">
+                <li>• <span className="text-emerald-400">正值（绿色）</span>：对比算法优于基准算法</li>
+                <li>• <span className="text-red-400">负值（红色）</span>：对比算法劣于基准算法</li>
+              </ul>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-amber-300 text-xs">筛选功能</h4>
+              <ul className="text-gray-300 text-xs space-y-1">
+                <li>• <strong>全部</strong>：显示所有用例</li>
+                <li>• <strong>退化</strong>：仅显示改进率为负的用例</li>
+                <li>• <strong>异常</strong>：仅显示数据异常的用例</li>
+              </ul>
+            </div>
+            
+            <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
+              💡 <strong>提示</strong>：勾选用例可将其纳入图表分析范围
+            </div>
           </div>
         }
         rightContent={
@@ -282,10 +309,14 @@ const TableView = ({
                   <HelpIcon 
                     content={
                       <div className="space-y-2">
-                        <p><strong>改进率计算公式：</strong></p>
-                        <p>改进率 = (基准值 - 对比值) / 基准值 × 100%</p>
-                        <p>• 正值（绿色）：对比算法优于基准算法</p>
-                        <p>• 负值（红色）：对比算法劣于基准算法</p>
+                        <h4 className="font-semibold text-indigo-300 text-xs">改进率计算公式</h4>
+                        <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-300 font-mono">
+                          改进率 = (基准值 - 对比值) / 基准值 × 100%
+                        </div>
+                        <ul className="text-gray-300 text-xs space-y-1">
+                          <li>• <span className="text-emerald-400">正值</span>：对比算法优于基准</li>
+                          <li>• <span className="text-red-400">负值</span>：对比算法劣于基准</li>
+                        </ul>
                       </div>
                     }
                     className="w-3 h-3 text-indigo-600"
@@ -299,11 +330,15 @@ const TableView = ({
                   <HelpIcon 
                     content={
                       <div className="space-y-2">
-                        <p><strong>状态标识：</strong></p>
-                        <p>• 已选：当前选中用于分析的用例</p>
-                        <p>• 退化：改进率为负的用例</p>
-                        <p>• 异常：数据异常的用例</p>
-                        <p><strong>透视按钮：</strong>点击可查看单点多维深度分析</p>
+                        <h4 className="font-semibold text-indigo-300 text-xs">状态标识说明</h4>
+                        <ul className="text-gray-300 text-xs space-y-1">
+                          <li>• <strong>已选</strong>：当前选中用于图表分析的用例</li>
+                          <li>• <strong>退化</strong>：改进率为负的用例</li>
+                          <li>• <strong>异常</strong>：数据存在缺失或异常值</li>
+                        </ul>
+                        <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400 mt-2">
+                          💡 点击放大镜按钮可查看该用例的多维深度分析
+                        </div>
                       </div>
                     }
                     className="w-3 h-3 text-indigo-600"

@@ -71,12 +71,43 @@ const AIAnalysisView = ({
           variant="primary"
           icon={Bot}
           helpContent={
-            <div className="space-y-1">
-              <p className="font-bold text-indigo-400">AI 智能诊断</p>
-              <div className="text-xs space-y-0.5">
-                <p>基于大语言模型的智能算法性能分析</p>
-                <p>自动生成结构化诊断报告</p>
-                <p>支持 DeepSeek、Gemini、OpenAI 等主流 LLM</p>
+            <div className="space-y-3">
+              <div>
+                <h3 className="font-bold text-indigo-400 text-sm mb-2">AI 智能诊断</h3>
+                <p className="text-gray-300 text-xs mb-2">
+                  基于大语言模型（LLM）的智能分析功能，自动解读统计数据并生成专业的算法评估报告。
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-semibold text-emerald-300 text-xs">功能特点</h4>
+                <ul className="text-gray-300 text-xs space-y-1.5">
+                  <li className="flex items-start gap-2">
+                    <span className="text-indigo-400">•</span>
+                    <span>自动分析改进率分布、离群点等统计特征</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-indigo-400">•</span>
+                    <span>生成结构化的诊断报告，包含问题定位和建议</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-indigo-400">•</span>
+                    <span>支持 DeepSeek、Gemini、OpenAI 等多种模型</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-semibold text-amber-300 text-xs">使用步骤</h4>
+                <ol className="text-gray-300 text-xs space-y-1 list-decimal list-inside">
+                  <li>点击「配置」按钮设置 API 密钥</li>
+                  <li>点击「生成诊断报告」开始分析</li>
+                  <li>查看生成的诊断报告</li>
+                </ol>
+              </div>
+              
+              <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
+                ⚠️ AI 生成内容仅供参考，请结合实际情况判断
               </div>
             </div>
           }
@@ -88,7 +119,7 @@ const AIAnalysisView = ({
           </span>
         </ChartHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-slate-50 to-slate-100 custom-scrollbar max-w-5xl mx-auto w-full">
+        <div className="flex-1 overflow-y-auto p-3 bg-gradient-to-b from-slate-50 to-slate-100 custom-scrollbar max-w-5xl mx-auto w-full">
         {isAnalyzing ? (
           <div className="flex flex-col items-center justify-center h-full text-purple-500 space-y-4">
             <div className="relative">

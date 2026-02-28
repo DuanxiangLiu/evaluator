@@ -4,6 +4,7 @@ import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartBody, ChartArea, ChartLegend, AreaLabel, EmptyState } from '../common/ChartContainer';
 import { formatIndustrialNumber } from '../../utils/formatters';
 import { calculateImprovement } from '../../utils/statistics';
+import { CHART_WIDTH, CHART_HEADER_STYLES } from '../../utils/constants';
 
 const CorrelationChart = ({ 
   parsedData, selectedCases, metaColumns, availableMetrics, 
@@ -71,7 +72,7 @@ const CorrelationChart = ({
     }
 
     return (
-      <ChartBody className="max-w-5xl mx-auto w-full">
+      <ChartBody className={`${CHART_WIDTH.COMPACT} mx-auto w-full`}>
         <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0">
           {yTicks.map((tick, i) => (
             <span 
@@ -136,21 +137,46 @@ const CorrelationChart = ({
       <ChartHeader
         title="特征相关性散点分析"
         helpContent={
-          <div className="space-y-1">
-            <p className="font-bold text-indigo-400">特征相关性散点分析</p>
-            <div className="text-xs space-y-0.5">
-              <p>发现深层物理规律：</p>
-              <p><b>属性 vs 指标：</b>规模与时序的关系</p>
-              <p><b>指标 vs 指标：</b>HPWL与功耗的关系</p>
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-bold text-indigo-400 text-sm mb-2">特征相关性散点分析</h3>
+              <p className="text-gray-300 text-xs mb-2">
+                通过散点图探索不同变量之间的关系，发现潜在的规律和异常。
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-emerald-300 text-xs">分析维度</h4>
+              <ul className="text-gray-300 text-xs space-y-1.5">
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-400">•</span>
+                  <span><strong>属性 vs 指标</strong>：探索设计规模与性能的关系，如实例数对时序的影响</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-400">•</span>
+                  <span><strong>指标 vs 指标</strong>：探索不同性能指标间的关联，如功耗与线长的关系</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-amber-300 text-xs">颜色含义</h4>
+              <ul className="text-gray-300 text-xs space-y-1">
+                <li>• <span className="text-emerald-400">绿色点</span>：该用例有优化效果</li>
+                <li>• <span className="text-red-400">红色点</span>：该用例出现退化</li>
+              </ul>
+            </div>
+            
+            <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
+              💡 <strong>提示</strong>：使用下拉菜单选择不同的 X/Y 轴变量进行探索
             </div>
           </div>
         }
-        helpWidth="w-64"
         helpPosition="right-center"
       >
         <div className="flex items-center gap-2 text-xs">
-          <span className="font-semibold text-white/80">X:</span>
-          <select value={corrX} onChange={(e) => setCorrX(e.target.value)} className="font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 text-xs">
+          <span className={CHART_HEADER_STYLES.LABEL}>X:</span>
+          <select value={corrX} onChange={(e) => setCorrX(e.target.value)} className={CHART_HEADER_STYLES.SELECT}>
             <optgroup label="属性">
               {metaColumns.map(m => <option key={`mx-${m}`} value={m}>{m}</option>)}
             </optgroup>
@@ -158,8 +184,8 @@ const CorrelationChart = ({
               {availableMetrics.map(m => <option key={`tx-${m}`} value={m}>{m}</option>)}
             </optgroup>
           </select>
-          <span className="font-semibold text-white/80 ml-1">Y:</span>
-          <select value={corrY} onChange={(e) => setCorrY(e.target.value)} className="font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 text-xs">
+          <span className={`${CHART_HEADER_STYLES.LABEL} ml-1`}>Y:</span>
+          <select value={corrY} onChange={(e) => setCorrY(e.target.value)} className={CHART_HEADER_STYLES.SELECT}>
             {availableMetrics.map(m => <option key={`ty-${m}`} value={m}>{m}</option>)}
           </select>
         </div>

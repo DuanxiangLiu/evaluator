@@ -119,15 +119,38 @@ const QoRSimulator = ({
         variant="primary"
         icon={Scale}
         helpContent={
-          <div className="space-y-2">
-            <p className="font-semibold text-indigo-300">QoR 综合评估</p>
-            <div className="text-xs space-y-1 text-gray-300">
-              <p>调整各指标权重，综合评估算法性能</p>
-              <p className="text-amber-300">权重总和应为 100%</p>
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-bold text-indigo-400 text-sm mb-2">QoR 综合评估模拟器</h3>
+              <p className="text-gray-300 text-xs mb-2">
+                QoR（Quality of Results）综合评估帮助您根据实际需求，对不同指标赋予不同权重，得出算法的综合得分排名。
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-emerald-300 text-xs">使用方法</h4>
+              <ol className="text-gray-300 text-xs space-y-1.5 list-decimal list-inside">
+                <li>根据您的关注重点，调整各指标的权重百分比</li>
+                <li>权重总和应接近 100%，系统会自动计算综合得分</li>
+                <li>查看排名结果，了解各算法的综合表现</li>
+              </ol>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-amber-300 text-xs">得分计算</h4>
+              <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-300 font-mono">
+                综合得分 = Σ(指标得分 × 权重%) / 100
+              </div>
+              <p className="text-gray-400 text-xs mt-1">
+                正分表示整体优化，负分表示整体退化
+              </p>
+            </div>
+            
+            <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
+              💡 <strong>提示</strong>：点击「均衡分配」可快速将权重平均分配到所有指标
             </div>
           </div>
         }
-        helpWidth="w-60"
       >
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -167,7 +190,7 @@ const QoRSimulator = ({
         </div>
       </ChartHeader>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 max-w-5xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3 max-w-5xl mx-auto w-full">
         <div className="bg-gradient-to-br from-slate-50 via-white to-slate-50 rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-transparent">
             <div className="flex items-center gap-2">

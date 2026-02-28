@@ -79,3 +79,19 @@ CSV columns:
 - BoxPlot chart x-axis is sorted in **descending order** by `inst` (or `#Inst`, `instance`, `instances`) values
 - Sorting logic implemented in `services/statisticsService.js` `computeStatistics()` function
 - Automatically detects inst column from metadata columns
+
+### Chart Width Configuration
+- All chart widths are managed via `CHART_WIDTH` constant in `utils/constants.js`
+- Width options: `FULL` (max-w-5xl), `COMPACT` (max-w-2xl), `NARROW` (max-w-xl)
+- Default: `CHART_WIDTH.COMPACT` (~60% of container width)
+- To change all chart widths globally, modify the constant value
+
+### Chart Header Styles
+- All header controls (buttons, selects, labels) use `CHART_HEADER_STYLES` constant
+- Available styles: `SELECT`, `SELECT_ACCENT`, `LABEL`, `LABEL_ACCENT`, `BUTTON`, `BUTTON_SELECTED`, `BUTTON_UNSELECTED`
+- Import: `import { CHART_HEADER_STYLES } from '../../utils/constants'`
+
+### Feature Panels (功能面板)
+- The application contains multiple feature panels: BoxPlot, Correlation, Pareto, Radar, AI Diagnosis
+- Each panel uses unified components: `ChartContainer`, `ChartHeader`, `ChartArea`, `ChartLegend`
+- All panels follow consistent styling through shared constants and components

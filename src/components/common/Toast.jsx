@@ -124,7 +124,7 @@ const Toast = ({ id, type, title, message, duration, onClose, index }) => {
       ref={toastRef}
       className={`
         ${config.bgColor} ${config.borderColor} ${config.shadow} ${config.ring}
-        rounded-xl p-0 min-w-[320px] max-w-[420px] sm:max-w-[480px]
+        rounded-xl p-0 min-w-[200px] max-w-[420px] sm:max-w-[480px]
         transform transition-all duration-300 ease-out
         ${isExiting 
           ? 'opacity-0 translate-x-full scale-95' 
@@ -137,7 +137,8 @@ const Toast = ({ id, type, title, message, duration, onClose, index }) => {
       onMouseLeave={handleMouseLeave}
       style={{
         animationDelay: `${index * 50}ms`,
-        zIndex: 9999 - index
+        zIndex: 9999 - index,
+        width: 'fit-content'
       }}
     >
       <div className="flex items-start gap-3 p-4">

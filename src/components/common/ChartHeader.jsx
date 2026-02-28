@@ -38,7 +38,6 @@ const ChartHeader = ({
   metric, 
   helpContent, 
   helpPosition = 'right-center',
-  helpWidth = 'w-[32rem]',
   children,
   leftContent,
   rightContent,
@@ -51,14 +50,14 @@ const ChartHeader = ({
   
   const containerClass = variant === 'table' 
     ? `${styles.container} px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 flex-shrink-0`
-    : `flex justify-between items-center mb-3 ${styles.container} px-4 py-2.5 rounded-lg shadow-md ${className}`;
+    : `flex justify-between items-center ${styles.container} px-3 py-2 rounded-lg shadow-md ${className}`;
 
   return (
     <div className={containerClass}>
       <div className="flex flex-wrap items-center gap-3">
         {leftContent}
-        <h3 className={`font-bold ${styles.title} text-sm flex items-center gap-1.5`}>
-          {Icon && <Icon className="w-4 h-4" />}
+        <h3 className={`font-bold ${styles.title} text-base flex items-center gap-2`}>
+          {Icon && <Icon className="w-5 h-5" />}
           {title}
           {metric && (
             <span className={styles.metric}>
@@ -69,8 +68,7 @@ const ChartHeader = ({
             <HelpIcon 
               content={helpContent}
               position={helpPosition}
-              tooltipWidth={helpWidth}
-              className={`w-3.5 h-3.5 ${styles.helpIcon}`}
+              className={`w-4 h-4 ${styles.helpIcon}`}
             />
           )}
         </h3>
@@ -98,7 +96,6 @@ ChartHeader.propTypes = {
   metric: PropTypes.string,
   helpContent: PropTypes.node,
   helpPosition: PropTypes.string,
-  helpWidth: PropTypes.string,
   children: PropTypes.node,
   leftContent: PropTypes.node,
   rightContent: PropTypes.node,

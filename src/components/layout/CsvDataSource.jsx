@@ -7,12 +7,13 @@ import {
 import HelpIcon from '../common/HelpIcon';
 import ValidationResultPanel, { CompactValidationStatus } from '../common/ValidationResultPanel';
 import SavedDataSelector from '../common/SavedDataSelector';
+import LogImporter from '../modals/LogImporter';
 import { useInputValidation, useFileUpload, INPUT_STATUS } from '../../hooks/useInputValidation';
 import { useToast } from '../common/Toast';
 import { getValidationSuggestions, detectDelimiter } from '../../utils/validationUtils';
 import { PREVIEW_TABLE_STYLES, getPreviewRowStyle } from '../../utils/tableStyles';
 
-const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
+const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis, llmConfig }) => {
   const [isVisible, setIsVisible] = useState(true);
   const [copied, setCopied] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,6 +25,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [lastAnalyzedCsv, setLastAnalyzedCsv] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showLogImporter, setShowLogImporter] = useState(false);
   const rowsPerPage = 20;
   const editInputRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -300,9 +302,43 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           {validationTouched && <CompactValidationStatus errors={validationErrors} warnings={validationWarnings} isValid={isValidData} onClick={() => setShowValidationPanel(!showValidationPanel)} />}
           <HelpIcon 
-            content={<div className="space-y-2"><p className="font-bold text-indigo-400">CSV 格式</p><div className="text-xs space-y-1"><p>第一列: Case名称</p><p>指标列: m_算法_指标</p><p>缺失值: NaN 或 NA</p></div></div>}
+            content={
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-bold text-indigo-400 text-sm mb-2">数据源与格式说明</h3>
+                  <p className="text-gray-300 text-xs mb-2">
+                    本系统支持 CSV 格式的数据文件，以下是数据要求和功能说明。
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-emerald-300 text-xs">CSV 格式要求</h4>
+                  <ul className="text-gray-300 text-xs space-y-1">
+                    <li>• <strong>第一列</strong>：Case 名称（测试用例标识）</li>
+                    <li>• <strong>元数据列</strong>：如 #Inst、#Net 等设计属性</li>
+                    <li>• <strong>指标列</strong>：格式为 <code className="bg-slate-700 px-1 rounded">m_算法名_指标名</code></li>
+                    <li>• <strong>缺失值</strong>：使用 NaN 或 NA 表示</li>
+                  </ul>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-amber-300 text-xs">数据管理功能</h4>
+                  <ul className="text-gray-300 text-xs space-y-1">
+                    <li>• <strong>选择数据集</strong>：从已保存的数据集中加载</li>
+                    <li>• <strong>保存数据</strong>：将当前数据保存到本地</li>
+                    <li>• <strong>上传 CSV</strong>：从本地上传 CSV 文件</li>
+                    <li>• <strong>粘贴数据</strong>：直接粘贴 CSV 格式数据</li>
+                    <li>• <strong>日志提取</strong>：从日志文件提取数据</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
+                  💡 数据保存在浏览器本地存储中，清除浏览器数据会导致保存的数据丢失
+                </div>
+              </div>
+            }
             position="left-center"
-            className="w-3.5 h-3.5 text-white/70 hover:text-white"
+            className="w-4 h-4 text-white/70 hover:text-white"
           />
           {isVisible ? <ChevronUp className="w-4 h-4 text-white" /> : <ChevronDown className="w-4 h-4 text-white" />}
         </div>
@@ -319,6 +355,26 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
             onPasteData={handlePasteData}
             isFileLoading={isFileLoading}
             fileName={fileName}
+            onOpenLogImporter={() => setShowLogImporter(true)}
+          />
+
+          <LogImporter
+            isOpen={showLogImporter}
+            onClose={() => setShowLogImporter(false)}
+            llmConfig={llmConfig}
+            onImportData={(csvString, meta) => {
+              onCsvChange(csvString);
+              const result = validateImmediate(csvString);
+              if (result.valid) {
+                setLastAnalyzedCsv(csvString);
+                onRunAnalysis(csvString);
+                toast.success('导入成功', `从 ${meta?.fileCount || 0} 个日志文件提取数据`);
+              } else {
+                toast.error('验证失败', '提取的数据格式不正确');
+                setShowValidationPanel(true);
+              }
+              setCurrentPage(1);
+            }}
           />
 
           {validationTouched && (validationErrors.length > 0 || validationWarnings.length > 0) && (

@@ -5,13 +5,16 @@ import { HelpCircle, X } from 'lucide-react';
 const HelpIcon = ({ 
   text, 
   content, 
-  className = "w-3.5 h-3.5 text-gray-400 hover:text-indigo-500 transition-colors", 
-  tooltipWidth = "w-80", 
+  className = "w-4 h-4 text-gray-400 hover:text-indigo-500 transition-colors", 
+  minWidth = 200,
+  maxWidth = 400,
   position = "bottom-right"
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipStyle, setTooltipStyle] = useState({});
+  const [actualWidth, setActualWidth] = useState(null);
   const iconRef = useRef(null);
+  const tooltipRef = useRef(null);
 
   const handleClick = (e) => {
     e.stopPropagation();
@@ -26,30 +29,19 @@ const HelpIcon = ({
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    const widthMap = {
-      'w-80': 320,
-      'w-72': 288,
-      'w-96': 384,
-      'w-[32rem]': 512,
-      'w-[36rem]': 576,
-      'w-[40rem]': 640,
-    };
-    const tooltipWidthPx = widthMap[tooltipWidth] || 320;
-    const tooltipHeight = 200;
+    const tooltipWidthPx = actualWidth || maxWidth;
+    const tooltipHeight = tooltipRef.current?.offsetHeight || 200;
 
     let left, top;
-    let actualPosition = position;
 
     if (iconRect.left + tooltipWidthPx > viewportWidth - 20) {
       left = iconRect.right - tooltipWidthPx;
-      actualPosition = actualPosition.replace('right', 'left');
     } else {
       left = iconRect.left;
     }
 
     if (iconRect.bottom + tooltipHeight + 10 > viewportHeight) {
       top = iconRect.top - tooltipHeight - 8;
-      actualPosition = actualPosition.replace('bottom', 'top');
     } else {
       top = iconRect.bottom + 8;
     }
@@ -63,7 +55,14 @@ const HelpIcon = ({
       top: `${top}px`,
       zIndex: 9999,
     });
-  }, [tooltipWidth, position]);
+  }, [actualWidth, maxWidth]);
+
+  useEffect(() => {
+    if (showTooltip && tooltipRef.current) {
+      const measuredWidth = tooltipRef.current.scrollWidth;
+      setActualWidth(Math.min(Math.max(measuredWidth, minWidth), maxWidth));
+    }
+  }, [showTooltip, minWidth, maxWidth]);
 
   useEffect(() => {
     if (showTooltip) {
@@ -123,15 +122,21 @@ const HelpIcon = ({
 
       {showTooltip && createPortal(
         <div 
-          className={`${tooltipWidth} max-w-[90vw]`}
-          style={tooltipStyle}
+          ref={tooltipRef}
+          className="max-w-[90vw]"
+          style={{
+            ...tooltipStyle,
+            width: actualWidth ? `${actualWidth}px` : 'auto',
+            minWidth: `${minWidth}px`,
+            maxWidth: `${maxWidth}px`,
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-gray-100 rounded-xl shadow-2xl border border-gray-700/50 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-transparent to-purple-500/5 pointer-events-none" />
             
             <div className="relative flex items-center justify-between px-4 py-3 border-b border-gray-700/50 bg-gray-800/50">
-              <span className="text-sm font-bold text-white">说明</span>
+              <span className="text-base font-bold text-white">说明</span>
               <button 
                 onClick={(e) => { e.stopPropagation(); setShowTooltip(false); }}
                 className="p-1 rounded-lg bg-gray-700/50 hover:bg-gray-700 transition-colors"
@@ -141,7 +146,7 @@ const HelpIcon = ({
             </div>
             
             <div className="relative p-4 overflow-y-auto max-h-[60vh] custom-scrollbar">
-              <div className="text-sm leading-relaxed text-gray-200">
+              <div className="text-sm leading-relaxed text-gray-200 font-medium whitespace-pre-wrap">
                 {content || text}
               </div>
             </div>

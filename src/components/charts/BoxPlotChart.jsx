@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartBody, ChartArea, ChartLegend, AreaLabel } from '../common/ChartContainer';
 import { calculateImprovement } from '../../utils/statistics';
-import { CHART_Y_PADDING } from '../../utils/constants';
+import { CHART_Y_PADDING, CHART_WIDTH } from '../../utils/constants';
 
 const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, setHoveredCase, setTooltipState, onCaseClick, parsedData, metaColumns }) => {
   const instColumn = useMemo(() => {
@@ -76,33 +76,59 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
         title="改进率分布箱线图"
         metric={activeMetric}
         helpContent={
-          <div className="space-y-1">
-            <p className="font-bold text-indigo-400">改进率分布箱线图</p>
-            <div className="text-xs space-y-0.5">
-              <p>箱线图直观展示了单个指标在所有 Case 中的宏观分布情况。</p>
-              <p><b>X轴：</b>按 INST 数量从大到小排序</p>
-              <p><b>蓝色阴影区 (IQR)：</b>覆盖 50% 的核心密集区</p>
-              <p><b>紫色点：</b>显著优化离群点</p>
-              <p><b>红色点：</b>严重退化离群点</p>
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-bold text-indigo-400 text-sm mb-2">改进率分布箱线图</h3>
+              <p className="text-gray-300 text-xs mb-2">
+                箱线图是一种直观展示数据分布的图表，帮助您快速了解算法改进效果的整体情况。
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-emerald-300 text-xs">图表解读</h4>
+              <ul className="text-gray-300 text-xs space-y-1.5">
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-400">•</span>
+                  <span><strong>X 轴</strong>：按设计规模（#Inst 实例数）从大到小排列各测试用例</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-400">•</span>
+                  <span><strong>Y 轴</strong>：改进率百分比，正值表示优化，负值表示退化</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-400">•</span>
+                  <span><strong>蓝色阴影区</strong>：中间 50% 数据的分布范围（IQR 四分位距）</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-amber-300 text-xs">特殊标记</h4>
+              <ul className="text-gray-300 text-xs space-y-1">
+                <li>• <span className="text-purple-400">紫色点</span>：显著优化（改进率超出正常范围）</li>
+                <li>• <span className="text-red-400">红色点</span>：严重退化（改进率为负且超出正常范围）</li>
+              </ul>
+            </div>
+            
+            <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
+              💡 <strong>提示</strong>：双击任意数据点可查看该用例的详细分析
             </div>
           </div>
         }
-        helpWidth="w-72"
         helpPosition="right-center"
       />
       
-      <ChartBody className="max-w-5xl mx-auto w-full">
-        <div className="relative w-12 flex-shrink-0">
+      <ChartBody className={`${CHART_WIDTH.COMPACT} mx-auto w-full`}>
+        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0">
           {yTicks.map((tick, i) => {
-            const yPercent = mapY(tick.val);
             const isMedian = tick.val === stats.median;
             const isQ3 = tick.val === stats.q3;
             const isQ1 = tick.val === stats.q1;
             
             return (
-              <div
+              <span 
                 key={i} 
-                className={`absolute right-2 text-[10px] font-semibold transform -translate-y-1/2 text-right
+                className={`
                   ${isMedian ? 'text-indigo-600 font-bold' : ''}
                   ${isQ3 ? 'text-emerald-600' : ''}
                   ${isQ1 ? 'text-amber-600' : ''}
@@ -110,27 +136,23 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
                   ${tick.val === yMax ? 'text-green-600' : ''}
                   ${tick.val === -yMax ? 'text-red-500' : ''}
                 `}
-                style={{ top: `${yPercent}%` }}
               >
                 {isMedian ? (
-                  <div className="flex flex-col items-end leading-tight">
-                    <span>中位</span>
-                    <span className="text-[9px]">{stats.median > 0 ? '+' : ''}{stats.median.toFixed(1)}%</span>
-                  </div>
+                  <>
+                    中位 <span className="text-[9px]">{stats.median > 0 ? '+' : ''}{stats.median.toFixed(1)}%</span>
+                  </>
                 ) : isQ3 ? (
-                  <div className="flex flex-col items-end leading-tight">
-                    <span>Q3</span>
-                    <span className="text-[9px]">+{stats.q3.toFixed(1)}%</span>
-                  </div>
+                  <>
+                    Q3 <span className="text-[9px]">+{stats.q3.toFixed(1)}%</span>
+                  </>
                 ) : isQ1 ? (
-                  <div className="flex flex-col items-end leading-tight">
-                    <span>Q1</span>
-                    <span className="text-[9px]">{stats.q1 > 0 ? '+' : ''}{stats.q1.toFixed(1)}%</span>
-                  </div>
+                  <>
+                    Q1 <span className="text-[9px]">{stats.q1 > 0 ? '+' : ''}{stats.q1.toFixed(1)}%</span>
+                  </>
                 ) : (
-                  <span>{formatYTick(tick.val)}</span>
+                  formatYTick(tick.val)
                 )}
-              </div>
+              </span>
             );
           })}
         </div>

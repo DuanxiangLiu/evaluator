@@ -77,20 +77,54 @@ const Sidebar = ({ isOpen, csvInput, onCsvChange, onRunAnalysis }) => {
           </button>
           <HelpIcon 
             content={
-              <div className="space-y-3">
-                <p className="font-bold text-indigo-400 text-lg">CSV 数据格式说明</p>
-                <div className="space-y-2 text-sm">
-                  <p><b>第一列：</b>Case 名称（测试用例标识）</p>
-                  <p><b>元数据列：</b>如 Instances、Nets 等设计属性</p>
-                  <p><b>指标列格式：</b>m_算法名_指标名</p>
-                  <p><b>示例：</b>m_Base_HPWL, m_Algo1_HPWL</p>
-                  <p><b>支持算法：</b>Base（基线）、Algo1、Algo2 等</p>
-                  <p><b>缺失值：</b>使用 NaN 或 NA 表示</p>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-bold text-indigo-400 text-base mb-2">CSV 数据格式说明</h3>
+                  <p className="text-gray-300 text-xs mb-3">
+                    CSV 是一种简单的表格数据格式，每行代表一条记录，每列代表一个字段。以下是本系统要求的数据格式：
+                  </p>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="bg-slate-800/50 rounded-lg p-3">
+                    <h4 className="font-semibold text-emerald-300 text-sm mb-2">列结构要求</h4>
+                    <ul className="text-gray-300 text-xs space-y-1.5">
+                      <li className="flex items-start gap-2">
+                        <span className="text-indigo-400 font-mono">1.</span>
+                        <span><strong>第一列</strong>：Case 名称，即测试用例的唯一标识（如 case1, design_A）</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-indigo-400 font-mono">2.</span>
+                        <span><strong>元数据列</strong>：设计属性信息，如 #Inst（实例数）、#Net（网络数）等</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-indigo-400 font-mono">3.</span>
+                        <span><strong>指标列</strong>：算法运行结果，格式为 <code className="bg-slate-700 px-1 rounded">m_算法名_指标名</code></span>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div className="bg-slate-800/50 rounded-lg p-3">
+                    <h4 className="font-semibold text-amber-300 text-sm mb-2">示例数据</h4>
+                    <pre className="text-xs text-gray-300 font-mono overflow-x-auto">
+{`Case,#Inst,#Net,m_Base_HPWL,m_Algo1_HPWL
+case1,1000,500,125000,118000
+case2,2000,800,250000,235000`}
+                    </pre>
+                  </div>
+                  
+                  <div className="bg-slate-800/50 rounded-lg p-3">
+                    <h4 className="font-semibold text-cyan-300 text-sm mb-2">注意事项</h4>
+                    <ul className="text-gray-300 text-xs space-y-1">
+                      <li>• <strong>缺失值</strong>：使用 NaN、NA 或留空表示</li>
+                      <li>• <strong>基线算法</strong>：通常命名为 Base，用于对比基准</li>
+                      <li>• <strong>文件编码</strong>：建议使用 UTF-8 编码</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             }
             position="right-center"
-            tooltipWidth="w-[40rem]"
           />
         </div>
       </div>

@@ -4,6 +4,7 @@ import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartBody, ChartArea, ChartLegend, AreaLabel, EmptyState } from '../common/ChartContainer';
 import { Circle } from 'lucide-react';
 import { calculateImprovement } from '../../utils/statistics';
+import { CHART_WIDTH, CHART_HEADER_STYLES } from '../../utils/constants';
 
 const ParetoChart = ({ 
   parsedData, selectedCases, availableMetrics, 
@@ -62,7 +63,7 @@ const ParetoChart = ({
     }
 
     return (
-      <ChartBody className="max-w-5xl mx-auto w-full">
+      <ChartBody className={`${CHART_WIDTH.COMPACT} mx-auto w-full`}>
         <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0">
           {ticks.slice().reverse().map((tick, i) => (
             <span 
@@ -146,33 +147,61 @@ const ParetoChart = ({
       <ChartHeader
         title="Pareto Front 多维气泡分析"
         helpContent={
-          <div className="space-y-1">
-            <p className="font-bold text-indigo-400">Pareto Front 分析</p>
-            <div className="text-xs space-y-0.5">
-              <p>揭示目标之间的竞争关系 (Trade-off)</p>
-              <p><b>右上 (绿)：</b>双赢点</p>
-              <p><b>左下 (红)：</b>双输点</p>
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-bold text-indigo-400 text-sm mb-2">Pareto Front 多维气泡分析</h3>
+              <p className="text-gray-300 text-xs mb-2">
+                同时观察两个或三个指标的改进情况，识别「双赢」或「Trade-off」的用例。
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-emerald-300 text-xs">象限解读</h4>
+              <ul className="text-gray-300 text-xs space-y-1.5">
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400">•</span>
+                  <span><strong>右上（绿色）</strong>：双赢区域，两个指标同时优化</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-400">•</span>
+                  <span><strong>左下（红色）</strong>：双输区域，两个指标同时退化</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-400">•</span>
+                  <span><strong>对角区域</strong>：Trade-off，一个优化一个退化</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-amber-300 text-xs">气泡大小</h4>
+              <p className="text-gray-300 text-xs">
+                开启 Z 轴后，气泡大小表示第三个指标的改进幅度，越大表示改进越明显。
+              </p>
+            </div>
+            
+            <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
+              💡 <strong>提示</strong>：Pareto Front（帕累托前沿）上的点代表最优权衡解
             </div>
           </div>
         }
-        helpWidth="w-64"
         helpPosition="right-center"
       >
         <div className="flex items-center gap-2 text-xs">
-          <span className="font-semibold text-white/80">X:</span>
-          <select value={paretoX} onChange={(e) => setParetoX(e.target.value)} className="font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 text-xs">
+          <span className={CHART_HEADER_STYLES.LABEL}>X:</span>
+          <select value={paretoX} onChange={(e) => setParetoX(e.target.value)} className={CHART_HEADER_STYLES.SELECT}>
             <option value="">--</option>
             {availableMetrics.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
-          <span className="font-semibold text-white/80 ml-1">Y:</span>
-          <select value={paretoY} onChange={(e) => setParetoY(e.target.value)} className="font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 text-xs">
+          <span className={`${CHART_HEADER_STYLES.LABEL} ml-1`}>Y:</span>
+          <select value={paretoY} onChange={(e) => setParetoY(e.target.value)} className={CHART_HEADER_STYLES.SELECT}>
             <option value="">--</option>
             {availableMetrics.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
-          <span className="font-semibold text-amber-200 ml-1 flex items-center gap-0.5">
+          <span className={`${CHART_HEADER_STYLES.LABEL_ACCENT} ml-1 flex items-center gap-0.5`}>
             <Circle className="w-2.5 h-2.5"/>Z:
           </span>
-          <select value={paretoZ} onChange={(e) => setParetoZ(e.target.value)} className="font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-amber-100 text-amber-800 text-xs">
+          <select value={paretoZ} onChange={(e) => setParetoZ(e.target.value)} className={CHART_HEADER_STYLES.SELECT_ACCENT}>
             <option value="">关</option>
             {availableMetrics.map(m => <option key={m} value={m}>{m}</option>)}
           </select>

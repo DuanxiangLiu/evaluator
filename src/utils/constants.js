@@ -4,6 +4,22 @@ export const CHART_BASE_RADIUS = 70;
 export const CHART_MAX_IMPROVEMENT = 20;
 export const CHART_Y_PADDING = 5;
 
+export const CHART_WIDTH = {
+  FULL: 'max-w-5xl',
+  COMPACT: 'max-w-2xl',
+  NARROW: 'max-w-xl'
+};
+
+export const CHART_HEADER_STYLES = {
+  SELECT: 'font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 text-xs',
+  SELECT_ACCENT: 'font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-amber-100 text-amber-800 text-xs',
+  LABEL: 'font-semibold text-white/80',
+  LABEL_ACCENT: 'font-semibold text-amber-200',
+  BUTTON: 'px-2.5 py-1 rounded text-xs font-semibold transition-all flex items-center gap-1.5',
+  BUTTON_SELECTED: 'shadow-md',
+  BUTTON_UNSELECTED: 'opacity-60 hover:opacity-100'
+};
+
 export const MAX_SAVED_DATASETS = 20;
 export const MAX_FILE_SIZE_MB = 10;
 

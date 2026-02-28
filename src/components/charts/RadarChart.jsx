@@ -3,6 +3,7 @@ import { CheckSquare, Square } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartArea, ChartLegend } from '../common/ChartContainer';
 import { getMetricConfig, computeStatistics } from '../../services/dataService';
+import { CHART_WIDTH, CHART_HEADER_STYLES } from '../../utils/constants';
 
 const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, parsedData, selectedCases }) => {
   const algoColors = {
@@ -25,11 +26,7 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
     return colors[index % colors.length];
   };
 
-  const [selectedAlgos, setSelectedAlgos] = useState(() => {
-    const initial = new Set([baseAlgo]);
-    if (compareAlgo) initial.add(compareAlgo);
-    return initial;
-  });
+  const [selectedAlgos, setSelectedAlgos] = useState(() => new Set(availableAlgos));
 
   const toggleAlgoSelection = (algo) => {
     setSelectedAlgos(prev => {
@@ -78,15 +75,42 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
         title="全局多维雷达图"
         variant="primary"
         helpContent={
-          <div className="space-y-1">
-            <p className="font-bold text-indigo-400">全局多维雷达图</p>
-            <div className="text-xs space-y-0.5">
-              <p><b>基线：</b>正多边形虚线框</p>
-              <p><b>向外：</b>优化 | <b>向内：</b>退化</p>
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-bold text-indigo-400 text-sm mb-2">全局多维雷达图</h3>
+              <p className="text-gray-300 text-xs mb-2">
+                雷达图将多个指标的性能同时展示在一个图形中，便于直观比较不同算法的综合表现。
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-emerald-300 text-xs">图表解读</h4>
+              <ul className="text-gray-300 text-xs space-y-1.5">
+                <li className="flex items-start gap-2">
+                  <span className="text-indigo-400">•</span>
+                  <span><strong>基线（虚线框）</strong>：基准算法的参考线，形状为正多边形</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-400">•</span>
+                  <span><strong>向外扩展</strong>：表示该指标有优化效果</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-400">•</span>
+                  <span><strong>向内收缩</strong>：表示该指标出现退化</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-semibold text-amber-300 text-xs">使用技巧</h4>
+              <ul className="text-gray-300 text-xs space-y-1">
+                <li>• 点击算法标签可显示/隐藏对应的多边形</li>
+                <li>• 形状越接近正多边形，说明各指标表现越均衡</li>
+                <li>• 某方向明显突出或凹陷，说明该指标表现突出或薄弱</li>
+              </ul>
             </div>
           </div>
         }
-        helpWidth="w-56"
       >
         <div className="flex items-center gap-2">
           <div className="flex flex-wrap gap-1">
@@ -98,17 +122,16 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
                 <button
                   key={algo}
                   onClick={() => toggleAlgoSelection(algo)}
-                  className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all flex items-center gap-1 ${isSelected ? 'shadow-sm' : 'opacity-50 hover:opacity-75'
-                    }`}
+                  className={`${CHART_HEADER_STYLES.BUTTON} ${isSelected ? CHART_HEADER_STYLES.BUTTON_SELECTED : CHART_HEADER_STYLES.BUTTON_UNSELECTED}`}
                   style={{
-                    backgroundColor: isSelected ? color.fill : '#f3f4f6',
+                    backgroundColor: isSelected ? color.stroke : 'rgba(255,255,255,0.15)',
                     borderColor: color.stroke,
-                    borderWidth: 1.5,
+                    borderWidth: 2,
                     borderStyle: 'solid',
-                    color: isSelected ? color.stroke : '#6b7280'
+                    color: isSelected ? '#fff' : 'rgba(255,255,255,0.9)'
                   }}
                 >
-                  {isSelected ? <CheckSquare className="w-2.5 h-2.5" /> : <Square className="w-2.5 h-2.5" />}
+                  {isSelected ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
                   {algo}
                 </button>
               );
@@ -116,14 +139,14 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
           </div>
           <button
             onClick={selectAllAlgos}
-            className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all border ${allSelected ? 'bg-white/30 text-white' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}
+            className={`px-2.5 py-1 rounded text-xs font-semibold transition-all border-2 ${allSelected ? 'bg-white text-indigo-600 border-white' : 'bg-white/15 text-white border-white/50 hover:bg-white/25'}`}
           >
             全选
           </button>
         </div>
       </ChartHeader>
       
-      <ChartArea className="bg-gradient-to-br from-indigo-50/30 to-purple-50/30 max-w-5xl mx-auto w-full">
+      <ChartArea className={`bg-gradient-to-br from-indigo-50/30 to-purple-50/30 ${CHART_WIDTH.COMPACT} mx-auto w-full`}>
         <svg className="w-full h-full" viewBox="-200 -200 400 400" preserveAspectRatio="xMidYMid meet">
           {(() => {
             const N = validMetrics.length;

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Settings, Key, Globe, Cpu, FileText, CheckCircle, AlertCircle, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { X, Settings, Key, Globe, Cpu, FileText, CheckCircle, AlertCircle, AlertTriangle, Eye, EyeOff, HelpCircle } from 'lucide-react';
 import { useFormValidation } from '../../hooks/useInputValidation';
 import { useToast } from '../common/Toast';
+import HelpIcon from '../common/HelpIcon';
 
 const PROVIDER_PRESETS = {
   deepseek: {
@@ -303,6 +304,43 @@ const AiConfigModal = ({ isOpen, config, onConfigChange, onClose }) => {
             <h3 className="font-bold text-lg sm:text-xl text-gray-900 flex items-center gap-2">
               <Settings className="w-5 h-5 text-indigo-600" />
               AI 配置
+              <HelpIcon 
+                content={
+                  <div className="space-y-3">
+                    <div>
+                      <h3 className="font-bold text-indigo-400 text-sm mb-2">AI 服务配置</h3>
+                      <p className="text-gray-300 text-xs mb-2">
+                        配置大语言模型 API，启用智能诊断功能。
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-emerald-300 text-xs">支持的模型</h4>
+                      <ul className="text-gray-300 text-xs space-y-1">
+                        <li>• <strong>DeepSeek</strong>：性价比高，中文支持好</li>
+                        <li>• <strong>Google Gemini</strong>：免费额度大</li>
+                        <li>• <strong>OpenAI</strong>：GPT-4 等模型</li>
+                        <li>• <strong>自定义</strong>：兼容 OpenAI API 的服务</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-amber-300 text-xs">获取 API Key</h4>
+                      <ul className="text-gray-300 text-xs space-y-1">
+                        <li>• DeepSeek: platform.deepseek.com</li>
+                        <li>• Gemini: aistudio.google.com</li>
+                        <li>• OpenAI: platform.openai.com</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
+                      🔒 API Key 仅保存在本地浏览器，不会上传到服务器
+                    </div>
+                  </div>
+                }
+                position="bottom-right"
+                className="w-4 h-4 text-gray-400 hover:text-indigo-500"
+              />
             </h3>
             <p className="text-sm text-gray-500 mt-1 hidden sm:block">配置 AI 服务提供商和 API 密钥</p>
           </div>
