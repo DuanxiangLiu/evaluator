@@ -16,6 +16,21 @@ export const computeStatistics = (metricName, base, comp, casesData, selectedCas
     })
     .filter(item => item !== null);
 
+  const instCol = Object.keys(validCases[0]?.meta || {}).find(k =>
+    k.toLowerCase() === 'inst' ||
+    k.toLowerCase() === 'instance' ||
+    k.toLowerCase() === 'instances' ||
+    k.toLowerCase() === '#inst'
+  );
+
+  if (instCol) {
+    validCases.sort((a, b) => {
+      const aVal = parseFloat(a.meta[instCol]) || 0;
+      const bVal = parseFloat(b.meta[instCol]) || 0;
+      return bVal - aVal;
+    });
+  }
+
   const n = validCases.length;
   if (n === 0) return null;
 

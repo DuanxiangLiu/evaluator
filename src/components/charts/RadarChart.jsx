@@ -81,37 +81,36 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
           </div>
         }
         helpWidth="w-56"
-      />
+      >
+        <div className="flex flex-wrap gap-1.5">
+          {availableAlgos.map((algo, index) => {
+            const isSelected = selectedAlgos.has(algo);
+            const color = getAlgoColor(algo, index);
 
-      <div className="px-3 py-2 border-b border-gray-100 flex flex-wrap gap-1.5 flex-shrink-0">
-        {availableAlgos.map((algo, index) => {
-          const isSelected = selectedAlgos.has(algo);
-          const color = getAlgoColor(algo, index);
-          
-          return (
-            <button
-              key={algo}
-              onClick={() => toggleAlgoSelection(algo)}
-              className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all flex items-center gap-1 ${
-                isSelected ? 'shadow-sm' : 'opacity-50 hover:opacity-75'
-              }`}
-              style={{
-                backgroundColor: isSelected ? color.fill : '#f3f4f6',
-                borderColor: color.stroke,
-                borderWidth: 1.5,
-                borderStyle: 'solid',
-                color: isSelected ? color.stroke : '#6b7280'
-              }}
-            >
-              {isSelected ? <CheckSquare className="w-2.5 h-2.5" /> : <Square className="w-2.5 h-2.5" />}
-              {algo}
-            </button>
-          );
-        })}
-      </div>
+            return (
+              <button
+                key={algo}
+                onClick={() => toggleAlgoSelection(algo)}
+                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all flex items-center gap-1 ${isSelected ? 'shadow-sm' : 'opacity-50 hover:opacity-75'
+                  }`}
+                style={{
+                  backgroundColor: isSelected ? color.fill : '#f3f4f6',
+                  borderColor: color.stroke,
+                  borderWidth: 1.5,
+                  borderStyle: 'solid',
+                  color: isSelected ? color.stroke : '#6b7280'
+                }}
+              >
+                {isSelected ? <CheckSquare className="w-2.5 h-2.5" /> : <Square className="w-2.5 h-2.5" />}
+                {algo}
+              </button>
+            );
+          })}
+        </div>
+      </ChartHeader>
       
       <ChartArea className="bg-gradient-to-br from-indigo-50/30 to-purple-50/30">
-        <svg className="w-full h-full" viewBox="-200 -180 400 360" preserveAspectRatio="xMidYMid meet">
+        <svg className="w-full h-full" viewBox="-200 -200 400 400" preserveAspectRatio="xMidYMid meet">
           {(() => {
             const N = validMetrics.length;
             if(N < 3) return <text x="0" y="0" textAnchor="middle" fill="#9ca3af" fontSize="10">至少需要 3 个指标</text>;
@@ -135,7 +134,7 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
             const renderAxes = () => validMetrics.map((m, i) => {
               const angle = (Math.PI * 2 * i) / N;
               const ptEnd = getPoint(angle, 100);
-              const labelPt = getPoint(angle, 120);
+              const labelPt = getPoint(angle, 130);
               
               return (
                 <g key={`axis-${i}`}>

@@ -19,8 +19,8 @@ const TAB_CONFIG = [
   { id: 'correlation', label: '特征相关性', icon: ScatterChart },
   { id: 'multi', label: '帕累托投影', icon: GitMerge },
   { id: 'all_metrics', label: '全局多维雷达', icon: Radar },
-  { id: 'ai_analysis', label: 'AI 智能诊断', icon: Bot },
-  { id: 'qor_simulator', label: 'QoR 模拟器', icon: Scale }
+  { id: 'qor_simulator', label: 'QoR 模拟器', icon: Scale },
+  { id: 'ai_analysis', label: 'AI 智能诊断', icon: Bot }
 ];
 
 const TabButton = ({ tab, isActive, onClick }) => (
@@ -34,13 +34,13 @@ const TabButton = ({ tab, isActive, onClick }) => (
     }`}
     onClick={onClick}
   >
-    <tab.icon className="w-4 h-4" />
+    <tab.icon className="w-3.5 h-3.5" />
     <span>{tab.label}</span>
     <HelpIcon
       content={<TabHelpContent tabId={tab.id} />}
       tooltipWidth="w-[40rem]"
       position="bottom-center"
-      className="w-4 h-4 text-gray-400 hover:text-indigo-500"
+      className="w-3.5 h-3.5 text-gray-400 hover:text-indigo-500"
     />
   </button>
 );
@@ -52,7 +52,7 @@ const TabHelpContent = ({ tabId }) => {
     correlation: { title: '特征相关性分析', items: ['分析不同特征之间的相关性关系', '使用散点图展示两个特征的关系', '可选择任意两个特征进行相关性分析'] },
     multi: { title: '帕累托投影分析', items: ['三维可视化展示多个指标的综合表现', '基于帕累托法则的多维度数据投影', '可自由选择三个维度进行投影分析'] },
     all_metrics: { title: '全局多维雷达分析', items: ['展示所有指标在不同算法下的综合表现', '多维度数据可视化，每个轴代表一个指标', '快速评估算法在多个指标上的综合优劣'] },
-    ai_analysis: { title: 'AI 智能诊断', items: ['基于大语言模型的智能算法性能分析', '自动生成深度分析报告和优化建议', '支持 Gemini、OpenAI 等主流 LLM'] },
+    ai_analysis: { title: 'AI 智能诊断', items: ['基于大语言模型的智能算法性能分析', '自动生成结构化诊断报告：最终判定、Trade-off分析、退化诊断、扩展性评估', '支持 DeepSeek、Gemini、OpenAI 等主流 LLM', '提供可执行的优化建议和风险预警'] },
     qor_simulator: { title: 'QoR 模拟器', items: ['Quality of Result 模拟器，自定义权重计算综合评分', '可为不同指标设置自定义权重', '根据业务需求自定义评估标准'] }
   };
   const help = helpTexts[tabId] || { title: '', items: [] };
@@ -223,7 +223,7 @@ const AppContent = () => {
 
         <StatsCards stats={stats} />
 
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 overflow-hidden flex flex-col h-[700px] relative z-0">
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 overflow-hidden flex flex-col min-h-[700px] relative z-0">
           {tooltipState.visible && (
             <div className="absolute pointer-events-none bg-gray-900/95 border border-gray-700 text-white text-xs px-4 py-3 rounded-xl shadow-2xl z-[100] whitespace-nowrap backdrop-blur-sm transition-opacity duration-75" style={{ left: tooltipState.x + 15, top: tooltipState.y + 15 }}>
               <div className="font-bold text-sm mb-1.5 text-indigo-300 border-b border-gray-700 pb-1">{tooltipState.title}</div>

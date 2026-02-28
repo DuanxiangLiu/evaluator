@@ -72,3 +72,10 @@ CSV columns:
 - Modals: `src/components/modals/`
 - Utils: `src/utils/`
 - Services: `src/services/`
+
+## Chart Features
+
+### BoxPlot X-Axis Sorting
+- BoxPlot chart x-axis is sorted in **descending order** by `inst` (or `#Inst`, `instance`, `instances`) values
+- Sorting logic implemented in `services/statisticsService.js` `computeStatistics()` function
+- Automatically detects inst column from metadata columns

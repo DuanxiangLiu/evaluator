@@ -31,6 +31,19 @@ export const generateAIInsights = async (config, baseAlgo, compareAlgo, activeMe
 
   const badCases = stats.validCases
     .filter(d => d.imp < 0)
+    .sort((a, b) => a.imp - b.imp)
+    .slice(0, 10)
+    .map(d => ({
+      case: d.Case,
+      base: d.bVal,
+      compare: d.cVal,
+      diff_pct: d.imp.toFixed(2) + '%'
+    }));
+
+  const topCases = stats.validCases
+    .filter(d => d.imp > 0)
+    .sort((a, b) => b.imp - a.imp)
+    .slice(0, 5)
     .map(d => ({
       case: d.Case,
       base: d.bVal,
@@ -41,6 +54,7 @@ export const generateAIInsights = async (config, baseAlgo, compareAlgo, activeMe
   let largeCases = [];
   const scaleCol = metaColumns.find(c => 
     c.toLowerCase().includes('instance') || 
+    c.toLowerCase().includes('inst') ||
     c.toLowerCase().includes('cell') || 
     c.toLowerCase().includes('net')
   );
@@ -48,7 +62,7 @@ export const generateAIInsights = async (config, baseAlgo, compareAlgo, activeMe
   if (scaleCol) {
     largeCases = [...stats.validCases]
       .sort((a, b) => (parseFloat(b.meta[scaleCol]) || 0) - (parseFloat(a.meta[scaleCol]) || 0))
-      .slice(0, 3)
+      .slice(0, 5)
       .map(d => ({
         case: d.Case,
         scale: d.meta[scaleCol],
@@ -57,16 +71,35 @@ export const generateAIInsights = async (config, baseAlgo, compareAlgo, activeMe
   }
 
   const allMetricsSummary = allMetricsStats
-    .map(m => `- ${m.metric}: 几何平均改进率 = ${m.stats ? m.stats.geomeanImp.toFixed(2) + '%' : 'N/A'}, P-Value = ${m.stats ? m.stats.pValue.toFixed(3) : 'N/A'}`)
+    .map(m => {
+      if (!m.stats) return `- ${m.metric}: 无有效数据`;
+      const sig = m.stats.pValue < 0.05 ? '✓ 显著' : '✗ 不显著';
+      return `- ${m.metric}: Geomean=${m.stats.geomeanImp.toFixed(2)}%, P-Value=${m.stats.pValue.toFixed(3)} (${sig}), 退化=${m.stats.degradedCount}`;
+    })
     .join('\n');
+
+  const statsSummary = {
+    metric: activeMetric,
+    geomeanImp: stats.geomeanImp.toFixed(2) + '%',
+    meanImp: stats.meanImp.toFixed(2) + '%',
+    pValue: stats.pValue.toFixed(4),
+    ci: `[${stats.ciLower.toFixed(1)}%, ${stats.ciUpper.toFixed(1)}%]`,
+    degradedCount: stats.degradedCount,
+    nValid: stats.nValid,
+    nTotal: stats.nTotalChecked,
+    maxImprovement: stats.maxImp ? stats.maxImp.toFixed(2) + '%' : 'N/A',
+    maxDegradation: stats.minImp ? stats.minImp.toFixed(2) + '%' : 'N/A'
+  };
 
   const promptPayload = config.userPrompt
     .replace(/{{baseAlgo}}/g, baseAlgo)
     .replace(/{{compareAlgo}}/g, compareAlgo)
     .replace(/{{activeMetric}}/g, activeMetric)
     .replace(/{{allMetricsSummary}}/g, allMetricsSummary)
-    .replace(/{{badCases}}/g, JSON.stringify(badCases))
-    .replace(/{{largeCases}}/g, JSON.stringify(largeCases));
+    .replace(/{{badCases}}/g, JSON.stringify(badCases, null, 2))
+    .replace(/{{largeCases}}/g, JSON.stringify(largeCases, null, 2))
+    .replace(/{{statsSummary}}/g, JSON.stringify(statsSummary, null, 2))
+    .replace(/{{topCases}}/g, JSON.stringify(topCases, null, 2));
 
   try {
     let text = '';

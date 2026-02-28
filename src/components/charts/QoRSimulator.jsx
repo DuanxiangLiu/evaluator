@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Scale, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartLegend } from '../common/ChartContainer';
-import { getMetricConfig } from '../../services/dataService';
+import { getMetricConfig, computeStatistics } from '../../services/dataService';
 
 const QoRSimulator = ({ 
   allMetricsStats, 
@@ -11,17 +11,40 @@ const QoRSimulator = ({
   baseAlgo, 
   compareAlgo,
   qorWeights,
-  setQorWeights 
+  setQorWeights,
+  parsedData,
+  selectedCases
 }) => {
   const [selectedAlgos, setSelectedAlgos] = useState(availableAlgos.filter(a => a !== baseAlgo));
 
+  const algoMetricsStats = useMemo(() => {
+    if (!parsedData || parsedData.length === 0 || !baseAlgo) return {};
+
+    const statsMap = {};
+    availableAlgos.forEach(algo => {
+      if (algo === baseAlgo) {
+        statsMap[algo] = availableMetrics.map(m => ({
+          metric: m,
+          stats: { geomeanImp: 0, validCases: [] }
+        }));
+      } else {
+        statsMap[algo] = availableMetrics.map(m => ({
+          metric: m,
+          stats: computeStatistics(m, baseAlgo, algo, parsedData, selectedCases)
+        }));
+      }
+    });
+    return statsMap;
+  }, [parsedData, selectedCases, availableMetrics, availableAlgos, baseAlgo]);
+
   const calculateScore = (algo) => {
-    if (!allMetricsStats || allMetricsStats.length === 0) return 0;
+    const statsForAlgo = algoMetricsStats[algo];
+    if (!statsForAlgo || statsForAlgo.length === 0) return 0;
     
     let totalScore = 0;
     let totalWeight = 0;
     
-    allMetricsStats.forEach(m => {
+    statsForAlgo.forEach(m => {
       if (m.stats && m.stats.validCases) {
         const config = getMetricConfig(m.metric);
         const weight = qorWeights[m.metric] || 0;
@@ -30,10 +53,7 @@ const QoRSimulator = ({
         if (algo === baseAlgo) {
           improvement = 0;
         } else {
-          const validCase = m.stats.validCases.find(v => v);
-          if (validCase) {
-            improvement = m.stats.geomeanImp || 0;
-          }
+          improvement = m.stats.geomeanImp || 0;
         }
         
         const adjustedImprovement = config.better === 'lower' ? improvement : -improvement;
@@ -52,7 +72,7 @@ const QoRSimulator = ({
       scores[algo] = calculateScore(algo);
     });
     return scores;
-  }, [allMetricsStats, qorWeights, availableAlgos]);
+  }, [algoMetricsStats, qorWeights, availableAlgos]);
 
   const handleWeightChange = (metric, value) => {
     const newWeights = { ...qorWeights };
@@ -80,7 +100,7 @@ const QoRSimulator = ({
     });
   };
 
-  if (!allMetricsStats || allMetricsStats.length === 0) {
+  if (!parsedData || parsedData.length === 0 || Object.keys(algoMetricsStats).length === 0) {
     return (
       <ChartContainer>
         <div className="flex-1 flex items-center justify-center text-gray-400 font-medium text-sm">
@@ -132,27 +152,17 @@ const QoRSimulator = ({
                 <div key={metric} className="bg-white p-2 rounded border border-gray-200">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] font-bold text-gray-700">{metric}</span>
-                    <span className={`text-[8px] px-1 rounded ${config.better === 'lower' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                      {config.better === 'lower' ? '↓' : '↑'}
-                    </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={weight}
-                      onChange={(e) => handleWeightChange(metric, e.target.value)}
-                      className="flex-1 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                    />
                     <input
                       type="number"
                       min="0"
                       max="100"
                       value={weight.toFixed(0)}
                       onChange={(e) => handleWeightChange(metric, e.target.value)}
-                      className="w-8 px-1 py-0.5 text-[10px] border border-gray-300 rounded text-center"
+                      className="w-full px-2 py-1 text-[11px] border border-gray-300 rounded text-center font-semibold"
                     />
+                    <span className="text-[10px] text-gray-500">%</span>
                   </div>
                 </div>
               );
@@ -160,37 +170,35 @@ const QoRSimulator = ({
           </div>
         </div>
 
-        <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-          <span className="text-[10px] font-bold text-gray-600 mb-1.5 block">算法选择</span>
-          <div className="flex flex-wrap gap-1.5">
-            {availableAlgos.map(algo => {
-              const isSelected = algo === baseAlgo || selectedAlgos.includes(algo);
-              const score = algoScores[algo] || 0;
-              
-              return (
-                <button
-                  key={algo}
-                  onClick={() => toggleAlgoSelection(algo)}
-                  disabled={algo === baseAlgo}
-                  className={`px-2.5 py-1 rounded font-bold text-[10px] transition-all ${
-                    isSelected
-                      ? algo === baseAlgo
-                        ? 'bg-gray-200 text-gray-700 cursor-not-allowed'
-                        : 'bg-indigo-600 text-white shadow'
-                      : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'
-                  }`}
-                >
-                  {algo}
-                  {isSelected && <span className="ml-1 text-[8px]">({score > 0 ? '+' : ''}{score.toFixed(1)}%)</span>}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-            <span className="text-[10px] font-bold text-gray-600 mb-1.5 block">综合得分排名</span>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold text-gray-600">算法选择</span>
+              <div className="flex flex-wrap gap-1">
+                {availableAlgos.map(algo => {
+                  const isSelected = algo === baseAlgo || selectedAlgos.includes(algo);
+                  const score = algoScores[algo] || 0;
+
+                  return (
+                    <button
+                      key={algo}
+                      onClick={() => toggleAlgoSelection(algo)}
+                      disabled={algo === baseAlgo}
+                      className={`px-2 py-0.5 rounded font-bold text-[9px] transition-all ${isSelected
+                        ? algo === baseAlgo
+                          ? 'bg-gray-200 text-gray-700 cursor-not-allowed'
+                          : 'bg-indigo-600 text-white shadow'
+                        : 'bg-white text-gray-500 hover:bg-gray-100 border border-gray-200'
+                        }`}
+                    >
+                      {algo}
+                      {isSelected && <span className="ml-0.5">({score > 0 ? '+' : ''}{score.toFixed(1)}%)</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <span className="text-[10px] font-bold text-gray-600 mb-1 block">综合得分排名</span>
             <div className="space-y-1">
               {[...availableAlgos]
                 .filter(algo => algo === baseAlgo || selectedAlgos.includes(algo))
@@ -233,20 +241,15 @@ const QoRSimulator = ({
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {availableMetrics.map(metric => {
-                    const config = getMetricConfig(metric);
                     const weight = qorWeights[metric] || 0;
-                    const metricStat = allMetricsStats.find(m => m.metric === metric);
                     
                     return (
                       <tr key={metric} className="hover:bg-white/50">
                         <td className="px-2 py-1 font-bold text-gray-800">{metric}</td>
                         <td className="px-2 py-1 text-center text-gray-600">{weight.toFixed(0)}%</td>
-                        <td className="px-2 py-1 text-center">
-                          <span className={`text-[8px] px-1 rounded ${config.better === 'lower' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                            {config.better === 'lower' ? '↓' : '↑'}
-                          </span>
-                        </td>
                         {availableAlgos.filter(algo => algo === baseAlgo || selectedAlgos.includes(algo)).map(algo => {
+                          const statsForAlgo = algoMetricsStats[algo];
+                          const metricStat = statsForAlgo?.find(m => m.metric === metric);
                           const imp = metricStat?.stats?.geomeanImp || 0;
                           return (
                             <td key={algo} className="px-2 py-1 text-center">

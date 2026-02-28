@@ -112,6 +112,8 @@ const ChartsView = ({
           compareAlgo={compareAlgo}
           qorWeights={qorWeights}
           setQorWeights={setQorWeights}
+          parsedData={parsedData}
+          selectedCases={selectedCases}
         />
       )}
     </>

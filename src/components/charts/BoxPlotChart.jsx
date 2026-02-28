@@ -49,19 +49,24 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
       />
       
       <ChartBody>
-        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0">
-          {yTicks.map((tick, i) => (
-            <span 
-              key={i} 
-              className={`
-                ${tick.val === stats.median ? 'text-indigo-600' : ''}
-                ${tick.val === yMax ? 'text-green-600' : ''}
-                ${tick.val === -yMax ? 'text-red-500' : ''}
-              `}
-            >
-              {formatYTick(tick.val)}
-            </span>
-          ))}
+        <div className="relative w-12 flex-shrink-0">
+          {yTicks.map((tick, i) => {
+            const yPercent = mapY(tick.val);
+            return (
+              <span
+                key={i} 
+                className={`absolute right-2 text-[10px] font-semibold transform -translate-y-1/2
+                  ${tick.val === stats.median ? 'text-indigo-600' : ''}
+                  ${tick.val === 0 ? 'text-gray-400' : ''}
+                  ${tick.val === yMax ? 'text-green-600' : ''}
+                  ${tick.val === -yMax ? 'text-red-500' : ''}
+                `}
+                style={{ top: `${yPercent}%` }}
+              >
+                {formatYTick(tick.val)}
+              </span>
+            );
+          })}
         </div>
         
         <ChartArea className="border-l-2 border-b-2 border-gray-300 bg-gradient-to-b from-green-50/30 via-white to-red-50/30">
@@ -69,7 +74,7 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
           <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-red-100/20 to-transparent pointer-events-none"></div>
           
           <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <line x1="0" y1="50" x2="100" y2="50" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
+            <line x1="0" y1={mapY(0)} x2="100" y2={mapY(0)} stroke="#9ca3af" strokeWidth="0.8" strokeDasharray="4 2" />
             
             <rect x="0" y={mapY(stats.q3)} width="100" height={Math.max(0, mapY(stats.q1) - mapY(stats.q3))} fill="#c7d2fe" opacity="0.5" />
             
@@ -117,6 +122,7 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
       <ChartLegend items={[
         { color: '#4f46e5', label: '中位数' },
         { color: '#c7d2fe', label: 'IQR区域' },
+        { color: '#9ca3af', label: '0线' },
         { color: '#9333ea', label: '显著优化' },
         { color: '#dc2626', label: '严重退化', shape: 'circle' }
       ]} />
