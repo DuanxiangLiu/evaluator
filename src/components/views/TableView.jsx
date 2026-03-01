@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import ChartHeader from '../common/ChartHeader';
 import SortIcon from '../common/SortIcon';
 import StatusBadge, { getStatusType } from '../common/StatusBadge';
+import FilterButton from '../common/FilterButton';
 import { useToast } from '../common/Toast';
 import { exportToCSV, exportFullDataToCSV, exportToJSON, exportToExcel } from '../../services/dataService';
 import { calculateImprovementWithDirection } from '../../utils/statistics';
@@ -26,6 +27,7 @@ const TableView = ({
   parsedData,
   filteredTableData,
   selectedCases,
+  setSelectedCases,
   sortConfig,
   handleSort,
   toggleCase,
@@ -43,8 +45,29 @@ const TableView = ({
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [exportMenuPosition, setExportMenuPosition] = useState({ top: 0, left: 0 });
   const [showAllMetricsOverview, setShowAllMetricsOverview] = useState(false);
+  const [filteredCases, setFilteredCases] = useState(null);
   const exportMenuRef = useRef(null);
   const searchInputRef = useRef(null);
+
+  const handleFilterApply = (casesToRemove) => {
+    if (casesToRemove === null) {
+      setSelectedCases(new Set(parsedData.map(d => d.Case)));
+      setFilteredCases(null);
+      setTableFilter('all');
+      toast.success('筛选已重置', '已恢复所有案例');
+    } else {
+      const newSelectedCases = new Set();
+      parsedData.forEach(d => {
+        if (!casesToRemove.has(d.Case)) {
+          newSelectedCases.add(d.Case);
+        }
+      });
+      setSelectedCases(newSelectedCases);
+      setFilteredCases(casesToRemove);
+      setTableFilter('all');
+      toast.success('筛选已应用', `已过滤 ${casesToRemove.size} 个案例，可在表格中查看未勾选项`);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -88,7 +111,7 @@ const TableView = ({
           placeholder="搜索..."
           value={tableSearchTerm || ''}
           onChange={(e) => setTableSearchTerm(e.target.value)}
-          className="text-xs pl-6 pr-5 py-1 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 w-20"
+          className="h-7 text-xs pl-6 pr-5 py-1 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 w-24"
         />
         {tableSearchTerm && (
           <button
@@ -99,15 +122,28 @@ const TableView = ({
           </button>
         )}
       </div>
-      <div className="flex items-center gap-0.5 bg-gray-50 p-0.5 rounded border border-gray-200 shadow-inner text-[11px]">
+      <div className="flex items-center h-7 gap-0.5 bg-gray-50 p-0.5 rounded border border-gray-200 text-[11px]">
         <button onClick={() => setTableFilter('all')} className={`px-2 py-0.5 rounded transition-colors ${tableFilter === 'all' ? 'bg-white text-indigo-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>全部</button>
         <button onClick={() => setTableFilter('degraded')} className={`px-2 py-0.5 rounded transition-colors flex items-center gap-0.5 ${tableFilter === 'degraded' ? 'bg-white text-red-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><ArrowDown className="w-2.5 h-2.5" />退化</button>
         <button onClick={() => setTableFilter('outlier')} className={`px-2 py-0.5 rounded transition-colors flex items-center gap-0.5 ${tableFilter === 'outlier' ? 'bg-white text-purple-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><AlertTriangle className="w-2.5 h-2.5" />异常</button>
-        <button onClick={() => setTableFilter('filtered')} className={`px-2 py-0.5 rounded transition-colors flex items-center gap-0.5 ${tableFilter === 'filtered' ? 'bg-white text-gray-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><Square className="w-2.5 h-2.5" />已过滤</button>
+        <button onClick={() => setTableFilter('filtered')} className={`px-2 py-0.5 rounded transition-colors flex items-center gap-0.5 ${tableFilter === 'filtered' ? 'bg-white text-amber-700 font-medium shadow-sm' : filteredCases ? 'text-amber-600 hover:text-amber-700' : 'text-gray-500 hover:text-gray-700'}`}>
+          <Square className="w-2.5 h-2.5" />
+          已过滤
+          {filteredCases && <span className="text-[9px] font-bold">({filteredCases.size})</span>}
+        </button>
       </div>
+      <FilterButton
+        parsedData={parsedData}
+        metaColumns={metaColumns}
+        activeMetric={activeMetric}
+        baseAlgo={baseAlgo}
+        compareAlgo={compareAlgo}
+        selectedCases={selectedCases}
+        onFilterApply={handleFilterApply}
+      />
       <button 
         onClick={() => setShowAllMetricsOverview(!showAllMetricsOverview)}
-        className="text-[11px] font-medium bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 border border-indigo-200/80 px-2 py-1 rounded-lg flex items-center gap-1 transition-all duration-200 shadow-sm hover:shadow-md"
+        className="h-7 text-[11px] font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200 px-2 py-1 rounded flex items-center gap-1 transition-all"
       >
         <Table className="w-3 h-3" />
         {showAllMetricsOverview ? '收起' : '展开'}所有指标概览
@@ -412,6 +448,7 @@ TableView.propTypes = {
   parsedData: PropTypes.array.isRequired,
   filteredTableData: PropTypes.array.isRequired,
   selectedCases: PropTypes.instanceOf(Set).isRequired,
+  setSelectedCases: PropTypes.func.isRequired,
   sortConfig: PropTypes.object.isRequired,
   handleSort: PropTypes.func.isRequired,
   toggleCase: PropTypes.func.isRequired,

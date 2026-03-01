@@ -1,26 +1,81 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
-import { CheckSquare, Square } from 'lucide-react';
+import { CheckSquare, Square, BarChart3, TrendingUp, Trophy, ChevronDown, Check } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
-import ChartContainer, { ChartBody, ChartArea, ChartLegend, AreaLabel, EmptyState } from '../common/ChartContainer';
-import { getMetricConfig, computeStatistics } from '../../services/dataService';
+import ChartContainer, { ChartArea, ChartLegend } from '../common/ChartContainer';
+import { computeStatistics } from '../../services/dataService';
 import { ImprovementFormulaHelp } from '../common/HelpContents';
 import { CHART_HEADER_STYLES } from '../../utils/constants';
 import { useChartWidth } from '../../hooks/useChartWidth';
 
+const METRIC_OPTIONS = [
+  { id: 'geomeanImp', label: '几何平均改进', icon: TrendingUp, description: '综合改进效果', unit: '%', color: '#4f46e5' },
+  { id: 'meanImp', label: '算术平均改进', icon: BarChart3, description: '平均改进率', unit: '%', color: '#059669' },
+  { id: 'winRate', label: '胜率', icon: Trophy, description: '改进案例占比', unit: '%', color: '#d97706' }
+];
+
 const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, parsedData, selectedCases }) => {
   const chartWidth = useChartWidth();
-  
-  const algoColors = {
-    'Base': { fill: 'none', stroke: '#9ca3af', strokeDasharray: '4 4', strokeWidth: 2, fillOpacity: 0, label: '基线' },
-    'Algo1': { fill: '#818cf8', fillOpacity: 0.15, stroke: '#4f46e5', strokeWidth: 2, label: '算法1' },
-    'Algo2': { fill: '#a7f3d0', fillOpacity: 0.15, stroke: '#059669', strokeWidth: 2, label: '算法2' },
-    'Algo3': { fill: '#fca5a5', fillOpacity: 0.15, stroke: '#dc2626', strokeWidth: 2, label: '算法3' },
+  const [displayMetric, setDisplayMetric] = useState('geomeanImp');
+  const [selectedAlgos, setSelectedAlgos] = useState(() => new Set(availableAlgos));
+  const [isMetricDropdownOpen, setIsMetricDropdownOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const metricButtonRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (isMetricDropdownOpen && metricButtonRef.current && dropdownRef.current) {
+        if (!metricButtonRef.current.contains(e.target) && !dropdownRef.current.contains(e.target)) {
+          setIsMetricDropdownOpen(false);
+        }
+      }
+    };
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isMetricDropdownOpen) {
+        setIsMetricDropdownOpen(false);
+      }
+    };
+    if (isMetricDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isMetricDropdownOpen]);
+
+  const handleMetricButtonClick = () => {
+    if (!isMetricDropdownOpen && metricButtonRef.current) {
+      const rect = metricButtonRef.current.getBoundingClientRect();
+      const dropdownWidth = 200;
+      const dropdownHeight = 150;
+      let left = rect.left;
+      let top = rect.bottom + 8;
+      
+      if (left + dropdownWidth > window.innerWidth - 10) {
+        left = window.innerWidth - dropdownWidth - 10;
+      }
+      if (left < 10) left = 10;
+      if (top + dropdownHeight > window.innerHeight - 10) {
+        top = rect.top - dropdownHeight - 8;
+      }
+      
+      setDropdownPosition({ top, left });
+    }
+    setIsMetricDropdownOpen(!isMetricDropdownOpen);
   };
 
+  const handleMetricSelect = (metricId) => {
+    setDisplayMetric(metricId);
+    setIsMetricDropdownOpen(false);
+  };
+
+  const currentMetricOption = METRIC_OPTIONS.find(m => m.id === displayMetric);
+
   const getAlgoColor = (algoName, index) => {
-    const shortName = algoName.replace('m_', '');
-    if (algoColors[shortName]) return algoColors[shortName];
     const colors = [
       { fill: '#818cf8', fillOpacity: 0.15, stroke: '#4f46e5', strokeWidth: 2 },
       { fill: '#a7f3d0', fillOpacity: 0.15, stroke: '#059669', strokeWidth: 2 },
@@ -30,8 +85,6 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
     ];
     return colors[index % colors.length];
   };
-
-  const [selectedAlgos, setSelectedAlgos] = useState(() => new Set(availableAlgos));
 
   const toggleAlgoSelection = (algo) => {
     setSelectedAlgos(prev => {
@@ -56,12 +109,19 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
     
     Array.from(selectedAlgos).forEach(algo => {
       if (algo === baseAlgo) {
-        statsMap[algo] = metrics.map(m => ({ metric: m, stats: { geomeanImp: 0 } }));
+        statsMap[algo] = metrics.map(m => ({ metric: m, stats: { geomeanImp: 0, meanImp: 0, winRate: 0 } }));
       } else {
-        statsMap[algo] = metrics.map(m => ({
-          metric: m,
-          stats: computeStatistics(m, baseAlgo, algo, parsedData, selectedCases)
-        }));
+        statsMap[algo] = metrics.map(m => {
+          const stats = computeStatistics(m, baseAlgo, algo, parsedData, selectedCases);
+          return {
+            metric: m,
+            stats: stats ? {
+              geomeanImp: stats.geomeanImp || 0,
+              meanImp: stats.meanImp || 0,
+              winRate: stats.nValid > 0 ? ((stats.nValid - stats.degradedCount) / stats.nValid * 100) : 0
+            } : { geomeanImp: 0, meanImp: 0, winRate: 0 }
+          };
+        });
       }
     });
     return statsMap;
@@ -73,6 +133,18 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
   if (!allMetricsStats || allMetricsStats.length === 0) return null;
 
   const allSelected = selectedAlgos.size === availableAlgos.length;
+
+  const getMetricValue = (stats) => {
+    if (!stats) return 0;
+    return stats[displayMetric] || 0;
+  };
+
+  const formatMetricValue = (value) => {
+    if (displayMetric === 'winRate') {
+      return `${value.toFixed(1)}%`;
+    }
+    return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
+  };
 
   return (
     <ChartContainer>
@@ -108,14 +180,75 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
               </ul>
             </div>
             
+            <div className="space-y-2">
+              <h4 className="font-semibold text-emerald-300 text-xs">显示指标</h4>
+              <ul className="text-gray-300 text-xs space-y-1">
+                {METRIC_OPTIONS.map(opt => (
+                  <li key={opt.id} className="flex items-center gap-2">
+                    <opt.icon className="w-3 h-3" style={{ color: opt.color }} />
+                    <span><strong>{opt.label}</strong>：{opt.description}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
             <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
-              💡 点击算法标签可显示/隐藏对应的多边形
+              💡 点击算法标签可显示/隐藏对应的多边形，切换显示指标查看不同维度
             </div>
           </div>
         }
       >
-        <div className="flex items-center gap-2">
-          <div className="flex flex-wrap gap-1">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative" ref={metricButtonRef}>
+            <button
+              onClick={handleMetricButtonClick}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/90 rounded-lg text-xs font-semibold text-indigo-700 hover:bg-white transition-all shadow-sm border border-indigo-200"
+            >
+              <currentMetricOption.icon className="w-3.5 h-3.5" style={{ color: currentMetricOption.color }} />
+              <span>{currentMetricOption.label}</span>
+              <ChevronDown className={`w-3 h-3 text-indigo-500 transition-transform ${isMetricDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {isMetricDropdownOpen && createPortal(
+              <div
+                ref={dropdownRef}
+                className="fixed bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 z-[9999] overflow-hidden animate-scaleIn"
+                style={{
+                  top: `${dropdownPosition.top}px`,
+                  left: `${dropdownPosition.left}px`,
+                  width: '200px'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="px-3 py-2 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-violet-50">
+                  <span className="text-xs font-semibold text-gray-600">选择显示指标</span>
+                </div>
+                <div className="py-1">
+                  {METRIC_OPTIONS.map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => handleMetricSelect(opt.id)}
+                      className={`w-full px-3 py-2.5 text-left text-sm hover:bg-indigo-50 flex items-center gap-2 transition-colors ${
+                        displayMetric === opt.id ? 'bg-indigo-50' : ''
+                      }`}
+                    >
+                      <opt.icon className="w-4 h-4" style={{ color: opt.color }} />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-800">{opt.label}</div>
+                        <div className="text-xs text-gray-400">{opt.description}</div>
+                      </div>
+                      {displayMetric === opt.id && (
+                        <Check className="w-4 h-4 text-indigo-500" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>,
+              document.body
+            )}
+          </div>
+          
+          <div className="flex items-center gap-1">
             {availableAlgos.map((algo, index) => {
               const isSelected = selectedAlgos.has(algo);
               const color = getAlgoColor(algo, index);
@@ -182,11 +315,11 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
                   {selectedAlgosArray.map((algo, algoIdx) => {
                     const statsForAlgo = algoStatsMap[algo];
                     const metricStat = statsForAlgo?.find(s => s.metric === m.metric);
-                    const imp = metricStat?.stats?.geomeanImp || 0;
+                    const value = getMetricValue(metricStat?.stats);
                     const color = getAlgoColor(algo, availableAlgos.indexOf(algo));
                     return (
                       <text key={`imp-${algo}`} x={labelPt.x} y={labelPt.y + 12 + algoIdx * 11} fontSize="9" fontWeight="bold" fill={color.stroke} textAnchor="middle">
-                        {imp > 0 ? '+' : ''}{imp.toFixed(2)}%
+                        {formatMetricValue(value)}
                       </text>
                     );
                   })}
@@ -210,8 +343,13 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
                   const algoPolygon = validMetrics.map((m, i) => {
                     const statsForAlgo = algoStatsMap[algo];
                     const metricStat = statsForAlgo?.find(s => s.metric === m.metric);
-                    const imp = metricStat?.stats?.geomeanImp || 0;
-                    const scale = Math.max(0.3, Math.min(1.5, 1 + imp / 20));
+                    const value = getMetricValue(metricStat?.stats);
+                    let scale;
+                    if (displayMetric === 'winRate') {
+                      scale = Math.max(0.3, Math.min(1.5, value / 100 * 1.5));
+                    } else {
+                      scale = Math.max(0.3, Math.min(1.5, 1 + value / 20));
+                    }
                     const pt = getPoint((Math.PI * 2 * i) / N, baseRadius * scale); 
                     return `${pt.x},${pt.y}`;
                   }).join(' ');
@@ -228,7 +366,8 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
 
       <ChartLegend items={[
         { label: '向外 = 优化', color: '#059669' },
-        { label: '向内 = 退化', color: '#dc2626' }
+        { label: '向内 = 退化', color: '#dc2626' },
+        { label: `当前: ${currentMetricOption?.label}`, color: currentMetricOption?.color || '#4f46e5' }
       ]} />
     </ChartContainer>
   );

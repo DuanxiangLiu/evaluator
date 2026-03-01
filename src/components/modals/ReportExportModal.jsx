@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { X, FileText, Download, Loader2, CheckCircle, AlertCircle, FileJson, FileCode, Database } from 'lucide-react';
+import { X, FileText, Download, Loader2, CheckCircle, AlertCircle, Database } from 'lucide-react';
 import { generateAIReport, downloadReport } from '../../services/reportExport.js';
 import { useToast } from '../common/Toast';
 
@@ -20,7 +20,6 @@ const ReportExportModal = ({
 }) => {
   const [reportData, setReportData] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [exportFormat, setExportFormat] = useState('pdf');
   const [includeData, setIncludeData] = useState(true);
   
   const toast = useToast();
@@ -81,13 +80,13 @@ const ReportExportModal = ({
     if (!reportData) return;
     
     try {
-      downloadReport(reportData, exportFormat === 'pdf' ? 'html' : exportFormat);
-      toast.success(`报告已导出为 ${exportFormat.toUpperCase()} 格式`);
+      downloadReport(reportData, 'html');
+      toast.success('报告已导出为 HTML 格式');
       onClose();
     } catch (error) {
       toast.error('导出失败', error.message);
     }
-  }, [reportData, exportFormat, toast, onClose]);
+  }, [reportData, toast, onClose]);
 
   if (!isOpen) return null;
 
@@ -114,34 +113,6 @@ const ReportExportModal = ({
         </div>
 
         <div className="p-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">导出格式</label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setExportFormat('pdf')}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  exportFormat === 'pdf'
-                    ? 'bg-red-100 text-red-700 border-2 border-red-300'
-                    : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200'
-                }`}
-              >
-                <FileCode className="w-4 h-4" />
-                PDF
-              </button>
-              <button
-                onClick={() => setExportFormat('json')}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  exportFormat === 'json'
-                    ? 'bg-amber-100 text-amber-700 border-2 border-amber-300'
-                    : 'bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200'
-                }`}
-              >
-                <FileJson className="w-4 h-4" />
-                JSON
-              </button>
-            </div>
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">数据选项</label>
             <button
@@ -202,7 +173,7 @@ const ReportExportModal = ({
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-lg font-medium hover:from-emerald-600 hover:to-teal-600 transition-all shadow-sm text-sm"
             >
               <Download className="w-4 h-4" />
-              导出 {exportFormat.toUpperCase()}
+              导出 HTML
             </button>
           ) : (
             <button

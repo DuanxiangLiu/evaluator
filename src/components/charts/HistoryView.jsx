@@ -273,56 +273,56 @@ const HistoryView = ({
               </div>
             </div>
           }
-        />
-        
-        <div className="px-4 py-2 border-b border-gray-100 flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => setShowNewExperiment(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            新建实验
-          </button>
-          
-          <button
-            onClick={handleCreateDefaultExperiment}
-            disabled={isLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-50"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            创建示例实验
-          </button>
-          
-          <label className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold hover:bg-gray-200 transition-colors cursor-pointer">
-            <Upload className="w-3.5 h-3.5" />
-            导入
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleImportExperiment}
-              className="hidden"
-            />
-          </label>
-        </div>
-
-        <ChartBody className={`${chartWidth} mx-auto w-full`}>
-          <div className="p-4">
-            {experiments.length === 0 ? (
-              <div className="text-center py-8">
-                <History className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p className="text-gray-500 font-medium">暂无实验数据</p>
-                <p className="text-sm text-gray-400 mt-1 mb-4">点击下方按钮开始追踪算法迭代</p>
+          rightContent={
+            experiments.length === 0 ? (
+              <div className="flex items-center gap-2">
+                <span className="text-white/70 text-xs">暂无实验数据</span>
                 <button
                   onClick={handleCreateDefaultExperiment}
                   disabled={isLoading}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-semibold hover:bg-amber-600 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500 text-white rounded-lg text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-50"
                 >
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-3 h-3" />
                   创建示例实验
                 </button>
-                <p className="text-xs text-gray-400 mt-3">或点击上方"新建实验"创建空白实验</p>
               </div>
             ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowNewExperiment(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 text-white rounded-lg text-xs font-semibold hover:bg-white/30 transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  新建实验
+                </button>
+                
+                <button
+                  onClick={handleCreateDefaultExperiment}
+                  disabled={isLoading}
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500 text-white rounded-lg text-xs font-semibold hover:bg-amber-600 transition-colors disabled:opacity-50"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  创建示例实验
+                </button>
+                
+                <label className="flex items-center gap-1.5 px-2.5 py-1 bg-white/20 text-white rounded-lg text-xs font-semibold hover:bg-white/30 transition-colors cursor-pointer">
+                  <Upload className="w-3 h-3" />
+                  导入
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportExperiment}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            )
+          }
+        />
+
+        <ChartBody className={`${chartWidth} mx-auto w-full`}>
+          {experiments.length > 0 && (
+            <div className="p-4">
               <div className="grid gap-2">
                 {experiments.map(exp => (
                   <div
@@ -380,8 +380,8 @@ const HistoryView = ({
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </ChartBody>
       </ChartContainer>
 

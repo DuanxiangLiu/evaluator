@@ -15,6 +15,7 @@ import ChartsView from './components/views/ChartsView';
 import AIAnalysisView from './components/views/AIAnalysisView';
 import { ToastProvider, useToast } from './components/common/Toast';
 import { generateAIInsights, getFallbackAnalysis } from './services/aiService.jsx';
+import { generateReportByMode, downloadReport } from './services/reportExportEnhanced.js';
 import { AlertTriangle, TrendingUp } from 'lucide-react';
 import { getTabStyle } from './config/ui.js';
 import { BarChart2, Box, ScatterChart, GitMerge, Radar, Scale, Bot, History, FileText } from 'lucide-react';
@@ -248,7 +249,7 @@ const AppContent = () => {
     tableFilter, setTableFilter, corrX, setCorrX, corrY, setCorrY,
     paretoX, setParetoX, paretoY, setParetoY, paretoZ, setParetoZ,
     qorWeights, setQorWeights,
-    selectedCases, sortConfig, tooltipState, setTooltipState,
+    selectedCases, setSelectedCases, sortConfig, tooltipState, setTooltipState,
     deepDiveCase, setDeepDiveCase, hoveredCase, setHoveredCase,
     isAnalyzing, setIsAnalyzing, aiInsights, setAiInsights,
     displayInsights, setDisplayInsights, aiError, setAiError,
@@ -408,7 +409,7 @@ const AppContent = () => {
           </span>
           <div className="h-5 w-px bg-white/30"></div>
           <span className="text-xs font-bold text-white/80">指标:</span>
-          <select value={activeMetric} onChange={(e) => setActiveMetric(e.target.value)} className="text-sm font-bold border-2 border-amber-300 rounded-lg py-1.5 px-3 focus:ring-2 focus:ring-amber-400 bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-900 shadow-md hover:from-amber-200 hover:to-yellow-200 transition-all cursor-pointer">
+          <select value={activeMetric} onChange={(e) => setActiveMetric(e.target.value)} className="text-xs font-semibold border border-amber-400 rounded-lg py-1 px-2 focus:ring-2 focus:ring-amber-400 bg-amber-100 text-amber-900 shadow-sm hover:bg-amber-200 transition-all cursor-pointer">
             {availableMetrics.map(m => {
               let label = m;
               if (m === 'Runtime') label = 'Runtime (s)';
@@ -424,7 +425,7 @@ const AppContent = () => {
           </select>
           <span className="text-white/60 font-bold text-xs">vs</span>
           <span className="text-xs font-bold text-white/80">对比:</span>
-          <select value={compareAlgo} onChange={(e) => setCompareAlgo(e.target.value)} className="text-sm font-semibold border-0 rounded-lg py-1 px-2 focus:ring-2 focus:ring-white/50 bg-amber-100 text-amber-800 shadow-sm">
+          <select value={compareAlgo} onChange={(e) => setCompareAlgo(e.target.value)} className="text-sm font-semibold border-0 rounded-lg py-1 px-2 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 shadow-sm">
             {availableAlgos.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
           {stats && (
@@ -456,6 +457,7 @@ const AppContent = () => {
               parsedData={parsedData}
               filteredTableData={filteredTableData}
               selectedCases={selectedCases}
+              setSelectedCases={setSelectedCases}
               sortConfig={sortConfig}
               handleSort={handleSort}
               toggleCase={toggleCase}
@@ -514,14 +516,27 @@ const AppContent = () => {
                 aiError={aiError}
                 setShowAiConfig={setShowAiConfig}
                 handleGenerateAIInsights={handleGenerateAIInsights}
-                handleExport={(format) => {
-                  if (format === 'pdf' || format === 'json') {
-                    setShowReportExport(true);
+                handleExport={(format, mode = 'detailed') => {
+                  const reportData = generateReportByMode(mode, {
+                    stats,
+                    allMetricsStats,
+                    baseAlgo,
+                    compareAlgo,
+                    activeMetric,
+                    parsedData,
+                    selectedCases,
+                    metaColumns,
+                    aiInsights
+                  });
+                  if (reportData) {
+                    downloadReport(reportData, format === 'pdf' ? 'html' : format);
                   }
                 }}
                 isOutdated={isInsightsOutdated(baseAlgo, compareAlgo)}
                 savedTimestamp={getSavedAiInsights(baseAlgo, compareAlgo)?.timestamp}
                 hasData={parsedData.length > 0 && !!stats}
+                aiConfig={llmConfig}
+                onAiConfigChange={setLlmConfig}
               />
             )}
           </div>
