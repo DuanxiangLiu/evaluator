@@ -253,14 +253,22 @@ export const AppProvider = ({ children }) => {
       });
     }
 
-    return result.filter(d => {
+    const filtered = result.filter(d => {
       const isChecked = selectedCases.has(d.Case);
       const bVal = d.raw[activeMetric]?.[baseAlgo];
       const cVal = d.raw[activeMetric]?.[compareAlgo];
       const isNull = bVal == null || cVal == null;
       
-      if (isNull || !isChecked) {
-        return tableFilter === 'filtered';
+      if (isNull && tableFilter !== 'filtered') {
+        return false;
+      }
+      
+      if (!isChecked && tableFilter === 'filtered') {
+        return true;
+      }
+      
+      if (!isChecked) {
+        return true;
       }
       
       const imp = calculateImprovementWithDirection(bVal, cVal, activeMetric);
@@ -272,6 +280,15 @@ export const AppProvider = ({ children }) => {
       if (tableFilter === 'filtered') return false;
       return true;
     });
+    
+    filtered.sort((a, b) => {
+      const aChecked = selectedCases.has(a.Case);
+      const bChecked = selectedCases.has(b.Case);
+      if (aChecked === bChecked) return 0;
+      return aChecked ? -1 : 1;
+    });
+    
+    return filtered;
   }, [sortedTableData, tableFilter, tableSearchTerm, activeMetric, baseAlgo, compareAlgo, validCasesMap, selectedCases, metaColumns]);
 
   const toggleCase = useCallback((caseName) => {

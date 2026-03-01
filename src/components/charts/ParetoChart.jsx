@@ -44,9 +44,8 @@ const ParetoChart = ({
   const xVals = validPoints.map(p => p.impX);
   const yVals = validPoints.map(p => p.impY);
   
-  const maxAbsX = xVals.length > 0 ? Math.max(...xVals.map(v => Math.abs(v)), 10) * 1.2 : 12;
-  const maxAbsY = yVals.length > 0 ? Math.max(...yVals.map(v => Math.abs(v)), 10) * 1.2 : 12;
-  const maxAbs = Math.max(maxAbsX, maxAbsY);
+  const maxAbsX = xVals.length > 0 ? Math.max(...xVals.map(v => Math.abs(v)), 5) * 1.15 : 6;
+  const maxAbsY = yVals.length > 0 ? Math.max(...yVals.map(v => Math.abs(v)), 5) * 1.15 : 6;
 
   let minZ = 0, maxZ = 0;
   if (paretoZ && validPoints.length > 0) {
@@ -57,14 +56,17 @@ const ParetoChart = ({
 
   const sortedPoints = [...validPoints].sort((a,b) => (paretoZ ? Math.abs(b.impZ) - Math.abs(a.impZ) : 0));
 
-  const mapX = (val) => 50 + (val / maxAbs) * 45;
-  const mapY = (val) => 50 - (val / maxAbs) * 45;
+  const mapX = (val) => 50 + (val / maxAbsX) * 45;
+  const mapY = (val) => 50 - (val / maxAbsY) * 45;
 
+  const xTicks = [];
+  const yTicks = [];
   const tickCount = 4;
-  const ticks = [];
   for (let i = 0; i <= tickCount; i++) {
-    const val = -maxAbs + (2 * maxAbs) * (i / tickCount);
-    ticks.push({ val, pos: mapX(val), yPos: mapY(val) });
+    const xVal = -maxAbsX + (2 * maxAbsX) * (i / tickCount);
+    const yVal = -maxAbsY + (2 * maxAbsY) * (i / tickCount);
+    xTicks.push({ val: xVal, pos: mapX(xVal) });
+    yTicks.push({ val: yVal, yPos: mapY(yVal) });
   }
 
   const formatTickValue = (val) => {
@@ -80,16 +82,17 @@ const ParetoChart = ({
 
     return (
       <ChartBody className={`${chartWidth} mx-auto w-full`}>
-        <div className="flex flex-col text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0 relative">
+        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0 relative">
           <span className="text-gray-400 text-[9px] -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">{paretoY || 'Y'}</span>
-          {ticks.slice().reverse().map((tick, i) => (
+          {yTicks.slice().reverse().map((tick, i) => (
             <span 
               key={i} 
               className={`
+                absolute right-2 text-[9px] font-medium tabular-nums
                 ${tick.val > 0 ? 'text-green-600' : ''} 
                 ${tick.val < 0 ? 'text-red-500' : ''}
               `}
-              style={{ position: 'absolute', top: `${tick.yPos}%`, transform: 'translateY(-50%)' }}
+              style={{ top: `${tick.yPos}%`, transform: 'translateY(-50%)' }}
             >
               {formatTickValue(tick.val)}
             </span>
@@ -100,125 +103,124 @@ const ParetoChart = ({
           <ChartArea className="border-l-2 border-b-2 border-gray-300 flex-1 bg-gradient-to-br from-green-50/30 via-white to-red-50/30">
             <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-bl from-green-100/20 to-transparent pointer-events-none"></div>
             <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-red-100/20 to-transparent pointer-events-none"></div>
-            
-            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <defs>
-                <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-                  <polygon points="0 0, 6 3, 0 6" fill="#6b7280" />
-                </marker>
-              </defs>
               
-              <line x1="0" y1="50" x2="100" y2="50" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
-              <line x1="50" y1="0" x2="50" y2="100" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
-              
-              <line x1="0" y1="50" x2="100" y2="50" stroke="#6b7280" strokeWidth="0.8" />
-              <line x1="50" y1="0" x2="50" y2="100" stroke="#6b7280" strokeWidth="0.8" />
-              
-              {ticks.map((tick, i) => (
-                <g key={`tick-${i}`}>
-                  <line x1={tick.pos} y1="0" x2={tick.pos} y2="100" stroke="#d1d5db" strokeWidth="0.3" strokeDasharray="1 3" />
-                  <line x1="0" y1={tick.pos} x2="100" y2={tick.pos} stroke="#d1d5db" strokeWidth="0.3" strokeDasharray="1 3" />
+              <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+                {yTicks.map((tick, i) => (
+                  <line 
+                    key={`ytick-${i}`}
+                    x1="0" 
+                    y1={tick.yPos} 
+                    x2="100" 
+                    y2={tick.yPos} 
+                    stroke={tick.val === 0 ? "#9ca3af" : "#e5e7eb"} 
+                    strokeWidth={tick.val === 0 ? "0.5" : "0.3"} 
+                    strokeDasharray={tick.val === 0 ? "2 2" : "1 2"}
+                  />
+                ))}
+                {xTicks.map((tick, i) => (
+                  <line 
+                    key={`xtick-${i}`}
+                    x1={tick.pos} 
+                    y1="0" 
+                    x2={tick.pos} 
+                    y2="100" 
+                    stroke={tick.val === 0 ? "#9ca3af" : "#e5e7eb"} 
+                    strokeWidth={tick.val === 0 ? "0.5" : "0.3"} 
+                    strokeDasharray={tick.val === 0 ? "2 2" : "1 2"}
+                  />
+                ))}
+                
+                {sortedPoints.map((p) => {
+                  const isHovered = hoveredCase === p.case;
+                  const scx = Math.max(5, Math.min(95, mapX(p.impX)));
+                  const scy = Math.max(5, Math.min(95, mapY(p.impY)));
                   
-                  <line x1={tick.pos} y1="49" x2={tick.pos} y2="51" stroke="#6b7280" strokeWidth="0.8" />
-                  <line x1="49" y1={tick.pos} x2="51" y2={tick.pos} stroke="#6b7280" strokeWidth="0.8" />
-                </g>
-              ))}
-              
-              <polygon points="100,50 96,48 96,52" fill="#6b7280" />
-              <polygon points="50,0 48,4 52,4" fill="#6b7280" />
-              
-              {sortedPoints.map((p) => {
-                const isHovered = hoveredCase === p.case;
-                const scx = Math.max(5, Math.min(95, mapX(p.impX)));
-                const scy = Math.max(5, Math.min(95, mapY(p.impY)));
-                
-                let color = '#6366f1';
-                if (p.impX > 0 && p.impY > 0) color = '#059669';
-                else if (p.impX < 0 && p.impY < 0) color = '#dc2626';
+                  let color = '#6366f1';
+                  if (p.impX > 0 && p.impY > 0) color = '#059669';
+                  else if (p.impX < 0 && p.impY < 0) color = '#dc2626';
 
-                let radius = 1;
-                if (paretoZ) {
-                  const zAbs = Math.abs(p.impZ);
-                  const maxZAbs = Math.max(Math.abs(minZ), Math.abs(maxZ)) || 1;
-                  radius = 0.6 + (zAbs / maxZAbs) * 2;
-                }
-                
-                const tooltipLines = [];
-                if (p.impX > 0) {
-                  tooltipLines.push({ text: `${paretoX}: +${p.impX.toFixed(2)}%`, color: 'text-green-400' });
-                } else if (p.impX < 0) {
-                  tooltipLines.push({ text: `${paretoX}: ${p.impX.toFixed(2)}%`, color: 'text-red-400' });
-                } else {
-                  tooltipLines.push(`${paretoX}: 0.00%`);
-                }
-                if (p.impY > 0) {
-                  tooltipLines.push({ text: `${paretoY}: +${p.impY.toFixed(2)}%`, color: 'text-green-400' });
-                } else if (p.impY < 0) {
-                  tooltipLines.push({ text: `${paretoY}: ${p.impY.toFixed(2)}%`, color: 'text-red-400' });
-                } else {
-                  tooltipLines.push(`${paretoY}: 0.00%`);
-                }
-                if (paretoZ) {
-                  if (p.impZ > 0) {
-                    tooltipLines.push({ text: `${paretoZ}: +${p.impZ.toFixed(2)}%`, color: 'text-green-400' });
-                  } else if (p.impZ < 0) {
-                    tooltipLines.push({ text: `${paretoZ}: ${p.impZ.toFixed(2)}%`, color: 'text-red-400' });
-                  } else {
-                    tooltipLines.push(`${paretoZ}: 0.00%`);
+                  let radius = 1;
+                  if (paretoZ) {
+                    const zAbs = Math.abs(p.impZ);
+                    const maxZAbs = Math.max(Math.abs(minZ), Math.abs(maxZ)) || 1;
+                    radius = 0.6 + (zAbs / maxZAbs) * 2;
                   }
-                }
+                  
+                  const tooltipLines = [];
+                  if (p.impX > 0) {
+                    tooltipLines.push({ text: `${paretoX}: +${p.impX.toFixed(2)}%`, color: 'text-green-400' });
+                  } else if (p.impX < 0) {
+                    tooltipLines.push({ text: `${paretoX}: ${p.impX.toFixed(2)}%`, color: 'text-red-400' });
+                  } else {
+                    tooltipLines.push(`${paretoX}: 0.00%`);
+                  }
+                  if (p.impY > 0) {
+                    tooltipLines.push({ text: `${paretoY}: +${p.impY.toFixed(2)}%`, color: 'text-green-400' });
+                  } else if (p.impY < 0) {
+                    tooltipLines.push({ text: `${paretoY}: ${p.impY.toFixed(2)}%`, color: 'text-red-400' });
+                  } else {
+                    tooltipLines.push(`${paretoY}: 0.00%`);
+                  }
+                  if (paretoZ) {
+                    if (p.impZ > 0) {
+                      tooltipLines.push({ text: `${paretoZ}: +${p.impZ.toFixed(2)}%`, color: 'text-green-400' });
+                    } else if (p.impZ < 0) {
+                      tooltipLines.push({ text: `${paretoZ}: ${p.impZ.toFixed(2)}%`, color: 'text-red-400' });
+                    } else {
+                      tooltipLines.push(`${paretoZ}: 0.00%`);
+                    }
+                  }
 
-                return (
-                  <g key={`pareto-${p.case}`}>
-                    <circle
-                      cx={scx} cy={scy} r="6"
-                      fill="transparent"
-                      className="cursor-pointer"
-                      onMouseEnter={(e) => {
-                        setHoveredCase(p.case);
-                        setTooltipState({ visible: true, x: e.clientX, y: e.clientY, title: p.case, lines: tooltipLines });
-                      }}
-                      onMouseMove={(e) => {
-                        setTooltipState(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
-                      }}
-                      onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setHoveredCase(null);
-                        setTooltipState(prev => ({...prev, visible: false}));
-                        if (onCaseClick) onCaseClick(p.case);
-                      }}
-                    />
-                    <circle
-                      cx={scx} cy={scy} 
-                      r={isHovered ? radius + 1 : radius} 
-                      fill={color} 
-                      stroke={isHovered ? "#fff" : "none"} 
-                      strokeWidth="0.3"
-                      fillOpacity={paretoZ ? 0.7 : 1}
-                      className={`transition-all duration-200 pointer-events-none ${isHovered ? 'animate-pulse' : ''}`}
-                    />
-                  </g>
-                );
-              })}
-            </svg>
+                  return (
+                    <g key={`pareto-${p.case}`}>
+                      <circle
+                        cx={scx} cy={scy} r="6"
+                        fill="transparent"
+                        className="cursor-pointer"
+                        onMouseEnter={(e) => {
+                          setHoveredCase(p.case);
+                          setTooltipState({ visible: true, x: e.clientX, y: e.clientY, title: p.case, lines: tooltipLines });
+                        }}
+                        onMouseMove={(e) => {
+                          setTooltipState(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
+                        }}
+                        onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setHoveredCase(null);
+                          setTooltipState(prev => ({...prev, visible: false}));
+                          if (onCaseClick) onCaseClick(p.case);
+                        }}
+                      />
+                      <circle
+                        cx={scx} cy={scy} 
+                        r={isHovered ? radius + 1 : radius} 
+                        fill={color} 
+                        stroke={isHovered ? "#fff" : "none"} 
+                        strokeWidth="0.3"
+                        fillOpacity={paretoZ ? 0.7 : 1}
+                        className={`transition-all duration-200 pointer-events-none ${isHovered ? 'animate-pulse' : ''}`}
+                      />
+                    </g>
+                  );
+                })}
+              </svg>
+              
+              <AreaLabel position="top-right" variant="success">双赢 ↑</AreaLabel>
+              <AreaLabel position="bottom-left" variant="danger">双输 ↓</AreaLabel>
+            </ChartArea>
             
-            <AreaLabel position="top-right" variant="success">双赢 ↑</AreaLabel>
-            <AreaLabel position="bottom-left" variant="danger">双输 ↓</AreaLabel>
-          </ChartArea>
-          
-          <div className="relative mt-4">
-            <div className="flex justify-between px-0 text-[10px] font-semibold text-gray-500 absolute -top-4 left-0 right-0">
-              {ticks.map((tick, i) => (
+            <div className="relative h-6 text-center text-[10px] font-semibold text-gray-500">
+              {xTicks.map((tick, i) => (
                 <span 
                   key={i} 
                   className={`
+                    absolute text-[9px]
                     ${tick.val > 0 ? 'text-green-600' : ''} 
                     ${tick.val < 0 ? 'text-red-500' : ''}
                   `}
                   style={{ 
-                    position: 'absolute', 
                     left: `${tick.pos}%`, 
                     transform: 'translateX(-50%)' 
                   }}
@@ -226,12 +228,9 @@ const ParetoChart = ({
                   {formatTickValue(tick.val)}
                 </span>
               ))}
-            </div>
-            <div className="text-center py-1 text-[10px] font-semibold text-gray-500">
-              {paretoX || 'X'}
+              <div className="mt-3 text-gray-400">{paretoX || 'X'}</div>
             </div>
           </div>
-        </div>
       </ChartBody>
     );
   };

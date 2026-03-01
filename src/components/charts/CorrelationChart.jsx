@@ -443,32 +443,25 @@ const CorrelationChart = ({
 
     return (
       <ChartBody className={`${chartWidth} mx-auto w-full`}>
-        <div className="flex flex-col items-end justify-between py-1 text-[10px] font-semibold text-gray-500 w-14 flex-shrink-0 border-r border-gray-200 bg-gray-50/30">
-          <div className="flex items-center gap-1 w-full px-1 justify-end">
-            <span className="text-[9px] text-gray-400 truncate max-w-[24px]" title={corrY || 'Y'}>{corrY || 'Y'}</span>
-          </div>
-          <div className="flex-1 relative w-full">
-            {yTicks.filter(tick => {
-              const topPercent = mapY(tick.val);
-              return topPercent >= 0 && topPercent <= 100;
-            }).map((tick, i) => (
-              <div 
-                key={i} 
-                className={`
-                  absolute right-1 flex items-center justify-end gap-0.5
-                  ${isMetricY && tick.val > 0 ? 'text-green-600' : ''} 
-                  ${isMetricY && tick.val < 0 ? 'text-red-500' : ''}
-                  ${isMetricY && tick.val === 0 ? 'text-gray-600 font-bold' : ''}
-                `}
-                style={{ top: `${mapY(tick.val)}%`, transform: 'translateY(-50%)' }}
-              >
-                <span className="text-[9px] font-medium tabular-nums">
-                  {formatYTick(tick.val)}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="h-0"></div>
+        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0 relative">
+          <span className="text-gray-400 text-[9px] -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">{corrY || 'Y'}</span>
+          {yTicks.filter(tick => {
+            const topPercent = mapY(tick.val);
+            return topPercent >= 0 && topPercent <= 100;
+          }).map((tick, i) => (
+            <span 
+              key={i} 
+              className={`
+                absolute right-2 text-[9px] font-medium tabular-nums
+                ${isMetricY && tick.val > 0 ? 'text-green-600' : ''} 
+                ${isMetricY && tick.val < 0 ? 'text-red-500' : ''}
+                ${isMetricY && tick.val === 0 ? 'text-gray-600 font-bold' : ''}
+              `}
+              style={{ top: `${mapY(tick.val)}%`, transform: 'translateY(-50%)' }}
+            >
+              {formatYTick(tick.val)}
+            </span>
+          ))}
         </div>
         
         <div className="flex-1 flex flex-col">
@@ -481,6 +474,19 @@ const CorrelationChart = ({
             )}
             
             <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+              {yTicks.map((tick, i) => (
+                <line 
+                  key={`ytick-${i}`}
+                  x1="0" 
+                  y1={mapY(tick.val)} 
+                  x2="100" 
+                  y2={mapY(tick.val)} 
+                  stroke={tick.val === 0 ? "#9ca3af" : "#e5e7eb"} 
+                  strokeWidth={tick.val === 0 ? "0.5" : "0.3"} 
+                  strokeDasharray={tick.val === 0 ? "2 2" : "1 2"}
+                />
+              ))}
+              
               {stats && stats.slope != null && !isInstX && !isInstY && (
                 <line 
                   x1={mapX(xMin)} 
