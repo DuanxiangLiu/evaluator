@@ -47,7 +47,7 @@ ChartArea.propTypes = {
 };
 
 export const YAxisLabels = ({ ticks, formatTick = (v) => v }) => (
-  <div className="flex flex-col justify-between text-right pr-2 py-2 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0">
+  <div className="flex flex-col justify-between text-right pr-2 py-2 text-xs font-semibold text-gray-500 w-14 flex-shrink-0">
     {ticks.map((tick, i) => (
       <span 
         key={i} 
@@ -70,7 +70,7 @@ YAxisLabels.propTypes = {
 };
 
 export const ChartLegend = ({ items }) => (
-  <div className="flex justify-center gap-4 py-1 border-t border-gray-100 text-[10px] text-gray-500 flex-shrink-0">
+  <div className="flex justify-center gap-4 py-1 border-t border-gray-100 text-xs text-gray-500 flex-shrink-0">
     {items.map((item, i) => (
       <span key={i} className="flex items-center gap-1">
         {item.color && (
@@ -112,7 +112,7 @@ export const AreaLabel = ({ children, position = 'top-left', variant = 'default'
   };
   
   return (
-    <div className={`absolute ${positionClasses[position]} text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm ${variantClasses[variant]}`}>
+    <div className={`absolute ${positionClasses[position]} text-xs font-bold px-1.5 py-0.5 rounded shadow-sm ${variantClasses[variant]}`}>
       {children}
     </div>
   );

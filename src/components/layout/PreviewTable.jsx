@@ -119,7 +119,7 @@ const PreviewTable = ({
         <div className={PREVIEW_TABLE_STYLES.editToolbar}>
           <button onClick={() => onAddRow('start')} className="text-xs px-2 py-0.5 bg-white border border-indigo-200 text-indigo-700 rounded hover:bg-indigo-100"><Plus className="w-3 h-3 inline" /> 开头添加</button>
           <button onClick={() => onAddRow('end')} className="text-xs px-2 py-0.5 bg-white border border-indigo-200 text-indigo-700 rounded hover:bg-indigo-100"><Plus className="w-3 h-3 inline" /> 末尾添加</button>
-          <span className="text-[10px] text-indigo-500">双击编辑 | Enter保存 | Esc取消</span>
+          <span className="text-xs text-indigo-500">双击编辑 | Enter保存 | Esc取消</span>
         </div>
       )}
       <div className={PREVIEW_TABLE_STYLES.wrapper}>

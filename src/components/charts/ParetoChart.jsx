@@ -82,13 +82,13 @@ const ParetoChart = ({
 
     return (
       <ChartBody className={`${chartWidth} mx-auto w-full`}>
-        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0 relative">
-          <span className="text-gray-400 text-[9px] -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">{paretoY || 'Y'}</span>
+        <div className="flex flex-col justify-between text-right pr-2 py-1 text-xs font-semibold text-gray-500 w-14 flex-shrink-0 relative">
+          <span className="text-gray-400 text-xs -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">{paretoY || 'Y'}</span>
           {yTicks.slice().reverse().map((tick, i) => (
             <span 
               key={i} 
               className={`
-                absolute right-2 text-[9px] font-medium tabular-nums
+                absolute right-2 text-xs font-medium tabular-nums
                 ${tick.val > 0 ? 'text-green-600' : ''} 
                 ${tick.val < 0 ? 'text-red-500' : ''}
               `}
@@ -172,30 +172,28 @@ const ParetoChart = ({
                   }
 
                   return (
-                    <g key={`pareto-${p.case}`}>
+                    <g key={`pareto-${p.case}`} className="cursor-pointer" onMouseEnter={(e) => {
+                      setHoveredCase(p.case);
+                      setTooltipState({ visible: true, x: e.clientX, y: e.clientY, title: p.case, lines: tooltipLines });
+                    }}
+                    onMouseMove={(e) => {
+                      setTooltipState(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
+                    }}
+                    onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setHoveredCase(null);
+                      setTooltipState(prev => ({...prev, visible: false}));
+                      if (onCaseClick) onCaseClick(p.case);
+                    }}>
                       <circle
                         cx={scx} cy={scy} r="6"
                         fill="transparent"
-                        className="cursor-pointer"
-                        onMouseEnter={(e) => {
-                          setHoveredCase(p.case);
-                          setTooltipState({ visible: true, x: e.clientX, y: e.clientY, title: p.case, lines: tooltipLines });
-                        }}
-                        onMouseMove={(e) => {
-                          setTooltipState(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
-                        }}
-                        onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setHoveredCase(null);
-                          setTooltipState(prev => ({...prev, visible: false}));
-                          if (onCaseClick) onCaseClick(p.case);
-                        }}
                       />
                       <circle
                         cx={scx} cy={scy} 
-                        r={isHovered ? radius + 1 : radius} 
+                        r={radius} 
                         fill={color} 
                         stroke={isHovered ? "#fff" : "none"} 
                         strokeWidth="0.3"
@@ -211,12 +209,12 @@ const ParetoChart = ({
               <AreaLabel position="bottom-left" variant="danger">双输 ↓</AreaLabel>
             </ChartArea>
             
-            <div className="relative h-6 text-center text-[10px] font-semibold text-gray-500">
+            <div className="relative h-6 text-center text-xs font-semibold text-gray-500">
               {xTicks.map((tick, i) => (
                 <span 
                   key={i} 
                   className={`
-                    absolute text-[9px]
+                    absolute text-xs
                     ${tick.val > 0 ? 'text-green-600' : ''} 
                     ${tick.val < 0 ? 'text-red-500' : ''}
                   `}

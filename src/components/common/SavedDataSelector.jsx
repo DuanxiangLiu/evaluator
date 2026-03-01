@@ -452,7 +452,7 @@ const SavedDataSelector = ({
                     </span>
                     <span className="text-gray-300">|</span>
                     <span>{defaultDataset.stats.size}</span>
-                    <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px]">内置</span>
+                    <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-xs">内置</span>
                   </div>
                 </div>
               </div>

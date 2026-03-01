@@ -28,6 +28,10 @@ export default {
           900: '#312e81',
         },
       },
+      fontFamily: {
+        inter: ['Inter', 'sans-serif'],
+        'noto-sans': ['Noto Sans SC', 'sans-serif'],
+      },
       animation: {
         'slide-in-right': 'slideInRight 0.3s ease-out',
         'zoom-in': 'zoomIn 0.2s ease-out',

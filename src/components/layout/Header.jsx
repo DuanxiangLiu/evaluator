@@ -204,7 +204,7 @@ const Header = () => {
               className="w-4 h-4 text-white/70 hover:text-white transition-colors"
               tooltipWidth="w-72"
             />
-            <span className="text-[10px] text-amber-200 font-semibold bg-amber-500/20 px-1.5 py-0.5 rounded-full">
+            <span className="text-xs text-amber-200 font-semibold bg-amber-500/20 px-1.5 py-0.5 rounded-full">
               v{APP_CONFIG.version}
             </span>
           </div>
@@ -223,7 +223,7 @@ const Header = () => {
                   </option>
                 ))}
               </select>
-              <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+              <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
                 图表大小
               </div>
             </div>

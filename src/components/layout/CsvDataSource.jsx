@@ -146,7 +146,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis, llmConfig }) => {
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-white" />
           <span className="text-sm font-semibold text-white">数据源</span>
-          <span className="text-[10px] text-white/70 bg-white/15 px-1.5 py-0.5 rounded-full">{rows.length} 条</span>
+          <span className="text-xs text-white/70 bg-white/15 px-1.5 py-0.5 rounded-full">{rows.length} 条</span>
         </div>
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           {validationTouched && (

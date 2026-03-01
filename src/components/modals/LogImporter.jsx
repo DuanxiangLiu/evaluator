@@ -650,7 +650,7 @@ const LogImporter = ({ isOpen, onClose, onImportData, llmConfig }) => {
                               <td className="px-2 py-2">
                                 {algo && (
                                   <span
-                                    className="px-2 py-0.5 rounded-full text-white text-[10px]"
+                                    className="px-2 py-0.5 rounded-full text-white text-xs"
                                     style={{ backgroundColor: algo.color }}
                                   >
                                     {algo.name}

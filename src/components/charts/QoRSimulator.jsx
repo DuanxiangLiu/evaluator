@@ -262,10 +262,10 @@ const QoRSimulator = ({
                         </div>
                         <span className="font-bold text-base text-slate-800">{algo}</span>
                         {isBaseline && (
-                          <span className="text-[10px] px-2 py-0.5 bg-slate-200 text-slate-500 rounded font-medium">基线</span>
+                          <span className="text-xs px-2 py-0.5 bg-slate-200 text-slate-500 rounded font-medium">基线</span>
                         )}
                         {isFirst && (
-                          <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-600 rounded font-medium flex items-center gap-0.5">
+                          <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-600 rounded font-medium flex items-center gap-0.5">
                             <Award className="w-3 h-3" />最优
                           </span>
                         )}

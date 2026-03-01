@@ -88,7 +88,7 @@ const StatsCards = ({ stats }) => {
     { label: '中位数', value: stats.median, isPositive: stats.median > 0, helpId: 'median', description: '改进率的中位数值' },
     { label: '标准差', value: stats.std, isPositive: true, neutral: true, helpId: 'std', description: '数据离散程度的度量' },
     { label: '变异系数', value: cv, std: stats.std, meanImp: stats.meanImp, isPositive: true, neutral: true, format: 'cv', helpId: 'cv', description: '标准差/均值，衡量相对离散程度' },
-    { label: 'IQR', value: iqr, isPositive: iqr > 0, helpId: 'iqr', description: '四分位距 Q3-Q1，中间50%数据的范围' }
+    { label: 'IQR', value: iqr, isPositive: iqr > 0, neutral: true, helpId: 'iqr', description: '四分位距 Q3-Q1，中间50%数据的范围' }
   ];
 
   return (
@@ -131,7 +131,7 @@ const StatsCards = ({ stats }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
-        <span className="text-[10px] text-gray-400">中位数、标准差、变异系数、IQR</span>
+        <span className="text-xs text-gray-400">中位数、标准差、变异系数、IQR</span>
       </div>
 
       {showAuxiliary && (
@@ -148,7 +148,9 @@ const StatsCards = ({ stats }) => {
                     ? 'N/A'
                     : card.value.toFixed(2))
                   : typeof card.value === 'number'
-                    ? `${card.value > 0 ? '+' : ''}${card.value.toFixed(2)}%`
+                    ? card.neutral
+                      ? `${card.value.toFixed(2)}%`
+                      : `${card.value > 0 ? '+' : ''}${card.value.toFixed(2)}%`
                     : card.value}
               </div>
             </div>
@@ -474,7 +476,7 @@ const AppContent = () => {
         <div className="fixed pointer-events-none bg-gray-900/95 border border-gray-700 text-white text-xs px-4 py-3 rounded-xl shadow-2xl z-[9999] backdrop-blur-sm transition-opacity duration-75 min-w-[120px] max-w-[300px]" style={{ left: tooltipState.x + 15, top: tooltipState.y + 15 }}>
           <div className="font-bold text-sm mb-1.5 text-indigo-300 border-b border-gray-700 pb-1 whitespace-nowrap">{tooltipState.title}</div>
           {tooltipState.lines.map((line, i) => (
-            <div key={i} className={`font-mono text-[11px] leading-relaxed ${
+            <div key={i} className={`font-mono text-sm leading-relaxed ${
               typeof line === 'string' ? 'text-gray-300' : line.color || 'text-gray-300'
             }`}>
               {typeof line === 'string' ? line : line.text}
@@ -565,29 +567,30 @@ const AppContent = () => {
 
           <div className="bg-white flex-1 overflow-y-auto custom-scrollbar relative z-0">
             {activeTab === 'table' && (
-              <TableView
-                activeMetric={activeMetric}
-                baseAlgo={baseAlgo}
-                compareAlgo={compareAlgo}
-                metaColumns={metaColumns}
-                tableFilter={tableFilter}
-                setTableFilter={setTableFilter}
-                parsedData={parsedData}
-                filteredTableData={filteredTableData}
-                selectedCases={selectedCases}
-                sortConfig={sortConfig}
-                handleSort={handleSort}
-                toggleCase={toggleCase}
-                toggleAll={toggleAll}
-                hoveredCase={hoveredCase}
-                setHoveredCase={setHoveredCase}
-                validCasesMap={validCasesMap}
-                setDeepDiveCase={setDeepDiveCase}
-                stats={stats}
-                tableSearchTerm={tableSearchTerm}
-                setTableSearchTerm={setTableSearchTerm}
-              />
-            )}
+            <TableView
+              activeMetric={activeMetric}
+              baseAlgo={baseAlgo}
+              compareAlgo={compareAlgo}
+              metaColumns={metaColumns}
+              tableFilter={tableFilter}
+              setTableFilter={setTableFilter}
+              parsedData={parsedData}
+              filteredTableData={filteredTableData}
+              selectedCases={selectedCases}
+              sortConfig={sortConfig}
+              handleSort={handleSort}
+              toggleCase={toggleCase}
+              toggleAll={toggleAll}
+              hoveredCase={hoveredCase}
+              setHoveredCase={setHoveredCase}
+              validCasesMap={validCasesMap}
+              setDeepDiveCase={setDeepDiveCase}
+              stats={stats}
+              allMetricsStats={allMetricsStats}
+              tableSearchTerm={tableSearchTerm}
+              setTableSearchTerm={setTableSearchTerm}
+            />
+          )}
 
             {activeTab !== 'table' && activeTab !== 'ai_analysis' && (
               <ChartsView

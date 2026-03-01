@@ -11,9 +11,10 @@ import { getMetricConfig } from '../../services/csvParser';
 import { formatIndustrialNumber } from '../../utils/formatters';
 import { TABLE_STYLES, getDetailRowStyle, getImpColorClass } from '../../utils/tableStyles';
 import { logger } from '../../utils/logger';
-import { CheckSquare, Square, ArrowDown, AlertTriangle, Download, Search, MoreVertical, FileSpreadsheet, FileJson, X } from 'lucide-react';
+import { CheckSquare, Square, ArrowDown, AlertTriangle, Download, Search, MoreVertical, FileSpreadsheet, FileJson, X, Table } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
 import { ImprovementFormulaHelp } from '../common/HelpContents';
+import AllMetricsOverview from '../stats/AllMetricsOverview';
 
 const TableView = ({
   activeMetric,
@@ -34,12 +35,14 @@ const TableView = ({
   validCasesMap,
   setDeepDiveCase,
   stats,
+  allMetricsStats,
   tableSearchTerm,
   setTableSearchTerm
 }) => {
   const toast = useToast();
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [exportMenuPosition, setExportMenuPosition] = useState({ top: 0, left: 0 });
+  const [showAllMetricsOverview, setShowAllMetricsOverview] = useState(false);
   const exportMenuRef = useRef(null);
   const searchInputRef = useRef(null);
 
@@ -102,6 +105,13 @@ const TableView = ({
         <button onClick={() => setTableFilter('outlier')} className={`px-2 py-0.5 rounded transition-colors flex items-center gap-0.5 ${tableFilter === 'outlier' ? 'bg-white text-purple-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><AlertTriangle className="w-2.5 h-2.5" />异常</button>
         <button onClick={() => setTableFilter('filtered')} className={`px-2 py-0.5 rounded transition-colors flex items-center gap-0.5 ${tableFilter === 'filtered' ? 'bg-white text-gray-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><Square className="w-2.5 h-2.5" />已过滤</button>
       </div>
+      <button 
+        onClick={() => setShowAllMetricsOverview(!showAllMetricsOverview)}
+        className="text-[11px] font-medium bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 border border-indigo-200/80 px-2 py-1 rounded-lg flex items-center gap-1 transition-all duration-200 shadow-sm hover:shadow-md"
+      >
+        <Table className="w-3 h-3" />
+        {showAllMetricsOverview ? '收起' : '展开'}所有指标概览
+      </button>
     </div>
   );
 
@@ -282,6 +292,16 @@ const TableView = ({
         }
       />
 
+      {showAllMetricsOverview && allMetricsStats && (
+        <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm animate-in slide-in-from-top-2 duration-200">
+          <AllMetricsOverview 
+            allMetricsStats={allMetricsStats} 
+            baseAlgo={baseAlgo} 
+            compareAlgo={compareAlgo} 
+          />
+        </div>
+      )}
+
       <div className={`${TABLE_STYLES.wrapper} pb-10 relative z-0`}>
         <table className={TABLE_STYLES.table}>
           <thead className={TABLE_STYLES.thead}>
@@ -401,6 +421,7 @@ TableView.propTypes = {
   validCasesMap: PropTypes.instanceOf(Map).isRequired,
   setDeepDiveCase: PropTypes.func.isRequired,
   stats: PropTypes.object,
+  allMetricsStats: PropTypes.array,
   tableSearchTerm: PropTypes.string,
   setTableSearchTerm: PropTypes.func.isRequired
 };

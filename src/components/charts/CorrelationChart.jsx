@@ -178,18 +178,18 @@ const CorrelationDiscovery = ({ parsedData, selectedCases, metaColumns, availabl
                 onClick={() => onSelectCorrelation(c.xKey, c.yKey)}
                 className="flex items-center gap-1.5 px-2 py-1 bg-white rounded border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all text-left"
               >
-                <span className="text-[10px] px-1 py-0.5 rounded ${c.isMetricX ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">
+                <span className="text-xs px-1 py-0.5 rounded ${c.isMetricX ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">
                   {c.type}
                 </span>
-                <span className="text-[11px] font-medium text-gray-700">{c.xKey}</span>
-                <span className="text-[10px] text-gray-400">↔</span>
-                <span className="text-[11px] font-medium text-gray-700">{c.yKey}</span>
+                <span className="text-sm font-medium text-gray-700">{c.xKey}</span>
+                <span className="text-xs text-gray-400">↔</span>
+                <span className="text-sm font-medium text-gray-700">{c.yKey}</span>
                 {c.pearsonR > 0 ? (
-                  <span className="text-green-600 text-[12px]">↗</span>
+                  <span className="text-green-600 text-base">↗</span>
                 ) : (
-                  <span className="text-red-600 text-[12px]">↘</span>
+                  <span className="text-red-600 text-base">↘</span>
                 )}
-                <span className={`text-[11px] font-bold ${c.pearsonR > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <span className={`text-sm font-bold ${c.pearsonR > 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {c.pearsonR.toFixed(2)}
                 </span>
               </button>
@@ -663,7 +663,7 @@ const CorrelationChart = ({
             )}
           </ChartArea>
           
-          <div className="text-center py-1 text-[10px] font-semibold text-gray-500 relative h-6">
+          <div className="text-center py-1 text-xs font-semibold text-gray-500 relative h-6">
             {!isInstX && xTicks.length > 0 ? (
               <>
                 <div className="absolute inset-0 flex justify-between px-0">
@@ -671,7 +671,7 @@ const CorrelationChart = ({
                     <span 
                       key={i}
                       className={`
-                        text-[9px] 
+                        text-xs 
                         ${isMetricX && tick.val > 0 ? 'text-green-600' : ''} 
                         ${isMetricX && tick.val < 0 ? 'text-red-500' : ''}
                       `}
@@ -685,7 +685,7 @@ const CorrelationChart = ({
                     </span>
                   ))}
                 </div>
-                <span className="text-gray-400 text-[9px] mt-3 block">{corrX || 'X'}</span>
+                <span className="text-gray-400 text-xs mt-3 block">{corrX || 'X'}</span>
               </>
             ) : (
               <span className="text-gray-400">{corrX || 'X'}</span>
@@ -710,7 +710,7 @@ const CorrelationChart = ({
           <span className={`font-bold ${trendColor} text-sm`}>
             {stats.pearsonR !== null ? stats.pearsonR.toFixed(3) : 'N/A'}
             {stats.pearsonInterpretation && (
-              <span className="ml-1 px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[9px] font-bold">
+              <span className="ml-1 px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs font-bold">
                 ({stats.pearsonInterpretation.strength}{stats.pearsonInterpretation.direction})
               </span>
             )}
@@ -734,7 +734,7 @@ const CorrelationChart = ({
         </div>
         <div className="flex items-center gap-1.5 group relative">
           <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
-          <div className="absolute left-0 top-full mt-1 p-3 bg-gray-800 text-white text-[10px] rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 w-80 pointer-events-none">
+          <div className="absolute left-0 top-full mt-1 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 w-80 pointer-events-none">
             <div className="space-y-2.5">
               <p className="font-bold text-indigo-300 text-xs">统计指标说明</p>
               

@@ -119,7 +119,7 @@ const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetri
                   })()}
                 </svg>
                 
-                <div className="absolute bottom-2 left-2 text-[9px] text-gray-400 bg-white/80 px-2 py-1 rounded">
+                <div className="absolute bottom-2 left-2 text-xs text-gray-400 bg-white/80 px-2 py-1 rounded">
                   向外 = 优化 | 向内 = 退化
                 </div>
               </div>
