@@ -1,7 +1,7 @@
 export const TABLE_STYLES = {
-  wrapper: 'overflow-x-auto overflow-y-auto flex-1 custom-scrollbar',
+  wrapper: 'overflow-x-auto overflow-y-auto flex-1 custom-scrollbar max-h-[calc(100vh-300px)]',
   table: 'min-w-full text-sm text-left relative',
-  thead: 'bg-gray-100 text-gray-700 text-sm sticky top-0 z-10 shadow-sm border-b border-gray-200',
+  thead: 'bg-gray-100 text-gray-700 text-sm sticky top-0 z-20 shadow-sm border-b border-gray-200',
   theadCell: 'px-4 py-2.5 font-medium cursor-pointer hover:bg-gray-200 transition-colors',
   theadCellRight: 'px-4 py-2.5 font-medium text-right border-l border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors text-gray-600',
   tbody: 'divide-y divide-gray-100',

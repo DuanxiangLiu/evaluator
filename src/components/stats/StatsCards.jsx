@@ -355,11 +355,15 @@ const StatsCards = ({ stats }) => {
                     ? 'N/A'
                     : <span>
                         <span className="text-xs font-normal text-gray-400">{card.std.toFixed(2)}/{Math.abs(card.meanImp).toFixed(2)}=</span>
-                        {card.value.toFixed(2)}
+                        {card.value.toFixed(2)}%
                       </span>)
-                  : typeof card.value === 'number'
-                    ? `${card.value > 0 ? '+' : ''}${card.value.toFixed(2)}%`
-                    : card.value}
+                  : card.label === 'IQR'
+                    ? `${Math.abs(card.value).toFixed(2)}%`
+                    : typeof card.value === 'number'
+                      ? card.neutral
+                        ? card.value.toFixed(2)
+                        : `${card.value > 0 ? '+' : ''}${card.value.toFixed(2)}%`
+                      : card.value}
               </div>
             </div>
           ))}

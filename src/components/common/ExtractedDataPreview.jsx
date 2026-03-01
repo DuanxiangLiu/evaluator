@@ -302,7 +302,7 @@ const ExtractedDataPreview = ({
       <div className="overflow-hidden">
         {viewMode === 'table' && (
           <>
-            <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+            <div className="overflow-x-auto max-h-[calc(100vh-350px)] overflow-y-auto">
               <table className="w-full text-xs">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>

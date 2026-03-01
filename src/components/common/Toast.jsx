@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { X, CheckCircle, AlertCircle, AlertTriangle, Info, XCircle, CheckCircle2, AlertOctagon, InfoIcon } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, AlertTriangle, Info, XCircle, CheckCircle2, AlertOctagon, InfoIcon, Copy, Check } from 'lucide-react';
 
 const ToastContext = createContext(null);
 
@@ -78,9 +78,20 @@ const Toast = ({ id, type, title, message, duration, onClose, index }) => {
   const [isPaused, setIsPaused] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const config = TOAST_CONFIG[type] || TOAST_CONFIG[TOAST_TYPES.INFO];
   const Icon = config.icon;
   const toastRef = useRef(null);
+
+  const handleCopy = useCallback(() => {
+    const textToCopy = `${title ? title + '\n' : ''}${message || ''}`;
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }).catch(err => {
+      console.error('Failed to copy: ', err);
+    });
+  }, [title, message]);
 
   useEffect(() => {
     if (duration <= 0 || isPaused) return;
@@ -119,6 +130,11 @@ const Toast = ({ id, type, title, message, duration, onClose, index }) => {
     setIsHovered(false);
   };
 
+  const handleClick = (e) => {
+    // 阻止点击事件冒泡，避免点击 Toast 时关闭
+    e.stopPropagation();
+  };
+
   return (
     <div
       ref={toastRef}
@@ -135,6 +151,7 @@ const Toast = ({ id, type, title, message, duration, onClose, index }) => {
       `}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
       style={{
         animationDelay: `${index * 50}ms`,
         zIndex: 9999 - index,
@@ -162,18 +179,36 @@ const Toast = ({ id, type, title, message, duration, onClose, index }) => {
           )}
         </div>
         
-        <button
-          onClick={handleClose}
-          className={`
-            flex-shrink-0 p-1.5 rounded-lg transition-all duration-200
-            ${config.closeBtnHover}
-            opacity-60 hover:opacity-100
-            focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300
-          `}
-          aria-label="关闭提示"
-        >
-          <X className="w-4 h-4" strokeWidth={2} />
-        </button>
+        <div className="flex flex-col gap-1">
+          <button
+            onClick={handleCopy}
+            className={`
+              flex-shrink-0 p-1.5 rounded-lg transition-all duration-200
+              ${config.closeBtnHover}
+              opacity-60 hover:opacity-100
+              focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300
+            `}
+            aria-label="复制内容"
+          >
+            {isCopied ? (
+              <Check className="w-4 h-4 text-green-500" strokeWidth={2} />
+            ) : (
+              <Copy className="w-4 h-4" strokeWidth={2} />
+            )}
+          </button>
+          <button
+            onClick={handleClose}
+            className={`
+              flex-shrink-0 p-1.5 rounded-lg transition-all duration-200
+              ${config.closeBtnHover}
+              opacity-60 hover:opacity-100
+              focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-300
+            `}
+            aria-label="关闭提示"
+          >
+            <X className="w-4 h-4" strokeWidth={2} />
+          </button>
+        </div>
       </div>
       
       {duration > 0 && (

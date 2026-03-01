@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Sparkles, Loader2, TrendingUp, TrendingDown, Minus, HelpCircle, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
@@ -224,6 +224,91 @@ const CorrelationChart = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   if (parsedData.length === 0) return null;
+  
+  // 计算强相关性发现
+  const correlations = useMemo(() => {
+    const results = [];
+    const selectedData = parsedData.filter(d => selectedCases.has(d.Case));
+    const seenPairs = new Set();
+    
+    if (selectedData.length < 5) return results;
+    
+    const allXOptions = [...metaColumns, ...availableMetrics];
+    const allYOptions = [...availableMetrics];
+    
+    for (const xKey of allXOptions) {
+      for (const yKey of allYOptions) {
+        if (xKey === yKey) continue;
+        
+        const pairKey = [xKey, yKey].sort().join('|||');
+        if (seenPairs.has(pairKey)) continue;
+        seenPairs.add(pairKey);
+        
+        const isMetricX = availableMetrics.includes(xKey);
+        const isMetricY = availableMetrics.includes(yKey);
+        
+        const points = selectedData.map(d => {
+          let xValRaw;
+          if (isMetricX) {
+            const bx = d.raw[xKey]?.[baseAlgo];
+            const cx = d.raw[xKey]?.[compareAlgo];
+            if (bx == null || cx == null) return null;
+            const config = getMetricConfig(xKey);
+            xValRaw = calculateImprovementWithDirection(bx, cx, config.better === 'higher');
+          } else {
+            xValRaw = d.meta[xKey];
+          }
+          
+          let yValRaw;
+          if (isMetricY) {
+            const by = d.raw[yKey]?.[baseAlgo];
+            const cy = d.raw[yKey]?.[compareAlgo];
+            if (by == null || cy == null) return null;
+            const config = getMetricConfig(yKey);
+            yValRaw = calculateImprovementWithDirection(by, cy, config.better === 'higher');
+          } else {
+            yValRaw = d.meta[yKey];
+          }
+          
+          if (xValRaw == null || yValRaw == null) return null;
+          const xVal = parseFloat(xValRaw);
+          const yVal = parseFloat(yValRaw);
+          if (isNaN(xVal) || isNaN(yVal)) return null;
+          
+          return { xVal, yVal };
+        }).filter(p => p !== null);
+        
+        if (points.length < 5) continue;
+        
+        const xVals = points.map(p => p.xVal);
+        const yVals = points.map(p => p.yVal);
+        const pearsonR = calculatePearsonCorrelation(xVals, yVals);
+        
+        if (pearsonR !== null && Math.abs(pearsonR) >= STRONG_CORRELATION_THRESHOLD) {
+          results.push({
+            xKey,
+            yKey,
+            pearsonR,
+            isMetricX,
+            isMetricY,
+            type: isMetricX ? '指标' : '属性',
+            typeY: isMetricY ? '指标' : '属性'
+          });
+        }
+      }
+    }
+    
+    return results.sort((a, b) => Math.abs(b.pearsonR) - Math.abs(a.pearsonR));
+  }, [parsedData, selectedCases, metaColumns, availableMetrics, baseAlgo, compareAlgo]);
+  
+  // 当强相关性发现存在时，自动设置默认的 XY
+  useEffect(() => {
+    if (correlations.length > 0) {
+      const firstCorrelation = correlations[0];
+      setCorrX(firstCorrelation.xKey);
+      setCorrY(firstCorrelation.yKey);
+    }
+  }, [correlations, setCorrX, setCorrY]);
 
   const isMetricX = availableMetrics.includes(corrX);
   const isMetricY = availableMetrics.includes(corrY);
