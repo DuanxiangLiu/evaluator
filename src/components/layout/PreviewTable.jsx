@@ -60,21 +60,21 @@ const PreviewTable = ({
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className="w-3 h-3 absolute left-1.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               ref={searchInputRef}
               type="text"
               placeholder="搜索..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="text-xs pl-6 pr-6 py-1 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 w-32"
+              className="text-xs pl-5 pr-4 py-0.5 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 w-20"
             />
             {searchTerm && (
               <button
                 onClick={onClearSearch}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                <X className="w-3 h-3" />
+                <X className="w-2.5 h-2.5" />
               </button>
             )}
           </div>

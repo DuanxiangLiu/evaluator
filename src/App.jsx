@@ -65,12 +65,12 @@ const StatsCards = ({ stats }) => {
     { label: '几何平均改进', value: stats.geomeanImp, isPositive: stats.geomeanImp > 0, helpId: 'geomean' },
     { label: '算术平均改进', value: stats.meanImp, isPositive: stats.meanImp > 0, helpId: 'arith' },
     { label: '显著性检验', value: stats.pValue, isPositive: stats.pValue < 0.05, format: 'pvalue', helpId: 'pvalue' },
-    { label: '95% 置信区间', value: `[${stats.ciLower.toFixed(1)}%, ${stats.ciUpper.toFixed(1)}%]`, isPositive: stats.ciLower > 0, helpId: 'ci' },
+    { label: '95% 置信区间', value: `[${stats.ciLower.toFixed(2)}%, ${stats.ciUpper.toFixed(2)}%]`, isPositive: stats.ciLower > 0, helpId: 'ci' },
     { 
       label: '退化案例', 
       value: stats.degradedCount, 
       suffix: `/${stats.nValid}`,
-      subValue: `(${degradedRate.toFixed(1)}%)`,
+      subValue: `(${degradedRate.toFixed(2)}%)`,
       isPositive: stats.degradedCount === 0, 
       helpId: 'degraded' 
     },
@@ -95,19 +95,19 @@ const StatsCards = ({ stats }) => {
     <div className="space-y-3">
       <div className="flex flex-wrap gap-3">
         {mainCards.map((card, i) => (
-          <div key={i} className={`p-3 rounded-xl border min-w-[180px] flex-1 ${card.isPositive ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+          <div key={i} className={`p-3 rounded-xl border min-w-[200px] flex-1 ${card.isPositive ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
             <div className={`text-xs font-bold mb-1 flex items-center ${card.isPositive ? 'text-emerald-800' : 'text-red-800'}`}>
               {card.label}
               <HelpIcon content={<StatHelpContent helpId={card.helpId} />} position="bottom-right" className="w-4 h-4 ml-0.5" />
             </div>
-            <div className={`text-2xl font-black ${card.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+            <div className={`text-xl font-black whitespace-nowrap ${card.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
               {card.format === 'pvalue' && typeof card.value === 'number' 
                 ? card.value.toFixed(3) 
                 : card.format === 'range'
                   ? <span className="flex items-center gap-1 text-lg">
-                      <span className="text-red-600">{card.minImp.toFixed(1)}%</span>
+                      <span className="text-red-600">{card.minImp.toFixed(2)}%</span>
                       <span className="text-gray-400 text-sm">~</span>
-                      <span className="text-emerald-600">+{card.value.toFixed(1)}%</span>
+                      <span className="text-emerald-600">+{card.value.toFixed(2)}%</span>
                     </span>
                   : card.format === 'integer'
                     ? <span>{card.value}{card.suffix || ''} <span className="text-sm font-medium">{card.subValue}</span></span>
@@ -146,10 +146,7 @@ const StatsCards = ({ stats }) => {
                 {card.format === 'cv'
                   ? (card.value === null || isNaN(card.value) 
                     ? 'N/A'
-                    : <span>
-                        <span className="text-xs font-normal text-gray-400">{card.std.toFixed(2)}/{Math.abs(card.meanImp).toFixed(2)}=</span>
-                        {card.value.toFixed(2)}
-                      </span>)
+                    : card.value.toFixed(2))
                   : typeof card.value === 'number'
                     ? `${card.value > 0 ? '+' : ''}${card.value.toFixed(2)}%`
                     : card.value}
@@ -473,6 +470,18 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-gray-100/50 p-4 lg:p-6 font-sans text-gray-800 relative">
+      {tooltipState.visible && (
+        <div className="fixed pointer-events-none bg-gray-900/95 border border-gray-700 text-white text-xs px-4 py-3 rounded-xl shadow-2xl z-[9999] backdrop-blur-sm transition-opacity duration-75 min-w-[120px] max-w-[300px]" style={{ left: tooltipState.x + 15, top: tooltipState.y + 15 }}>
+          <div className="font-bold text-sm mb-1.5 text-indigo-300 border-b border-gray-700 pb-1 whitespace-nowrap">{tooltipState.title}</div>
+          {tooltipState.lines.map((line, i) => (
+            <div key={i} className={`font-mono text-[11px] leading-relaxed ${
+              typeof line === 'string' ? 'text-gray-300' : line.color || 'text-gray-300'
+            }`}>
+              {typeof line === 'string' ? line : line.text}
+            </div>
+          ))}
+        </div>
+      )}
       <DeepDiveModal isOpen={!!deepDiveCase} caseData={caseData} baseAlgo={baseAlgo} compareAlgo={compareAlgo} availableMetrics={availableMetrics} onClose={() => setDeepDiveCase(null)} />
       <AiConfigModal isOpen={showAiConfig} config={llmConfig} onConfigChange={setLlmConfig} onClose={() => setShowAiConfig(false)} />
 
@@ -519,7 +528,14 @@ const AppContent = () => {
           <div className="h-5 w-px bg-white/30"></div>
           <span className="text-xs font-bold text-white/80">指标:</span>
           <select value={activeMetric} onChange={(e) => setActiveMetric(e.target.value)} className="text-sm font-semibold border-0 rounded-lg py-1 px-2 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 shadow-sm">
-            {availableMetrics.map(m => <option key={m} value={m}>{m}</option>)}
+            {availableMetrics.map(m => {
+              let label = m;
+              if (m === 'Runtime') label = 'Runtime (s)';
+              if (m === 'HPWL') label = 'HPWL (μm)';
+              if (m === 'TNS') label = 'TNS (ps)';
+              if (m === 'HB') label = '#HB';
+              return <option key={m} value={m}>{label}</option>;
+            })}
           </select>
           <span className="text-xs font-bold text-white/80">基线:</span>
           <select value={baseAlgo} onChange={(e) => setBaseAlgo(e.target.value)} className="text-sm font-semibold border-0 rounded-lg py-1 px-2 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 shadow-sm">
@@ -541,13 +557,6 @@ const AppContent = () => {
         <StatsCards stats={stats} />
 
         <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 overflow-hidden flex flex-col min-h-[700px] relative z-0">
-          {tooltipState.visible && (
-            <div className="absolute pointer-events-none bg-gray-900/95 border border-gray-700 text-white text-xs px-4 py-3 rounded-xl shadow-2xl z-[100] backdrop-blur-sm transition-opacity duration-75 min-w-[120px] max-w-[300px]" style={{ left: tooltipState.x + 15, top: tooltipState.y + 15 }}>
-              <div className="font-bold text-sm mb-1.5 text-indigo-300 border-b border-gray-700 pb-1 whitespace-nowrap">{tooltipState.title}</div>
-              {tooltipState.lines.map((l, i) => (<div key={i} className="text-gray-300 font-mono text-[11px] leading-relaxed">{l}</div>))}
-            </div>
-          )}
-
           <div className="flex items-center overflow-x-auto border-b border-gray-200 bg-gray-50 scrollbar-hide flex-shrink-0 relative z-10">
             {TAB_CONFIG.map(tab => (
               <TabButton key={tab.id} tab={tab} isActive={activeTab === tab.id} onClick={() => setActiveTab(tab.id)} />

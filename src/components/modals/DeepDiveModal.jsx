@@ -107,7 +107,7 @@ const DeepDiveModal = ({ isOpen, caseData, baseAlgo, compareAlgo, availableMetri
                               <line x1="0" y1="0" x2={ptEnd.x} y2={ptEnd.y} stroke="#d1d5db" strokeWidth="0.5" />
                               <text x={labelPt.x} y={labelPt.y} fontSize="7" fontWeight="bold" fill="#4b5563" textAnchor="middle" dominantBaseline="middle">{d.metric}</text>
                               <text x={labelPt.x} y={labelPt.y + 10} fontSize="6" fontWeight="bold" fill={d.imp >= 0 ? '#059669' : '#dc2626'} textAnchor="middle">
-                                {d.imp > 0 ? '+' : ''}{d.imp.toFixed(1)}%
+                                {d.imp > 0 ? '+' : ''}{d.imp.toFixed(2)}%
                                 {config.better === 'higher' && <tspan fill="#6366f1"> ↑</tspan>}
                                 {config.better === 'lower' && <tspan fill="#6366f1"> ↓</tspan>}
                               </text>

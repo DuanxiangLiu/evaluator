@@ -83,7 +83,7 @@ export const generateAIInsights = async (config, baseAlgo, compareAlgo, activeMe
     geomeanImp: stats.geomeanImp.toFixed(2) + '%',
     meanImp: stats.meanImp.toFixed(2) + '%',
     pValue: stats.pValue.toFixed(4),
-    ci: `[${stats.ciLower.toFixed(1)}%, ${stats.ciUpper.toFixed(1)}%]`,
+    ci: `[${stats.ciLower.toFixed(2)}%, ${stats.ciUpper.toFixed(2)}%]`,
     degradedCount: stats.degradedCount,
     nValid: stats.nValid,
     nTotal: stats.nTotalChecked,

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useMemo, useCallback, useEf
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { parseCSV, computeStatistics, updateDataValue, dataToCSVString } from '../services/dataService';
 import { generateDefaultDataset } from '../utils/dataGenerator';
-import { DEFAULT_LLM_CONFIG } from '../utils/constants';
+import { DEFAULT_LLM_CONFIG, DEFAULT_CHART_SIZE } from '../utils/constants';
 import { calculateImprovement } from '../utils/statistics';
 import { getMetricConfig } from '../services/csvParser';
 
@@ -31,6 +31,7 @@ export const AppProvider = ({ children }) => {
   const [activeMetric, setActiveMetric] = useLocalStorage('eda_active_metric', '');
   const [qorWeights, setQorWeights] = useLocalStorage('eda_qor_weights', {});
   const [savedAiInsights, setSavedAiInsights] = useLocalStorage('eda_ai_insights', {});
+  const [chartSize, setChartSize] = useLocalStorage('eda_chart_size', DEFAULT_CHART_SIZE);
   
   const [parsedData, setParsedData] = useState([]);
   const [availableMetrics, setAvailableMetrics] = useState([]);
@@ -302,11 +303,10 @@ export const AppProvider = ({ children }) => {
 
   const handleChartMouseMove = useCallback((e) => {
     if (!tooltipState.visible) return;
-    const rect = e.currentTarget.getBoundingClientRect();
     setTooltipState(prev => ({
       ...prev,
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      x: e.clientX,
+      y: e.clientY
     }));
   }, [tooltipState.visible]);
 
@@ -363,7 +363,8 @@ export const AppProvider = ({ children }) => {
     handleEditDataValue,
     saveAiInsights,
     getSavedAiInsights,
-    isInsightsOutdated
+    isInsightsOutdated,
+    chartSize, setChartSize
   };
 
   return (

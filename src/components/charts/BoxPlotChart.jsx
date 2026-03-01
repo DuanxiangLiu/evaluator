@@ -5,9 +5,11 @@ import ChartContainer, { ChartBody, ChartArea, ChartLegend, AreaLabel } from '..
 import { ImprovementFormulaHelp } from '../common/HelpContents';
 import { calculateImprovementWithDirection } from '../../utils/statistics';
 import { getMetricConfig } from '../../services/csvParser';
-import { CHART_Y_PADDING, CHART_WIDTH } from '../../utils/constants';
+import { useChartWidth } from '../../hooks/useChartWidth';
 
 const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, setHoveredCase, setTooltipState, onCaseClick, parsedData, metaColumns }) => {
+  const chartWidth = useChartWidth();
+  
   const instColumn = useMemo(() => {
     if (!metaColumns || metaColumns.length === 0) return null;
     return metaColumns.find(c => 
@@ -44,27 +46,49 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
 
   if (!stats) return null;
 
-  const yMax = Math.max(Math.abs(stats.maxImp), Math.abs(stats.minImp)) + CHART_Y_PADDING;
-  const mapY = (val) => 50 - (val / yMax) * 50;
-
-  const yTicks = [
-    { val: yMax },
-    { val: stats.q3 },
-    { val: stats.median },
-    { val: stats.q1 },
-    { val: 0 },
-    { val: -yMax }
-  ];
+  // Calculate Y-axis range based on actual data
+  const dataRange = stats.maxImp - stats.minImp;
+  const paddingPercent = 0.15; // 15% padding
+  const dynamicPadding = Math.max(dataRange * paddingPercent, 1); // At least 1% padding
+  
+  const yMin = stats.minImp - dynamicPadding;
+  const yMax = stats.maxImp + dynamicPadding;
+  const yRange = yMax - yMin || 1;
+  const mapY = (val) => ((yMax - val) / yRange) * 90 + 5;
 
   const formatYTick = (val) => {
-    if (val === stats.median) return `中位 ${stats.median > 0 ? '+' : ''}${stats.median.toFixed(1)}%`;
-    if (val === stats.q3) return `Q3 +${stats.q3.toFixed(1)}%`;
-    if (val === stats.q1) return `Q1 ${stats.q1 > 0 ? '+' : ''}${stats.q1.toFixed(1)}%`;
-    if (val === yMax) return `+${val.toFixed(0)}%`;
-    if (val === -yMax) return `-${yMax.toFixed(0)}%`;
-    if (val === 0) return '0%';
-    return `${val > 0 ? '+' : ''}${val.toFixed(0)}%`;
+    if (Math.abs(val) < 0.001) return '0%';
+    return `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
   };
+
+  const specialTicks = useMemo(() => {
+    const ticks = [];
+    const addTick = (val, label, colorClass, priority) => {
+      if (val >= yMin - 0.001 && val <= yMax + 0.001) {
+        ticks.push({ val, label, colorClass, priority });
+      }
+    };
+    
+    addTick(stats.maxImp, <>最大<br/>{stats.maxImp > 0 ? '+' : ''}{stats.maxImp.toFixed(2)}%</>, 'text-green-600', 1);
+    addTick(stats.q3, <>Q3<br/>{stats.q3 > 0 ? '+' : ''}{stats.q3.toFixed(2)}%</>, 'text-emerald-600', 2);
+    addTick(stats.median, <>中位<br/>{stats.median > 0 ? '+' : ''}{stats.median.toFixed(2)}%</>, 'text-indigo-600 font-bold', 3);
+    addTick(stats.q1, <>Q1<br/>{stats.q1 > 0 ? '+' : ''}{stats.q1.toFixed(2)}%</>, 'text-amber-600', 4);
+    addTick(stats.minImp, <>最小<br/>{stats.minImp > 0 ? '+' : ''}{stats.minImp.toFixed(2)}%</>, 'text-red-500', 5);
+    addTick(0, '0%', 'text-gray-400', 6);
+    
+    const uniqueTicks = [];
+    const seenVals = new Set();
+    for (const tick of ticks) {
+      const key = tick.val.toFixed(2);
+      if (!seenVals.has(key)) {
+        seenVals.add(key);
+        uniqueTicks.push(tick);
+      }
+    }
+    
+    uniqueTicks.sort((a, b) => b.val - a.val);
+    return uniqueTicks;
+  }, [yMin, yMax, stats]);
 
   const getInstValue = (caseName) => {
     if (!parsedData || !instColumn) return 0;
@@ -114,47 +138,21 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
         helpPosition="right-center"
       />
       
-      <ChartBody className={`${CHART_WIDTH.COMPACT} mx-auto w-full`}>
+      <ChartBody className={`${chartWidth} mx-auto w-full`}>
         <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0 relative">
           <span className="text-gray-400 text-[9px] -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">改进率</span>
-          {yTicks.map((tick, i) => {
-            const isMedian = tick.val === stats.median;
-            const isQ3 = tick.val === stats.q3;
-            const isQ1 = tick.val === stats.q1;
-            
-            return (
-              <span 
-                key={i} 
-                className={`
-                  ${isMedian ? 'text-indigo-600 font-bold' : ''}
-                  ${isQ3 ? 'text-emerald-600' : ''}
-                  ${isQ1 ? 'text-amber-600' : ''}
-                  ${tick.val === 0 ? 'text-gray-400' : ''}
-                  ${tick.val === yMax ? 'text-green-600' : ''}
-                  ${tick.val === -yMax ? 'text-red-500' : ''}
-                `}
-              >
-                {isMedian ? (
-                  <>
-                    中位 <span className="text-[9px]">{stats.median > 0 ? '+' : ''}{stats.median.toFixed(1)}%</span>
-                  </>
-                ) : isQ3 ? (
-                  <>
-                    Q3 <span className="text-[9px]">+{stats.q3.toFixed(1)}%</span>
-                  </>
-                ) : isQ1 ? (
-                  <>
-                    Q1 <span className="text-[9px]">{stats.q1 > 0 ? '+' : ''}{stats.q1.toFixed(1)}%</span>
-                  </>
-                ) : (
-                  formatYTick(tick.val)
-                )}
-              </span>
-            );
-          })}
+          {specialTicks.map((tick, i) => (
+            <span 
+              key={i} 
+              className={tick.colorClass}
+              style={{ position: 'absolute', top: `${mapY(tick.val)}%`, transform: 'translateY(-50%)' }}
+            >
+              {tick.label}
+            </span>
+          ))}          
         </div>
         
-        <ChartArea className="border-l-2 border-b-2 border-gray-300 bg-gradient-to-b from-green-50/30 via-white to-red-50/30">
+        <ChartArea className="border-l-2 border-b-2 border-gray-300 bg-gradient-to-b from-green-50/30 via-white to-red-50/30 pt-2">
           <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-green-100/20 to-transparent pointer-events-none"></div>
           <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-red-100/20 to-transparent pointer-events-none"></div>
           
@@ -177,7 +175,7 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
               const instValue = getInstValue(d.Case);
               
               let dotColor = "#6366f1";
-              if (imp > stats.outlierUpper) dotColor = "#9333ea";
+              if (imp > stats.outlierUpper) dotColor = "#10b981";
               if (imp < stats.outlierLower) dotColor = "#dc2626";
               
               return (
@@ -188,25 +186,26 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
                     className="cursor-pointer"
                     onMouseEnter={(e) => {
                       setHoveredCase(d.Case);
-                      const rect = e.currentTarget.closest('.chart-area')?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
+                      const imp = d.imp;
                       setTooltipState({ 
                         visible: true, 
-                        x: e.clientX - rect.left, 
-                        y: e.clientY - rect.top, 
+                        x: e.clientX, 
+                        y: e.clientY, 
                         title: d.Case, 
                         lines: [
                           `#Inst: ${instValue.toLocaleString()}`,
                           `状态: ${isOutlier ? (imp > 0 ? '显著优化' : '严重退化') : (imp > 0 ? '优化' : '退化')}`, 
-                          `改进: ${imp > 0 ? '+' : ''}${imp.toFixed(2)}%`
+                          imp > 0 ? { text: `改进: +${imp.toFixed(2)}%`, color: 'text-green-400' } : 
+                          imp < 0 ? { text: `改进: ${imp.toFixed(2)}%`, color: 'text-red-400' } : 
+                          '改进: 0.00%'
                         ] 
                       });
                     }}
                     onMouseMove={(e) => {
-                      const rect = e.currentTarget.closest('.chart-area')?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
                       setTooltipState(prev => ({
                         ...prev,
-                        x: e.clientX - rect.left,
-                        y: e.clientY - rect.top
+                        x: e.clientX,
+                        y: e.clientY
                       }));
                     }}
                     onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
@@ -238,27 +237,22 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
         </ChartArea>
       </ChartBody>
       
-      <div className="flex justify-between items-center px-14 py-1 text-[10px] text-gray-500 font-medium">
-        <span className="flex items-center gap-1">
-          <span className="text-gray-400">#Inst:</span>
-          <span className="text-indigo-600 font-bold">{maxInst.toLocaleString()}</span>
-          <span className="text-gray-400">(大)</span>
-        </span>
-        <span className="text-gray-400">按 #Inst 数量排序 →</span>
-        <span className="flex items-center gap-1">
-          <span className="text-gray-400">#Inst:</span>
-          <span className="text-indigo-600 font-bold">{minInst.toLocaleString()}</span>
-          <span className="text-gray-400">(小)</span>
-        </span>
+      <div className={`${chartWidth} mx-auto w-full flex justify-between items-center py-1 text-[10px] text-gray-500 font-medium`}>
+        <div className="w-12 flex-shrink-0"></div>
+        <div className="flex-1 flex justify-between items-center">
+          <span className="flex items-center gap-1">
+            <span className="text-gray-400">#Inst:</span>
+            <span className="text-indigo-600 font-bold">{maxInst.toLocaleString()}</span>
+            <span className="text-gray-400">(大)</span>
+          </span>
+          <span className="text-gray-400">按 #Inst 数量排序 →</span>
+          <span className="flex items-center gap-1">
+            <span className="text-gray-400">#Inst:</span>
+            <span className="text-indigo-600 font-bold">{minInst.toLocaleString()}</span>
+            <span className="text-gray-400">(小)</span>
+          </span>
+        </div>
       </div>
-
-      <ChartLegend items={[
-        { color: '#4f46e5', label: '中位数' },
-        { color: '#c7d2fe', label: 'IQR区域' },
-        { color: '#9ca3af', label: '0线' },
-        { color: '#9333ea', label: '显著优化' },
-        { color: '#dc2626', label: '严重退化', shape: 'circle' }
-      ]} />
     </ChartContainer>
   );
 };

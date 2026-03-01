@@ -131,7 +131,7 @@ export const diagnoseDataIssues = (data, algos, metrics) => {
       missingDataStats[metric] = {
         missing: missingCount,
         total: totalCount,
-        percentage: ((missingCount / totalCount) * 100).toFixed(1)
+        percentage: ((missingCount / totalCount) * 100).toFixed(2)
       };
     }
   });
@@ -173,7 +173,7 @@ export const diagnoseDataIssues = (data, algos, metrics) => {
       zeroValueStats[metric] = {
         zeros: zeroCount,
         valid: validCount,
-        percentage: ((zeroCount / validCount) * 100).toFixed(1)
+        percentage: ((zeroCount / validCount) * 100).toFixed(2)
       };
     }
   });
@@ -396,21 +396,21 @@ export const checkDataQuality = (data, algos, metrics) => {
     quality.factors.push({
       name: '数据完整性',
       score: 40,
-      message: `缺失值比例 ${missingRate.toFixed(1)}%`
+      message: `缺失值比例 ${missingRate.toFixed(2)}%`
     });
     quality.score -= 20;
   } else if (missingRate > 10) {
     quality.factors.push({
       name: '数据完整性',
       score: 70,
-      message: `缺失值比例 ${missingRate.toFixed(1)}%`
+      message: `缺失值比例 ${missingRate.toFixed(2)}%`
     });
     quality.score -= 10;
   } else {
     quality.factors.push({
       name: '数据完整性',
       score: 100,
-      message: `缺失值比例 ${missingRate.toFixed(1)}%`
+      message: `缺失值比例 ${missingRate.toFixed(2)}%`
     });
   }
   

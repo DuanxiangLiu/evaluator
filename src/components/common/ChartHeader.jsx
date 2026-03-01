@@ -61,7 +61,7 @@ const ChartHeader = ({
           {title}
           {metric && (
             <span className={styles.metric}>
-              {metric}
+              {metric === 'Runtime' ? 'Runtime (s)' : metric === 'HPWL' ? 'HPWL (μm)' : metric === 'TNS' ? 'TNS (ps)' : metric === 'HB' ? '#HB' : metric}
             </span>
           )}
           {helpContent && (

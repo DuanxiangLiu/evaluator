@@ -6,7 +6,7 @@ export const EDA_METRICS_CONFIG = {
   WNS: { name: '最差时序负裕度', unit: 'ps', better: 'higher', description: '最差的时序负裕度，值越大越好（越接近0或正值）' },
   Congestion: { name: '拥塞', unit: '', better: 'lower', description: '布线拥塞程度，值越小越好' },
   Runtime: { name: '运行时间', unit: 's', better: 'lower', description: '算法运行时间，值越小越好' },
-  Hb_Count: { name: '闩锁数量', unit: '个', better: 'lower', description: '闩锁数量，值越小越好' },
+  HB: { name: 'hybrid bonding terminal', unit: '个', better: 'lower', description: '混合键合终端数量，值越小越好' },
   Leakage: { name: '泄漏功耗', unit: 'mW', better: 'lower', description: '泄漏功耗，值越小越好' },
   Cell_Area: { name: '单元面积', unit: 'um²', better: 'lower', description: '单元总面积，值越小越好' },
   Metal_Layers: { name: '金属层数', unit: '层', better: 'lower', description: '金属层数，值越小越好' },

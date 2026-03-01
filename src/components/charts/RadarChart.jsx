@@ -5,9 +5,12 @@ import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartBody, ChartArea, ChartLegend, AreaLabel, EmptyState } from '../common/ChartContainer';
 import { getMetricConfig, computeStatistics } from '../../services/dataService';
 import { ImprovementFormulaHelp } from '../common/HelpContents';
-import { CHART_WIDTH, CHART_HEADER_STYLES } from '../../utils/constants';
+import { CHART_HEADER_STYLES } from '../../utils/constants';
+import { useChartWidth } from '../../hooks/useChartWidth';
 
 const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, parsedData, selectedCases }) => {
+  const chartWidth = useChartWidth();
+  
   const algoColors = {
     'Base': { fill: 'none', stroke: '#9ca3af', strokeDasharray: '4 4', strokeWidth: 2, fillOpacity: 0, label: '基线' },
     'Algo1': { fill: '#818cf8', fillOpacity: 0.15, stroke: '#4f46e5', strokeWidth: 2, label: '算法1' },
@@ -145,13 +148,13 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
         </div>
       </ChartHeader>
       
-      <ChartArea className={`bg-gradient-to-br from-indigo-50/30 to-purple-50/30 ${CHART_WIDTH.COMPACT} mx-auto w-full`}>
+      <ChartArea className={`bg-gradient-to-br from-indigo-50/30 to-purple-50/30 ${chartWidth} mx-auto w-full`}>
         <svg className="w-full h-full" viewBox="-200 -200 400 400" preserveAspectRatio="xMidYMid meet">
           {(() => {
             const N = validMetrics.length;
             if(N < 3) return <text x="0" y="0" textAnchor="middle" fill="#9ca3af" fontSize="10">至少需要 3 个指标</text>;
             
-            const baseRadius = 70;
+            const baseRadius = 100;
             const getPoint = (angle, r) => ({ x: r * Math.sin(angle), y: -r * Math.cos(angle) });
 
             const rings = [0.33, 0.67, 1.0, 1.33];
@@ -169,21 +172,21 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
 
             const renderAxes = () => validMetrics.map((m, i) => {
               const angle = (Math.PI * 2 * i) / N;
-              const ptEnd = getPoint(angle, 100);
-              const labelPt = getPoint(angle, 130);
+              const ptEnd = getPoint(angle, 140);
+              const labelPt = getPoint(angle, 175);
               
               return (
                 <g key={`axis-${i}`}>
                   <line x1="0" y1="0" x2={ptEnd.x} y2={ptEnd.y} stroke="#d1d5db" strokeWidth="0.8" />
-                  <text x={labelPt.x} y={labelPt.y} fontSize="7" fontWeight="bold" fill="#4b5563" textAnchor="middle" dominantBaseline="middle">{m.metric}</text>
+                  <text x={labelPt.x} y={labelPt.y} fontSize="10" fontWeight="bold" fill="#4b5563" textAnchor="middle" dominantBaseline="middle">{m.metric}</text>
                   {selectedAlgosArray.map((algo, algoIdx) => {
                     const statsForAlgo = algoStatsMap[algo];
                     const metricStat = statsForAlgo?.find(s => s.metric === m.metric);
                     const imp = metricStat?.stats?.geomeanImp || 0;
                     const color = getAlgoColor(algo, availableAlgos.indexOf(algo));
                     return (
-                      <text key={`imp-${algo}`} x={labelPt.x} y={labelPt.y + 9 + algoIdx * 8} fontSize="5" fontWeight="bold" fill={color.stroke} textAnchor="middle">
-                        {imp > 0 ? '+' : ''}{imp.toFixed(1)}%
+                      <text key={`imp-${algo}`} x={labelPt.x} y={labelPt.y + 12 + algoIdx * 11} fontSize="9" fontWeight="bold" fill={color.stroke} textAnchor="middle">
+                        {imp > 0 ? '+' : ''}{imp.toFixed(2)}%
                       </text>
                     );
                   })}

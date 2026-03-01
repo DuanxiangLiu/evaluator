@@ -272,12 +272,12 @@ const StatsCards = ({ stats }) => {
     { label: '几何平均改进', value: stats.geomeanImp, isPositive: stats.geomeanImp > 0, helpId: 'geomean' },
     { label: '算术平均改进', value: stats.meanImp, isPositive: stats.meanImp > 0, helpId: 'arith' },
     { label: '显著性检验', value: stats.pValue, isPositive: stats.pValue < 0.05, format: 'pvalue', helpId: 'pvalue' },
-    { label: '95% 置信区间', value: `[${stats.ciLower.toFixed(1)}%, ${stats.ciUpper.toFixed(1)}%]`, isPositive: stats.ciLower > 0, helpId: 'ci' },
+    { label: '95% 置信区间', value: `[${stats.ciLower.toFixed(2)}%, ${stats.ciUpper.toFixed(2)}%]`, isPositive: stats.ciLower > 0, helpId: 'ci' },
     { 
       label: '退化案例', 
       value: stats.degradedCount, 
       suffix: `/${stats.nValid}`,
-      subValue: `(${degradedRate.toFixed(1)}%)`,
+      subValue: `(${degradedRate.toFixed(2)}%)`,
       isPositive: stats.degradedCount === 0, 
       helpId: 'degraded' 
     },
@@ -307,14 +307,14 @@ const StatsCards = ({ stats }) => {
               {card.label}
               <HelpIcon content={<StatHelpContent helpId={card.helpId} />} position="bottom-right" className="w-4 h-4 ml-0.5" />
             </div>
-            <div className={`text-2xl font-black ${card.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+            <div className={`text-xl font-black whitespace-nowrap ${card.isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
               {card.format === 'pvalue' && typeof card.value === 'number' 
                 ? card.value.toFixed(3) 
                 : card.format === 'range'
                   ? <span className="flex items-center gap-1 text-lg">
-                      <span className="text-red-600">{card.minImp.toFixed(1)}%</span>
+                      <span className="text-red-600">{card.minImp.toFixed(2)}%</span>
                       <span className="text-gray-400 text-sm">~</span>
-                      <span className="text-emerald-600">+{card.value.toFixed(1)}%</span>
+                      <span className="text-emerald-600">+{card.value.toFixed(2)}%</span>
                     </span>
                   : card.format === 'integer'
                     ? <span>{card.value}{card.suffix || ''} <span className="text-sm font-medium">{card.subValue}</span></span>

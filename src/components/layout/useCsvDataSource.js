@@ -69,8 +69,50 @@ export const useCsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis }) => {
     const lines = csv.trim().split('\n');
     if (lines.length === 0) return { headers: [], rows: [] };
     const delimiter = detectDelimiter(csv);
-    const headers = lines[0].split(delimiter).map(h => h.trim());
+    let headers = lines[0].split(delimiter).map(h => h.trim());
     const rows = lines.slice(1).map(line => line.split(delimiter).map(v => v.trim()));
+    
+    // 重新排列列顺序：Case, 元数据列, HPWL列, HB列, Congestion列, TNS列, 其他指标列
+    const caseColumn = headers.find(h => h.toLowerCase() === 'case');
+    const metaColumns = headers.filter(h => !h.startsWith('m_') && h.toLowerCase() !== 'case');
+    const hpwlColumns = headers.filter(h => h.includes('_HPWL'));
+    const hbColumns = headers.filter(h => h.includes('_HB'));
+    const congestionColumns = headers.filter(h => h.includes('_Congestion'));
+    const tnsColumns = headers.filter(h => h.includes('_TNS'));
+    const otherColumns = headers.filter(h => 
+      h.startsWith('m_') && 
+      !h.includes('_HPWL') && 
+      !h.includes('_HB') && 
+      !h.includes('_Congestion') && 
+      !h.includes('_TNS')
+    );
+    
+    // 按照正确顺序重组列
+    const newHeaders = [];
+    if (caseColumn) newHeaders.push(caseColumn);
+    newHeaders.push(...metaColumns);
+    newHeaders.push(...hpwlColumns);
+    newHeaders.push(...hbColumns);
+    newHeaders.push(...congestionColumns);
+    newHeaders.push(...tnsColumns);
+    newHeaders.push(...otherColumns);
+    
+    // 如果列顺序有变化，重新排列行数据
+    if (JSON.stringify(newHeaders) !== JSON.stringify(headers)) {
+      headers = newHeaders;
+      const originalHeaders = lines[0].split(delimiter).map(h => h.trim());
+      const originalHeaderMap = new Map(originalHeaders.map((h, i) => [h, i]));
+      
+      const reorderedRows = rows.map(row => {
+        return headers.map(header => {
+          const originalIndex = originalHeaderMap.get(header);
+          return originalIndex !== undefined ? row[originalIndex] : '';
+        });
+      });
+      
+      return { headers, rows: reorderedRows, delimiter };
+    }
+    
     return { headers, rows, delimiter };
   }, []);
 

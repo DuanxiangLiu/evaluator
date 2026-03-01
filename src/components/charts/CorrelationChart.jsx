@@ -7,10 +7,11 @@ import HelpIcon from '../common/HelpIcon';
 import { formatIndustrialNumber } from '../../utils/formatters';
 import { calculateImprovementWithDirection, calculatePearsonCorrelation, calculateSpearmanCorrelation, calculateLinearRegression, detectOutliers, interpretCorrelation } from '../../utils/statistics';
 import { getMetricConfig } from '../../services/csvParser';
-import { CHART_WIDTH, CHART_HEADER_STYLES } from '../../utils/constants';
+import { CHART_HEADER_STYLES } from '../../utils/constants';
 import { generateCorrelationInsight, renderMarkdownText } from '../../services/aiService';
 import { useAppContext } from '../../context/AppContext';
 import { useToast } from '../common/Toast';
+import { useChartWidth } from '../../hooks/useChartWidth';
 
 const STRONG_CORRELATION_THRESHOLD = 0.7;
 
@@ -177,18 +178,18 @@ const CorrelationDiscovery = ({ parsedData, selectedCases, metaColumns, availabl
                 onClick={() => onSelectCorrelation(c.xKey, c.yKey)}
                 className="flex items-center gap-1.5 px-2 py-1 bg-white rounded border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50 transition-all text-left"
               >
-                <span className={`text-[10px] px-1 py-0.5 rounded ${c.isMetricX ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                <span className="text-[10px] px-1 py-0.5 rounded ${c.isMetricX ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}">
                   {c.type}
                 </span>
                 <span className="text-[11px] font-medium text-gray-700">{c.xKey}</span>
-                <span className="text-[10px] text-gray-400">vs</span>
+                <span className="text-[10px] text-gray-400">↔</span>
                 <span className="text-[11px] font-medium text-gray-700">{c.yKey}</span>
                 {c.pearsonR > 0 ? (
-                  <TrendingUp className="w-3 h-3 text-green-500" />
+                  <span className="text-green-600 text-[12px]">↗</span>
                 ) : (
-                  <TrendingDown className="w-3 h-3 text-red-500" />
+                  <span className="text-red-600 text-[12px]">↘</span>
                 )}
-                <span className={`text-[11px] font-bold ${c.pearsonR > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                <span className={`text-[11px] font-bold ${c.pearsonR > 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {c.pearsonR.toFixed(2)}
                 </span>
               </button>
@@ -218,6 +219,7 @@ const CorrelationChart = ({
 }) => {
   const { llmConfig, setShowAiConfig } = useAppContext();
   const toast = useToast();
+  const chartWidth = useChartWidth();
   const [aiInsight, setAiInsight] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   
@@ -302,14 +304,85 @@ const CorrelationChart = ({
   const maxY = yVals.length > 0 ? Math.max(...yVals) : 1;
   const yRange = maxY - minY || 1;
 
-  const mapX = (val) => ((val - minX) / xRange) * 90 + 5;
-  const mapY = (val) => ((maxY - val) / yRange) * 90 + 5;
+  const padding = 0.08;
+  const xPad = xRange * padding;
+  const yPad = yRange * padding;
+  
+  const xMin = minX - xPad;
+  const xMax = maxX + xPad;
+  const yMin = minY - yPad;
+  const yMax = maxY + yPad;
+  const xRangePadded = xMax - xMin;
+  const yRangePadded = yMax - yMin;
+
+  const mapX = (val) => ((val - xMin) / xRangePadded) * 90 + 5;
+  const mapY = (val) => ((yMax - val) / yRangePadded) * 90 + 5;
+
+  const calculateNiceTicks = (min, max, tickCount) => {
+    const range = max - min;
+    if (range === 0) return [min];
+    
+    const roughStep = range / (tickCount - 1);
+    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+    const residual = roughStep / magnitude;
+    
+    let niceStep;
+    if (residual <= 1.5) niceStep = magnitude;
+    else if (residual <= 3) niceStep = 2 * magnitude;
+    else if (residual <= 7) niceStep = 5 * magnitude;
+    else niceStep = 10 * magnitude;
+    
+    const ticks = [];
+    const firstTick = Math.ceil(min / niceStep) * niceStep;
+    for (let tick = firstTick; tick <= max; tick += niceStep) {
+      ticks.push(tick);
+    }
+    
+    return ticks;
+  };
 
   const yTickCount = 5;
   const yTicks = [];
-  for (let i = 0; i <= yTickCount; i++) {
-    const val = maxY - (yRange) * (i / yTickCount);
-    yTicks.push({ val });
+  
+  const shouldIncludeZero = isMetricY && minY < 0 && maxY > 0;
+  
+  if (shouldIncludeZero) {
+    const niceStep = yRangePadded / (yTickCount - 1);
+    const magnitude = Math.pow(10, Math.floor(Math.log10(niceStep)));
+    const residual = niceStep / magnitude;
+    
+    let step;
+    if (residual <= 1.5) step = magnitude;
+    else if (residual <= 3) step = 2 * magnitude;
+    else if (residual <= 7) step = 5 * magnitude;
+    else step = 10 * magnitude;
+    
+    const maxTick = Math.min(Math.ceil(yMax / step) * step, yMax);
+    const minTick = Math.max(Math.floor(yMin / step) * step, yMin);
+    
+    for (let tick = maxTick; tick >= minTick; tick -= step) {
+      if (tick >= yMin && tick <= yMax) {
+        yTicks.push({ val: tick });
+      }
+    }
+    
+    if (!yTicks.some(t => Math.abs(t.val) < 0.001)) {
+      if (0 >= yMin && 0 <= yMax) {
+        yTicks.push({ val: 0 });
+        yTicks.sort((a, b) => b.val - a.val);
+      }
+    }
+  } else {
+    const niceTicks = calculateNiceTicks(yMin, yMax, yTickCount);
+    niceTicks.filter(tick => tick >= yMin && tick <= yMax).reverse().forEach(tick => yTicks.push({ val: tick }));
+  }
+
+  const xTickCount = 5;
+  const xTicks = [];
+  
+  if (!isInstX) {
+    const niceTicks = calculateNiceTicks(xMin, xMax, xTickCount);
+    niceTicks.forEach(tick => xTicks.push({ val: tick }));
   }
 
   const handleAIAnalysis = useCallback(async () => {
@@ -354,28 +427,48 @@ const CorrelationChart = ({
       return <EmptyState message="请选择 X 轴与 Y 轴进行分析" />;
     }
 
+    const formatXTick = (val) => {
+      if (isMetricX) {
+        return `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
+      }
+      return formatIndustrialNumber(val);
+    };
+
     const formatYTick = (val) => {
       if (isMetricY) {
-        return `${val > 0 ? '+' : ''}${val.toFixed(0)}%`;
+        return `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
       }
       return formatIndustrialNumber(val);
     };
 
     return (
-      <ChartBody className={`${CHART_WIDTH.COMPACT} mx-auto w-full`}>
-        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0 relative">
-          <span className="text-gray-400 text-[9px] -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">{corrY || 'Y'}</span>
-          {yTicks.map((tick, i) => (
-            <span 
-              key={i} 
-              className={`
-                ${isMetricY && tick.val > 0 ? 'text-green-600' : ''} 
-                ${isMetricY && tick.val < 0 ? 'text-red-500' : ''}
-              `}
-            >
-              {formatYTick(tick.val)}
-            </span>
-          ))}
+      <ChartBody className={`${chartWidth} mx-auto w-full`}>
+        <div className="flex flex-col items-end justify-between py-1 text-[10px] font-semibold text-gray-500 w-14 flex-shrink-0 border-r border-gray-200 bg-gray-50/30">
+          <div className="flex items-center gap-1 w-full px-1 justify-end">
+            <span className="text-[9px] text-gray-400 truncate max-w-[24px]" title={corrY || 'Y'}>{corrY || 'Y'}</span>
+          </div>
+          <div className="flex-1 relative w-full">
+            {yTicks.filter(tick => {
+              const topPercent = mapY(tick.val);
+              return topPercent >= 0 && topPercent <= 100;
+            }).map((tick, i) => (
+              <div 
+                key={i} 
+                className={`
+                  absolute right-1 flex items-center justify-end gap-0.5
+                  ${isMetricY && tick.val > 0 ? 'text-green-600' : ''} 
+                  ${isMetricY && tick.val < 0 ? 'text-red-500' : ''}
+                  ${isMetricY && tick.val === 0 ? 'text-gray-600 font-bold' : ''}
+                `}
+                style={{ top: `${mapY(tick.val)}%`, transform: 'translateY(-50%)' }}
+              >
+                <span className="text-[9px] font-medium tabular-nums">
+                  {formatYTick(tick.val)}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="h-0"></div>
         </div>
         
         <div className="flex-1 flex flex-col">
@@ -388,20 +481,16 @@ const CorrelationChart = ({
             )}
             
             <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-              {isMetricY && (
-                <line x1="0" y1={mapY(0)} x2="100" y2={mapY(0)} stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
-              )}
-              
               {stats && stats.slope != null && !isInstX && !isInstY && (
                 <line 
-                  x1={mapX(minX)} 
-                  y1={mapY(stats.slope * minX + stats.intercept)} 
-                  x2={mapX(maxX)} 
-                  y2={mapY(stats.slope * maxX + stats.intercept)} 
-                  stroke="#6366f1" 
-                  strokeWidth="0.5" 
-                  strokeDasharray="1 1"
-                  opacity="0.6"
+                  x1={mapX(xMin)} 
+                  y1={mapY(stats.slope * xMin + stats.intercept)} 
+                  x2={mapX(xMax)} 
+                  y2={mapY(stats.slope * xMax + stats.intercept)} 
+                  stroke="#4f46e5" 
+                  strokeWidth="0.8" 
+                  strokeDasharray="2 1"
+                  opacity="0.9"
                 />
               )}
               
@@ -418,7 +507,13 @@ const CorrelationChart = ({
 
                 const formatTooltipValue = (val, isMetric) => {
                   if (isMetric) {
-                    return `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
+                    if (val > 0) {
+                      return { text: `+${val.toFixed(2)}%`, color: 'text-green-400' };
+                    } else if (val < 0) {
+                      return { text: `${val.toFixed(2)}%`, color: 'text-red-400' };
+                    } else {
+                      return '0.00%';
+                    }
                   }
                   return formatIndustrialNumber(val);
                 };
@@ -431,12 +526,16 @@ const CorrelationChart = ({
                       className="cursor-pointer"
                       onMouseEnter={(e) => {
                         setHoveredCase(p.case);
-                        const rect = e.currentTarget.closest('.chart-area')?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
-                        setTooltipState({ visible: true, x: e.clientX - rect.left, y: e.clientY - rect.top, title: p.case, lines: [`${corrX}: ${formatTooltipValue(p.xVal, isMetricX)}`, `${corrY}: ${formatTooltipValue(p.yVal, isMetricY)}`] });
+                        const xValue = formatTooltipValue(p.xVal, isMetricX);
+                        const yValue = formatTooltipValue(p.yVal, isMetricY);
+                        const lines = [
+                          typeof xValue === 'string' ? `${corrX}: ${xValue}` : { text: `${corrX}: ${xValue.text}`, color: xValue.color },
+                          typeof yValue === 'string' ? `${corrY}: ${yValue}` : { text: `${corrY}: ${yValue.text}`, color: yValue.color }
+                        ];
+                        setTooltipState({ visible: true, x: e.clientX, y: e.clientY, title: p.case, lines });
                       }}
                       onMouseMove={(e) => {
-                        const rect = e.currentTarget.closest('.chart-area')?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
-                        setTooltipState(prev => ({ ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top }));
+                        setTooltipState(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
                       }}
                       onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
                       onClick={(e) => {
@@ -473,8 +572,33 @@ const CorrelationChart = ({
             )}
           </ChartArea>
           
-          <div className="text-center py-1 text-[10px] font-semibold text-gray-500">
-            {corrX || 'X'}
+          <div className="text-center py-1 text-[10px] font-semibold text-gray-500 relative h-6">
+            {!isInstX && xTicks.length > 0 ? (
+              <>
+                <div className="absolute inset-0 flex justify-between px-0">
+                  {xTicks.map((tick, i) => (
+                    <span 
+                      key={i}
+                      className={`
+                        text-[9px] 
+                        ${isMetricX && tick.val > 0 ? 'text-green-600' : ''} 
+                        ${isMetricX && tick.val < 0 ? 'text-red-500' : ''}
+                      `}
+                      style={{ 
+                        position: 'absolute', 
+                        left: `${mapX(tick.val)}%`, 
+                        transform: 'translateX(-50%)' 
+                      }}
+                    >
+                      {formatXTick(tick.val)}
+                    </span>
+                  ))}
+                </div>
+                <span className="text-gray-400 text-[9px] mt-3 block">{corrX || 'X'}</span>
+              </>
+            ) : (
+              <span className="text-gray-400">{corrX || 'X'}</span>
+            )}
           </div>
         </div>
       </ChartBody>
@@ -489,11 +613,16 @@ const CorrelationChart = ({
     
     return (
       <div className="flex items-center gap-4 px-4 py-2 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 border-b border-gray-200 text-xs">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 bg-white/70 px-2 py-1 rounded-lg border border-indigo-100">
           <TrendIcon className={`w-3.5 h-3.5 ${trendColor}`} />
-          <span className="text-gray-500">Pearson:</span>
-          <span className={`font-semibold ${trendColor}`}>
+          <span className="text-gray-500 font-medium">Pearson:</span>
+          <span className={`font-bold ${trendColor} text-sm`}>
             {stats.pearsonR !== null ? stats.pearsonR.toFixed(3) : 'N/A'}
+            {stats.pearsonInterpretation && (
+              <span className="ml-1 px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[9px] font-bold">
+                ({stats.pearsonInterpretation.strength}{stats.pearsonInterpretation.direction})
+              </span>
+            )}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -546,11 +675,6 @@ const CorrelationChart = ({
             </div>
           </div>
         </div>
-        {stats.pearsonInterpretation && (
-          <div className="ml-auto px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[10px] font-medium">
-            {stats.pearsonInterpretation.strength}{stats.pearsonInterpretation.direction}
-          </div>
-        )}
       </div>
     );
   };
@@ -680,7 +804,7 @@ const CorrelationChart = ({
       <ChartLegend items={[
         { color: '#059669', label: '优化', shape: 'circle' },
         { color: '#dc2626', label: '退化', shape: 'circle' },
-        { color: '#6366f1', label: '趋势线', shape: 'line' }
+        { color: '#4f46e5', label: '拟合线', shape: 'dashed-line' }
       ]} />
       
       {renderAIInsight()}

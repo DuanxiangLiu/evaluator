@@ -1,8 +1,9 @@
 import React from 'react';
-import { Github, Settings } from 'lucide-react';
+import { Github, Settings, Maximize2 } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
 import APP_CONFIG from '../../utils/appConfig';
 import { useAppContext } from '../../context/AppContext';
+import { CHART_SIZE_OPTIONS } from '../../utils/constants';
 
 const helpContent = (
   <div className="space-y-4">
@@ -185,7 +186,7 @@ const CircuitBackground = () => (
 );
 
 const Header = () => {
-  const { setShowAiConfig, llmConfig } = useAppContext();
+  const { setShowAiConfig, llmConfig, chartSize, setChartSize } = useAppContext();
   const hasApiKey = llmConfig?.apiKey && llmConfig.apiKey.trim() !== '';
   
   return (
@@ -209,6 +210,24 @@ const Header = () => {
           </div>
           
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 px-2 py-1 bg-white/10 rounded-full border border-white/10 group relative" title="调整所有图表的显示大小">
+              <Maximize2 className="w-3 h-3 text-white/70" />
+              <select
+                value={chartSize}
+                onChange={(e) => setChartSize(e.target.value)}
+                className="bg-transparent text-white/90 text-xs font-medium border-none outline-none cursor-pointer"
+              >
+                {CHART_SIZE_OPTIONS.map(opt => (
+                  <option key={opt.id} value={opt.id} className="bg-gray-800 text-white">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                图表大小
+              </div>
+            </div>
+            
             <button
               onClick={() => setShowAiConfig(true)}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all border ${

@@ -6,9 +6,19 @@ export const CHART_Y_PADDING = 5;
 
 export const CHART_WIDTH = {
   FULL: 'max-w-5xl',
-  COMPACT: 'max-w-2xl',
-  NARROW: 'max-w-xl'
+  COMPACT: 'max-w-lg',
+  NARROW: 'max-w-xs'
 };
+
+export const CHART_SIZE_OPTIONS = [
+  { id: 'sm', label: '小', width: 'max-w-sm', scale: 0.75 },
+  { id: 'md', label: '中', width: 'max-w-md', scale: 0.88 },
+  { id: 'lg', label: '默认', width: 'max-w-lg', scale: 1 },
+  { id: 'xl', label: '大', width: 'max-w-xl', scale: 1.25 },
+  { id: '2xl', label: '特大', width: 'max-w-2xl', scale: 1.5 }
+];
+
+export const DEFAULT_CHART_SIZE = 'lg';
 
 export const CHART_HEADER_STYLES = {
   SELECT: 'font-semibold border-0 rounded py-0.5 px-1.5 focus:ring-2 focus:ring-white/50 bg-white/90 text-gray-800 text-xs',

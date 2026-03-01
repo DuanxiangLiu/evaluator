@@ -216,7 +216,7 @@ const ExtractedDataPreview = ({
 
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search className="w-3 h-3 absolute left-1.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   placeholder="搜索..."
@@ -225,7 +225,7 @@ const ExtractedDataPreview = ({
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="pl-6 pr-3 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 w-40"
+                  className="pl-5 pr-2 py-0.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 w-20"
                 />
               </div>
 

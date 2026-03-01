@@ -78,29 +78,29 @@ const TableView = ({
   const filterButtons = (
     <div className="flex items-center gap-2 flex-wrap">
       <div className="relative">
-        <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
           ref={searchInputRef}
           type="text"
-          placeholder="搜索 Case 或数据..."
+          placeholder="搜索..."
           value={tableSearchTerm || ''}
           onChange={(e) => setTableSearchTerm(e.target.value)}
-          className="text-xs pl-8 pr-7 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 w-44"
+          className="text-xs pl-6 pr-5 py-1 border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 w-20"
         />
         {tableSearchTerm && (
           <button
             onClick={clearSearch}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-3 h-3" />
           </button>
         )}
       </div>
-      <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200 shadow-inner text-xs">
-        <button onClick={() => setTableFilter('all')} className={`px-3 py-1.5 rounded transition-colors ${tableFilter === 'all' ? 'bg-white text-indigo-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>全部</button>
-        <button onClick={() => setTableFilter('degraded')} className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${tableFilter === 'degraded' ? 'bg-white text-red-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700 font-medium'}`}><ArrowDown className="w-3 h-3" />退化</button>
-        <button onClick={() => setTableFilter('outlier')} className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${tableFilter === 'outlier' ? 'bg-white text-purple-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700 font-medium'}`}><AlertTriangle className="w-3 h-3" />异常</button>
-        <button onClick={() => setTableFilter('filtered')} className={`px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${tableFilter === 'filtered' ? 'bg-white text-gray-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700 font-medium'}`}><Square className="w-3 h-3" />已过滤</button>
+      <div className="flex items-center gap-0.5 bg-gray-50 p-0.5 rounded border border-gray-200 shadow-inner text-[11px]">
+        <button onClick={() => setTableFilter('all')} className={`px-2 py-0.5 rounded transition-colors ${tableFilter === 'all' ? 'bg-white text-indigo-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>全部</button>
+        <button onClick={() => setTableFilter('degraded')} className={`px-2 py-0.5 rounded transition-colors flex items-center gap-0.5 ${tableFilter === 'degraded' ? 'bg-white text-red-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><ArrowDown className="w-2.5 h-2.5" />退化</button>
+        <button onClick={() => setTableFilter('outlier')} className={`px-2 py-0.5 rounded transition-colors flex items-center gap-0.5 ${tableFilter === 'outlier' ? 'bg-white text-purple-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><AlertTriangle className="w-2.5 h-2.5" />异常</button>
+        <button onClick={() => setTableFilter('filtered')} className={`px-2 py-0.5 rounded transition-colors flex items-center gap-0.5 ${tableFilter === 'filtered' ? 'bg-white text-gray-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><Square className="w-2.5 h-2.5" />已过滤</button>
       </div>
     </div>
   );
@@ -128,10 +128,10 @@ const TableView = ({
           }
           setShowExportMenu(!showExportMenu);
         }} 
-        className="text-sm font-medium bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 border border-indigo-200/80 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all duration-200 shadow-sm hover:shadow-md"
+        className="text-[11px] font-medium bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 border border-indigo-200/80 px-2 py-1 rounded-lg flex items-center gap-1 transition-all duration-200 shadow-sm hover:shadow-md"
       >
-        <Download className="w-4 h-4" />导出数据
-        <MoreVertical className="w-3 h-3" />
+        <Download className="w-3 h-3" />导出
+        <MoreVertical className="w-2.5 h-2.5" />
       </button>
       {showExportMenu && createPortal(
         <div 

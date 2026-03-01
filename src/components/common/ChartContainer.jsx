@@ -25,7 +25,7 @@ ChartContainer.propTypes = {
 };
 
 export const ChartBody = ({ children, className = '' }) => (
-  <div className={`flex-1 flex min-h-0 ${className}`}>
+  <div className={`flex-1 flex min-h-0 pt-3 ${className}`}>
     {children}
   </div>
 );
@@ -74,10 +74,13 @@ export const ChartLegend = ({ items }) => (
     {items.map((item, i) => (
       <span key={i} className="flex items-center gap-1">
         {item.color && (
-          <span 
-            className={`${item.shape === 'circle' ? 'w-2 h-2 rounded-full' : 'w-3 h-0.5 rounded'}`}
-            style={{ backgroundColor: item.color }}
-          />
+          item.shape === 'circle' ? (
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+          ) : item.shape === 'dashed-line' ? (
+            <span className="w-4 border-t-2 border-dashed" style={{ borderColor: item.color }} />
+          ) : (
+            <span className="w-3 h-0.5 rounded" style={{ backgroundColor: item.color }} />
+          )
         )}
         {item.label}
       </span>

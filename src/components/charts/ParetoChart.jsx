@@ -7,7 +7,8 @@ import HelpIcon from '../common/HelpIcon';
 import { calculateImprovementWithDirection } from '../../utils/statistics';
 import { getMetricConfig } from '../../services/csvParser';
 import { ImprovementFormulaHelp } from '../common/HelpContents';
-import { CHART_WIDTH, CHART_HEADER_STYLES } from '../../utils/constants';
+import { CHART_HEADER_STYLES } from '../../utils/constants';
+import { useChartWidth } from '../../hooks/useChartWidth';
 
 const ParetoChart = ({ 
   parsedData, selectedCases, availableMetrics, 
@@ -16,6 +17,8 @@ const ParetoChart = ({
   baseAlgo, compareAlgo,
   onCaseClick
 }) => {
+  const chartWidth = useChartWidth();
+  
   const validPoints = parsedData.filter(d => selectedCases.has(d.Case)).map(d => {
     const bx = d.raw[paretoX]?.[baseAlgo], cx = d.raw[paretoX]?.[compareAlgo];
     const by = d.raw[paretoY]?.[baseAlgo], cy = d.raw[paretoY]?.[compareAlgo];
@@ -61,8 +64,14 @@ const ParetoChart = ({
   const ticks = [];
   for (let i = 0; i <= tickCount; i++) {
     const val = -maxAbs + (2 * maxAbs) * (i / tickCount);
-    ticks.push({ val, pos: mapX(val) });
+    ticks.push({ val, pos: mapX(val), yPos: mapY(val) });
   }
+
+  const formatTickValue = (val) => {
+    if (Math.abs(val) >= 10) return `${val > 0 ? '+' : ''}${val.toFixed(0)}%`;
+    if (Math.abs(val) >= 1) return `${val > 0 ? '+' : ''}${val.toFixed(1)}%`;
+    return `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
+  };
 
   const renderContent = () => {
     if (!paretoX || !paretoY || sortedPoints.length === 0) {
@@ -70,8 +79,8 @@ const ParetoChart = ({
     }
 
     return (
-      <ChartBody className={`${CHART_WIDTH.COMPACT} mx-auto w-full`}>
-        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0 relative">
+      <ChartBody className={`${chartWidth} mx-auto w-full`}>
+        <div className="flex flex-col text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0 relative">
           <span className="text-gray-400 text-[9px] -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">{paretoY || 'Y'}</span>
           {ticks.slice().reverse().map((tick, i) => (
             <span 
@@ -80,8 +89,9 @@ const ParetoChart = ({
                 ${tick.val > 0 ? 'text-green-600' : ''} 
                 ${tick.val < 0 ? 'text-red-500' : ''}
               `}
+              style={{ position: 'absolute', top: `${tick.yPos}%`, transform: 'translateY(-50%)' }}
             >
-              {tick.val > 0 ? '+' : ''}{tick.val.toFixed(0)}%
+              {formatTickValue(tick.val)}
             </span>
           ))}
         </div>
@@ -92,15 +102,30 @@ const ParetoChart = ({
             <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-red-100/20 to-transparent pointer-events-none"></div>
             
             <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <defs>
+                <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                  <polygon points="0 0, 6 3, 0 6" fill="#6b7280" />
+                </marker>
+              </defs>
+              
               <line x1="0" y1="50" x2="100" y2="50" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
               <line x1="50" y1="0" x2="50" y2="100" stroke="#9ca3af" strokeWidth="0.5" strokeDasharray="2 2" />
               
+              <line x1="0" y1="50" x2="100" y2="50" stroke="#6b7280" strokeWidth="0.8" />
+              <line x1="50" y1="0" x2="50" y2="100" stroke="#6b7280" strokeWidth="0.8" />
+              
               {ticks.map((tick, i) => (
                 <g key={`tick-${i}`}>
-                  <line x1={tick.pos} y1="0" x2={tick.pos} y2="100" stroke="#e5e7eb" strokeWidth="0.2" strokeDasharray="1 2" />
-                  <line x1="0" y1={tick.pos} x2="100" y2={tick.pos} stroke="#e5e7eb" strokeWidth="0.2" strokeDasharray="1 2" />
+                  <line x1={tick.pos} y1="0" x2={tick.pos} y2="100" stroke="#d1d5db" strokeWidth="0.3" strokeDasharray="1 3" />
+                  <line x1="0" y1={tick.pos} x2="100" y2={tick.pos} stroke="#d1d5db" strokeWidth="0.3" strokeDasharray="1 3" />
+                  
+                  <line x1={tick.pos} y1="49" x2={tick.pos} y2="51" stroke="#6b7280" strokeWidth="0.8" />
+                  <line x1="49" y1={tick.pos} x2="51" y2={tick.pos} stroke="#6b7280" strokeWidth="0.8" />
                 </g>
               ))}
+              
+              <polygon points="100,50 96,48 96,52" fill="#6b7280" />
+              <polygon points="50,0 48,4 52,4" fill="#6b7280" />
               
               {sortedPoints.map((p) => {
                 const isHovered = hoveredCase === p.case;
@@ -118,8 +143,30 @@ const ParetoChart = ({
                   radius = 0.6 + (zAbs / maxZAbs) * 2;
                 }
                 
-                let tooltipLines = [`${paretoX}: ${p.impX > 0 ? '+' : ''}${p.impX.toFixed(2)}%`, `${paretoY}: ${p.impY > 0 ? '+' : ''}${p.impY.toFixed(2)}%`];
-                if (paretoZ) tooltipLines.push(`${paretoZ}: ${p.impZ > 0 ? '+' : ''}${p.impZ.toFixed(2)}%`);
+                const tooltipLines = [];
+                if (p.impX > 0) {
+                  tooltipLines.push({ text: `${paretoX}: +${p.impX.toFixed(2)}%`, color: 'text-green-400' });
+                } else if (p.impX < 0) {
+                  tooltipLines.push({ text: `${paretoX}: ${p.impX.toFixed(2)}%`, color: 'text-red-400' });
+                } else {
+                  tooltipLines.push(`${paretoX}: 0.00%`);
+                }
+                if (p.impY > 0) {
+                  tooltipLines.push({ text: `${paretoY}: +${p.impY.toFixed(2)}%`, color: 'text-green-400' });
+                } else if (p.impY < 0) {
+                  tooltipLines.push({ text: `${paretoY}: ${p.impY.toFixed(2)}%`, color: 'text-red-400' });
+                } else {
+                  tooltipLines.push(`${paretoY}: 0.00%`);
+                }
+                if (paretoZ) {
+                  if (p.impZ > 0) {
+                    tooltipLines.push({ text: `${paretoZ}: +${p.impZ.toFixed(2)}%`, color: 'text-green-400' });
+                  } else if (p.impZ < 0) {
+                    tooltipLines.push({ text: `${paretoZ}: ${p.impZ.toFixed(2)}%`, color: 'text-red-400' });
+                  } else {
+                    tooltipLines.push(`${paretoZ}: 0.00%`);
+                  }
+                }
 
                 return (
                   <g key={`pareto-${p.case}`}>
@@ -129,12 +176,10 @@ const ParetoChart = ({
                       className="cursor-pointer"
                       onMouseEnter={(e) => {
                         setHoveredCase(p.case);
-                        const rect = e.currentTarget.closest('.chart-area')?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
-                        setTooltipState({ visible: true, x: e.clientX - rect.left, y: e.clientY - rect.top, title: p.case, lines: tooltipLines });
+                        setTooltipState({ visible: true, x: e.clientX, y: e.clientY, title: p.case, lines: tooltipLines });
                       }}
                       onMouseMove={(e) => {
-                        const rect = e.currentTarget.closest('.chart-area')?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
-                        setTooltipState(prev => ({ ...prev, x: e.clientX - rect.left, y: e.clientY - rect.top }));
+                        setTooltipState(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
                       }}
                       onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
                       onClick={(e) => {
@@ -163,8 +208,28 @@ const ParetoChart = ({
             <AreaLabel position="bottom-left" variant="danger">双输 ↓</AreaLabel>
           </ChartArea>
           
-          <div className="text-center py-1 text-[10px] font-semibold text-gray-500">
-            {paretoX || 'X'}
+          <div className="relative mt-4">
+            <div className="flex justify-between px-0 text-[10px] font-semibold text-gray-500 absolute -top-4 left-0 right-0">
+              {ticks.map((tick, i) => (
+                <span 
+                  key={i} 
+                  className={`
+                    ${tick.val > 0 ? 'text-green-600' : ''} 
+                    ${tick.val < 0 ? 'text-red-500' : ''}
+                  `}
+                  style={{ 
+                    position: 'absolute', 
+                    left: `${tick.pos}%`, 
+                    transform: 'translateX(-50%)' 
+                  }}
+                >
+                  {formatTickValue(tick.val)}
+                </span>
+              ))}
+            </div>
+            <div className="text-center py-1 text-[10px] font-semibold text-gray-500">
+              {paretoX || 'X'}
+            </div>
           </div>
         </div>
       </ChartBody>
@@ -272,25 +337,25 @@ const ParetoChart = ({
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                 <span className="text-gray-500">三赢:</span>
                 <span className="font-semibold text-emerald-600">{tripleWin}</span>
-                <span className="text-gray-400">({((tripleWin / validPoints.length) * 100).toFixed(0)}%)</span>
+                <span className="text-gray-400">({((tripleWin / validPoints.length) * 100).toFixed(2)}%)</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
                 <span className="text-gray-500">两赢一输:</span>
                 <span className="font-semibold text-emerald-500">{doubleWin}</span>
-                <span className="text-gray-400">({((doubleWin / validPoints.length) * 100).toFixed(0)}%)</span>
+                <span className="text-gray-400">({((doubleWin / validPoints.length) * 100).toFixed(2)}%)</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                 <span className="text-gray-500">一赢两输:</span>
                 <span className="font-semibold text-amber-600">{doubleLose}</span>
-                <span className="text-gray-400">({((doubleLose / validPoints.length) * 100).toFixed(0)}%)</span>
+                <span className="text-gray-400">({((doubleLose / validPoints.length) * 100).toFixed(2)}%)</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
                 <span className="text-gray-500">三输:</span>
                 <span className="font-semibold text-red-500">{tripleLose}</span>
-                <span className="text-gray-400">({((tripleLose / validPoints.length) * 100).toFixed(0)}%)</span>
+                <span className="text-gray-400">({((tripleLose / validPoints.length) * 100).toFixed(2)}%)</span>
               </div>
               <div className="flex items-center gap-1.5 ml-auto">
                 <span className="text-gray-500">样本数:</span>
@@ -310,19 +375,19 @@ const ParetoChart = ({
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
               <span className="text-gray-500">双赢:</span>
               <span className="font-semibold text-emerald-600">{winWin}</span>
-              <span className="text-gray-400">({((winWin / validPoints.length) * 100).toFixed(0)}%)</span>
+              <span className="text-gray-400">({((winWin / validPoints.length) * 100).toFixed(2)}%)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
               <span className="text-gray-500">双输:</span>
               <span className="font-semibold text-red-500">{loseLose}</span>
-              <span className="text-gray-400">({((loseLose / validPoints.length) * 100).toFixed(0)}%)</span>
+              <span className="text-gray-400">({((loseLose / validPoints.length) * 100).toFixed(2)}%)</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
               <span className="text-gray-500">Trade-off:</span>
               <span className="font-semibold text-indigo-600">{tradeOff}</span>
-              <span className="text-gray-400">({((tradeOff / validPoints.length) * 100).toFixed(0)}%)</span>
+              <span className="text-gray-400">({((tradeOff / validPoints.length) * 100).toFixed(2)}%)</span>
             </div>
             <div className="flex items-center gap-1.5 ml-auto">
               <span className="text-gray-500">样本数:</span>
