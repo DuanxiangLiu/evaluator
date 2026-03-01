@@ -1,4 +1,4 @@
-import { formatIndustrialNumber } from '../utils/formatters.js';
+import { formatIndustrialNumber, formatNumberWithCommas } from '../utils/formatters.js';
 import { calculateImprovement } from '../utils/statistics.js';
 
 const generateQuickReport = (params) => {
@@ -396,8 +396,8 @@ export const exportReportToHTML = (reportData) => {
   const renderCaseRow = (c) => `
     <tr>
       <td class="px-4 py-2 font-medium">${c.case}</td>
-      <td class="px-4 py-2 text-right">${formatIndustrialNumber(c.baseValue)}</td>
-      <td class="px-4 py-2 text-right">${formatIndustrialNumber(c.compareValue)}</td>
+      <td class="px-4 py-2 text-right">${formatNumberWithCommas(c.baseValue)}</td>
+      <td class="px-4 py-2 text-right">${formatNumberWithCommas(c.compareValue)}</td>
       <td class="px-4 py-2 text-right ${c.improvement > 0 ? 'text-green-600' : 'text-red-600'}">${c.improvement?.toFixed(2)}%</td>
     </tr>
   `;
@@ -752,7 +752,7 @@ export const exportReportToMarkdown = (reportData) => {
       markdown += `| 案例 | ${metadata.baseAlgo} | ${metadata.compareAlgo} | 改进 |\n`;
       markdown += `|------|------|------|------|\n`;
       cases.topImprovements.forEach(c => {
-        markdown += `| ${c.case} | ${formatIndustrialNumber(c.baseValue)} | ${formatIndustrialNumber(c.compareValue)} | ${c.improvement?.toFixed(2)}% |\n`;
+        markdown += `| ${c.case} | ${formatNumberWithCommas(c.baseValue)} | ${formatNumberWithCommas(c.compareValue)} | ${c.improvement?.toFixed(2)}% |\n`;
       });
       markdown += '\n';
     }
@@ -762,7 +762,7 @@ export const exportReportToMarkdown = (reportData) => {
       markdown += `| 案例 | ${metadata.baseAlgo} | ${metadata.compareAlgo} | 改进 |\n`;
       markdown += `|------|------|------|------|\n`;
       cases.topDegradations.forEach(c => {
-        markdown += `| ${c.case} | ${formatIndustrialNumber(c.baseValue)} | ${formatIndustrialNumber(c.compareValue)} | ${c.improvement?.toFixed(2)}% |\n`;
+        markdown += `| ${c.case} | ${formatNumberWithCommas(c.baseValue)} | ${formatNumberWithCommas(c.compareValue)} | ${c.improvement?.toFixed(2)}% |\n`;
       });
       markdown += '\n';
     }

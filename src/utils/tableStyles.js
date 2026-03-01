@@ -1,5 +1,5 @@
 export const TABLE_STYLES = {
-  wrapper: 'overflow-x-auto overflow-y-auto flex-1 custom-scrollbar max-h-[calc(100vh-300px)]',
+  wrapper: 'overflow-x-auto overflow-y-auto flex-1 custom-scrollbar max-h-[calc(100vh-300px)] mx-auto max-w-7xl',
   table: 'w-full text-sm text-left relative border-collapse table-auto',
   thead: 'bg-gray-100 text-gray-700 text-sm sticky top-0 z-20 shadow-sm border-b border-gray-200',
   theadCell: 'px-3 py-2.5 font-medium cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap',

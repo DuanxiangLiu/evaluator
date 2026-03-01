@@ -1,3 +1,13 @@
+export const formatNumberWithCommas = (val) => {
+  if (val === null || val === undefined || val === '') return val;
+  const num = Number(val);
+  if (isNaN(num)) return val;
+  
+  const parts = num.toString().split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
+};
+
 export const formatIndustrialNumber = (val) => {
   if (val === null || val === undefined || val === '') return val;
   const num = Number(val);

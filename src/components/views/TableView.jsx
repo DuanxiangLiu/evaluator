@@ -9,7 +9,7 @@ import { useToast } from '../common/Toast';
 import { exportToCSV, exportFullDataToCSV, exportToJSON, exportToExcel } from '../../services/dataService';
 import { calculateImprovementWithDirection } from '../../utils/statistics';
 import { getMetricConfig } from '../../services/csvParser';
-import { formatIndustrialNumber } from '../../utils/formatters';
+import { formatIndustrialNumber, formatNumberWithCommas } from '../../utils/formatters';
 import { TABLE_STYLES, getDetailRowStyle, getImpColorClass } from '../../utils/tableStyles';
 import { logger } from '../../utils/logger';
 import { CheckSquare, Square, ArrowDown, AlertTriangle, Download, Search, MoreVertical, FileSpreadsheet, FileJson, X, Table } from 'lucide-react';
@@ -412,10 +412,10 @@ const TableView = ({
                     <td key={mc} className={TABLE_STYLES.cellRight} title={d.meta[mc]}>{formatIndustrialNumber(d.meta[mc]) || '-'}</td>
                   ))}
                   <td className="px-3 py-2 text-right font-mono text-sm text-gray-600 border-l border-gray-200 bg-gray-50/50 whitespace-nowrap">
-                    {bVal == null ? <span className="text-gray-300">NaN</span> : bVal}
+                    {bVal == null ? <span className="text-gray-300">NaN</span> : formatNumberWithCommas(bVal)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono text-sm text-gray-600 bg-gray-50/50 whitespace-nowrap">
-                    {cVal == null ? <span className="text-gray-300">NaN</span> : cVal}
+                    {cVal == null ? <span className="text-gray-300">NaN</span> : formatNumberWithCommas(cVal)}
                   </td>
                   <td className={`px-3 py-2 text-right font-mono text-sm tracking-tight border-l border-gray-200 ${impColor} bg-indigo-50/40 whitespace-nowrap`}>{isNull ? '-' : (imp != null ? `${imp > 0 ? '+' : ''}${imp.toFixed(2)}%` : '-')}</td>
                   <td className="px-3 py-2 text-center bg-indigo-50/40 border-l border-indigo-100/50 whitespace-nowrap">

@@ -145,12 +145,14 @@ const ParetoChart = ({
                 if (p.impX > 0 && p.impY > 0) color = '#059669';
                 else if (p.impX < 0 && p.impY < 0) color = '#dc2626';
 
-                let radius = 1;
+                let baseRadius = 1;
                 if (paretoZ) {
                   const zAbs = Math.abs(p.impZ);
                   const maxZAbs = Math.max(Math.abs(minZ), Math.abs(maxZ)) || 1;
-                  radius = 0.6 + (zAbs / maxZAbs) * 2;
+                  baseRadius = 0.6 + (zAbs / maxZAbs) * 1.4;
                 }
+                
+                const radius = isHovered ? 2 : baseRadius;
                 
                 const tooltipLines = [];
                 if (p.impX > 0) {
@@ -203,7 +205,6 @@ const ParetoChart = ({
                       fill={color} 
                       stroke={isHovered ? "#fff" : "none"} 
                       strokeWidth="0.3"
-                      fillOpacity={paretoZ ? 0.7 : 1}
                       className={`transition-all duration-200 pointer-events-none ${isHovered ? 'animate-pulse' : ''}`}
                     />
                   </g>

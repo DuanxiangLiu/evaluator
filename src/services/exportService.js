@@ -2,6 +2,7 @@ import { calculateImprovement } from '../utils/statistics';
 import { downloadCSV, downloadJSON, downloadTSV } from '../utils/downloadUtils';
 import { validateCSVStructure, VALIDATION_CODES } from '../utils/validationUtils';
 import { parseCSV } from './csvParser';
+import { formatNumberWithCommas } from '../utils/formatters';
 
 export const exportToCSV = (filteredData, activeMetric, baseAlgo, compareAlgo, metaColumns, stats) => {
   let csvContent = `Case,${metaColumns.join(',')},Base_${baseAlgo},Comp_${compareAlgo},Improvement(%),Status\n`;
@@ -28,7 +29,7 @@ export const exportToCSV = (filteredData, activeMetric, baseAlgo, compareAlgo, m
     }
     
     const metaVals = metaColumns.map(mc => d.meta[mc]).join(',');
-    csvContent += `${d.Case},${metaVals},${bVal == null ? 'NaN' : bVal},${cVal == null ? 'NaN' : cVal},${isNull ? '-' : imp.toFixed(2)},${status}\n`;
+    csvContent += `${d.Case},${metaVals},${bVal == null ? 'NaN' : formatNumberWithCommas(bVal)},${cVal == null ? 'NaN' : formatNumberWithCommas(cVal)},${isNull ? '-' : imp.toFixed(2)},${status}\n`;
   });
   
   downloadCSV(csvContent, `eda_export_${activeMetric}_${Date.now()}.csv`);
@@ -55,7 +56,7 @@ export const exportFullDataToCSV = (data, algos, metrics, metaColumns) => {
     metrics.forEach(metric => {
       algos.forEach(algo => {
         const val = row.raw[metric]?.[algo];
-        values.push(val == null ? 'NaN' : val.toString());
+        values.push(val == null ? 'NaN' : formatNumberWithCommas(val));
       });
     });
     
@@ -119,8 +120,8 @@ export const exportToExcel = (data, algos, metrics, metaColumns, activeMetric, b
     const values = [
       row.Case,
       ...metaColumns.map(mc => row.meta[mc] ?? ''),
-      bVal == null ? 'NaN' : bVal,
-      cVal == null ? 'NaN' : cVal,
+      bVal == null ? 'NaN' : formatNumberWithCommas(bVal),
+      cVal == null ? 'NaN' : formatNumberWithCommas(cVal),
       isNull ? '-' : imp.toFixed(2),
       status
     ];

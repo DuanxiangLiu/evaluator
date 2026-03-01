@@ -1,4 +1,4 @@
-import { formatIndustrialNumber } from '../utils/formatters';
+import { formatIndustrialNumber, formatNumberWithCommas } from '../utils/formatters';
 import { getMetricConfig } from './csvParser';
 
 const REPORT_TEMPLATES = {
@@ -172,8 +172,8 @@ const generateCasesAnalysisSection = (stats, parsedData, baseAlgo, compareAlgo, 
   const formatCaseRow = (c) => `
     <tr>
       <td>${c.Case}</td>
-      <td>${formatIndustrialNumber(c.bVal)}</td>
-      <td>${formatIndustrialNumber(c.cVal)}</td>
+      <td>${formatNumberWithCommas(c.bVal)}</td>
+      <td>${formatNumberWithCommas(c.cVal)}</td>
       <td class="${c.imp >= 0 ? 'positive' : 'negative'}">${c.imp >= 0 ? '+' : ''}${c.imp.toFixed(2)}%</td>
     </tr>
   `;
@@ -380,8 +380,8 @@ const generateRawDataSection = (stats, parsedData, baseAlgo, compareAlgo, active
   const rows = stats.validCases.map(c => `
     <tr>
       <td>${c.Case}</td>
-      <td>${formatIndustrialNumber(c.bVal)}</td>
-      <td>${formatIndustrialNumber(c.cVal)}</td>
+      <td>${formatNumberWithCommas(c.bVal)}</td>
+      <td>${formatNumberWithCommas(c.cVal)}</td>
       <td class="${c.imp >= 0 ? 'positive' : 'negative'}">${c.imp >= 0 ? '+' : ''}${c.imp.toFixed(2)}%</td>
       <td>${(() => {
         if (c.outlierType === 'normal') return '正常';

@@ -266,6 +266,33 @@ const AppContent = () => {
   useEffect(() => { runAnalysis(); }, []);
 
   useEffect(() => {
+    const handleGlobalMouseLeave = (e) => {
+      if (tooltipState.visible) {
+        const relatedTarget = e.relatedTarget;
+        if (!relatedTarget || relatedTarget.nodeName === 'HTML') {
+          setHoveredCase(null);
+          setTooltipState(prev => ({ ...prev, visible: false }));
+        }
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && tooltipState.visible) {
+        setHoveredCase(null);
+        setTooltipState(prev => ({ ...prev, visible: false }));
+      }
+    };
+
+    document.addEventListener('mouseleave', handleGlobalMouseLeave);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mouseleave', handleGlobalMouseLeave);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [tooltipState.visible, setHoveredCase, setTooltipState]);
+
+  useEffect(() => {
     if (availableMetrics.length > 0 && !corrX) {
       setCorrX(metaColumns.length > 0 ? metaColumns[0] : availableMetrics[0]);
     }

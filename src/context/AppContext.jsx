@@ -235,13 +235,12 @@ export const AppProvider = ({ children }) => {
   }, [actions, setSavedQorWeights, state.qorWeights]);
 
   const handleChartMouseMove = useCallback((e) => {
-    if (!state.tooltipState.visible) return;
-    actions.setTooltip({
-      ...state.tooltipState,
+    actions.setTooltip(prev => ({
+      ...prev,
       x: e.clientX,
       y: e.clientY
-    });
-  }, [state.tooltipState.visible, state.tooltipState, actions]);
+    }));
+  }, [actions]);
 
   const handleEditDataValue = useCallback((caseName, columnId, metric, algorithm, newValue) => {
     const updatedData = updateDataValue(state.parsedData, caseName, metric, algorithm, newValue);

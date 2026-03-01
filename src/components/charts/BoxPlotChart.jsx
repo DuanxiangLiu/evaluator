@@ -7,7 +7,7 @@ import { calculateImprovementWithDirection } from '../../utils/statistics';
 import { getMetricConfig } from '../../config/metrics.js';
 import { useChartWidth } from '../../hooks/useChartWidth';
 import { findInstColumn } from '../../config/business.js';
-import { CHART_LAYOUT, CHART_COLORS, CHART_POINT_SIZES } from '../../config/ui.js';
+import { CHART_LAYOUT, CHART_COLORS } from '../../config/ui.js';
 
 const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, setHoveredCase, setTooltipState, onCaseClick, parsedData, metaColumns }) => {
   const chartWidth = useChartWidth();
@@ -215,15 +215,15 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
                   }
                 }}>
                   <circle 
-                    cx={cx} cy={cy} r={CHART_POINT_SIZES.HOVER_AREA_RADIUS}
+                    cx={cx} cy={cy} r="6"
                     fill="transparent"
                   />
                   <circle 
                     cx={cx} cy={cy} 
-                    r={isOutlier ? CHART_POINT_SIZES.OUTLIER_RADIUS : CHART_POINT_SIZES.NORMAL_RADIUS}
+                    r={isHovered ? "2" : (isOutlier ? "1.2" : "1")}
                     fill={dotColor} 
                     stroke={isHovered ? "#fff" : "none"} 
-                    strokeWidth={isHovered ? CHART_POINT_SIZES.HOVER_STROKE_WIDTH : "0"}
+                    strokeWidth="0.3"
                     className={`transition-all duration-200 pointer-events-none ${isHovered ? 'animate-pulse' : ''}`}
                   />
                 </g>

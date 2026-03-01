@@ -141,7 +141,7 @@ export const appReducer = (state, action) => {
       return { ...state, qorWeights: action.payload };
 
     case ACTION_TYPES.SET_TOOLTIP:
-      return { ...state, tooltipState: action.payload };
+      return { ...state, tooltipState: typeof action.payload === 'function' ? action.payload(state.tooltipState) : action.payload };
 
     case ACTION_TYPES.SET_DEEP_DIVE_CASE:
       return { ...state, deepDiveCase: action.payload };
