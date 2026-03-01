@@ -43,7 +43,8 @@ const EditableCell = ({
   const handleSave = useCallback(() => {
     if (valueType === 'number') {
       const trimmed = editValue.trim();
-      if (trimmed === '' || trimmed.toUpperCase() === 'NAN' || trimmed.toUpperCase() === 'NA') {
+      const upperTrimmed = trimmed.toUpperCase();
+      if (trimmed === '' || upperTrimmed === 'NAN' || upperTrimmed === 'NA' || upperTrimmed === 'N/A' || upperTrimmed === 'NULL') {
         onSave(rowId, columnId, metric, algorithm, null);
         setIsEditing(false);
         return;

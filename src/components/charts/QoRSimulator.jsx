@@ -1,9 +1,20 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Scale, TrendingUp, TrendingDown, Minus, Target, Award, Settings2, Check, AlertCircle, Info } from 'lucide-react';
+import { Scale, TrendingUp, TrendingDown, Minus, Target, Award, Settings2, Check, AlertCircle, Info, Sparkles, Lightbulb, Clock, Zap, Square, Timer } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartLegend } from '../common/ChartContainer';
+import HelpIcon from '../common/HelpIcon';
 import { getMetricConfig, computeStatistics } from '../../services/dataService';
+import { recommendWeights, analyzeWeightSensitivity, optimizeWeights, WEIGHT_PRESETS, getWeightPresetList } from '../../services/weightRecommendation';
+import { CHART_HEADER_STYLES } from '../../utils/constants';
+
+const PRESET_ICONS = {
+  Scale: Settings2,
+  Clock: Clock,
+  Zap: Zap,
+  Square: Square,
+  Timer: Timer
+};
 
 const QoRSimulator = ({ 
   allMetricsStats, 
@@ -17,6 +28,8 @@ const QoRSimulator = ({
   selectedCases
 }) => {
   const [showWeightHelp, setShowWeightHelp] = useState(false);
+  const [showSensitivity, setShowSensitivity] = useState(false);
+  const [activePreset, setActivePreset] = useState('balanced');
 
   const algoMetricsStats = useMemo(() => {
     if (!parsedData || parsedData.length === 0 || !baseAlgo) return {};
@@ -79,18 +92,37 @@ const QoRSimulator = ({
     return scores;
   }, [algoMetricsStats, qorWeights, availableAlgos, baseAlgo, availableMetrics]);
 
+  const sensitivityAnalysis = useMemo(() => {
+    if (!allMetricsStats || allMetricsStats.length === 0) return [];
+    return analyzeWeightSensitivity(availableMetrics, allMetricsStats, baseAlgo, qorWeights);
+  }, [availableMetrics, allMetricsStats, baseAlgo, qorWeights]);
+
   const handleWeightChange = (metric, value) => {
     const numValue = Math.max(0, Math.min(100, parseFloat(value) || 0));
     setQorWeights(prev => ({ ...prev, [metric]: numValue }));
+    setActivePreset('custom');
   };
 
+  const applyPreset = useCallback((presetId) => {
+    if (presetId === 'auto') {
+      const recommended = recommendWeights(availableMetrics, allMetricsStats, baseAlgo, 'auto');
+      setQorWeights(recommended);
+      setActivePreset('auto');
+    } else if (WEIGHT_PRESETS[presetId]) {
+      const weights = WEIGHT_PRESETS[presetId].getWeights(availableMetrics);
+      setQorWeights(weights);
+      setActivePreset(presetId);
+    }
+  }, [availableMetrics, allMetricsStats, baseAlgo, setQorWeights]);
+
+  const applyOptimizedWeights = useCallback(() => {
+    const result = optimizeWeights(availableMetrics, allMetricsStats, baseAlgo, compareAlgo);
+    setQorWeights(result.weights);
+    setActivePreset('optimized');
+  }, [availableMetrics, allMetricsStats, baseAlgo, compareAlgo, setQorWeights]);
+
   const equalizeWeights = () => {
-    const avgWeight = 100 / availableMetrics.length;
-    const newWeights = {};
-    availableMetrics.forEach(m => {
-      newWeights[m] = avgWeight;
-    });
-    setQorWeights(newWeights);
+    applyPreset('balanced');
   };
 
   if (!parsedData || parsedData.length === 0 || Object.keys(algoMetricsStats).length === 0) {
@@ -112,6 +144,7 @@ const QoRSimulator = ({
   const weightSum = availableMetrics.reduce((sum, m) => sum + (qorWeights[m] || 0), 0);
   const isWeightValid = Math.abs(weightSum - 100) < 1;
   const rankedAlgos = [...availableAlgos].sort((a, b) => (algoScores[b] || 0) - (algoScores[a] || 0));
+  const presetList = getWeightPresetList();
 
   return (
     <ChartContainer>
@@ -129,12 +162,12 @@ const QoRSimulator = ({
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-semibold text-emerald-300 text-xs">使用方法</h4>
-              <ol className="text-gray-300 text-xs space-y-1.5 list-decimal list-inside">
-                <li>根据您的关注重点，调整各指标的权重百分比</li>
-                <li>权重总和应接近 100%，系统会自动计算综合得分</li>
-                <li>查看排名结果，了解各算法的综合表现</li>
-              </ol>
+              <h4 className="font-semibold text-emerald-300 text-xs">智能权重推荐</h4>
+              <ul className="text-gray-300 text-xs space-y-1.5">
+                <li>• <strong>自动推荐</strong>：基于数据特征智能推荐权重</li>
+                <li>• <strong>场景预设</strong>：时序优先、功耗优先等场景化配置</li>
+                <li>• <strong>优化权重</strong>：自动优化以最大化综合得分</li>
+              </ul>
             </div>
             
             <div className="space-y-2">
@@ -148,7 +181,7 @@ const QoRSimulator = ({
             </div>
             
             <div className="bg-slate-800/50 rounded p-2 text-xs text-gray-400">
-              💡 <strong>提示</strong>：点击「均衡分配」可快速将权重平均分配到所有指标
+              💡 <strong>提示</strong>：点击预设按钮可快速应用场景化权重配置
             </div>
           </div>
         }
@@ -182,25 +215,125 @@ const QoRSimulator = ({
             )}
           </div>
           <button 
-            onClick={equalizeWeights} 
-            className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white/90 rounded-full text-xs font-medium transition-all border border-white/10 hover:border-white/20 flex items-center gap-1"
+            onClick={() => setShowSensitivity(!showSensitivity)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-all border flex items-center gap-1 ${showSensitivity ? 'bg-indigo-500/20 text-indigo-200 border-indigo-400/50' : 'bg-white/10 text-white/90 border-white/10 hover:border-white/20'}`}
           >
-            <Settings2 className="w-3 h-3" />
-            均衡分配
+            <Lightbulb className="w-3 h-3" />
+            敏感性分析
           </button>
         </div>
       </ChartHeader>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2.5 max-w-5xl mx-auto w-full">
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-100 overflow-hidden">
+          <div className="px-3 py-2 border-b border-indigo-100 bg-indigo-50/50 flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+            <span className="text-xs font-semibold text-indigo-700">智能权重推荐</span>
+          </div>
+          <div className="p-3">
+            <div className="flex flex-wrap gap-2 mb-3">
+              <button
+                onClick={() => applyPreset('auto')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  activePreset === 'auto'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md'
+                    : 'bg-white text-indigo-600 border border-indigo-200 hover:border-indigo-400'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                自动推荐
+              </button>
+              <button
+                onClick={applyOptimizedWeights}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  activePreset === 'optimized'
+                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md'
+                    : 'bg-white text-indigo-600 border border-indigo-200 hover:border-indigo-400'
+                }`}
+              >
+                <Target className="w-3.5 h-3.5" />
+                优化权重
+              </button>
+              {presetList.map(preset => {
+                const IconComponent = PRESET_ICONS[preset.icon] || Settings2;
+                return (
+                  <button
+                    key={preset.id}
+                    onClick={() => applyPreset(preset.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                      activePreset === preset.id
+                        ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md'
+                        : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-400'
+                    }`}
+                    title={preset.description}
+                  >
+                    <IconComponent className="w-3.5 h-3.5" />
+                    {preset.name}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-500">
+              💡 <strong>自动推荐</strong>：基于改进幅度、显著性、稳定性智能计算权重；
+              <strong>优化权重</strong>：自动调整以最大化综合得分
+            </p>
+          </div>
+        </div>
+
+        {showSensitivity && sensitivityAnalysis.length > 0 && (
+          <div className="bg-white rounded-lg border border-amber-200 shadow-sm overflow-hidden">
+            <div className="px-3 py-2 border-b border-amber-100 bg-amber-50/50 flex items-center gap-2">
+              <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-xs font-semibold text-amber-700">权重敏感性分析</span>
+            </div>
+            <div className="p-3">
+              <div className="flex flex-wrap gap-2">
+                {sensitivityAnalysis.map(item => (
+                  <div
+                    key={item.metric}
+                    className={`px-3 py-2 rounded-lg border ${
+                      item.sensitivity === 'high' 
+                        ? 'bg-red-50 border-red-200' 
+                        : item.sensitivity === 'medium'
+                          ? 'bg-amber-50 border-amber-200'
+                          : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-gray-700">{item.metric}</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${
+                        item.sensitivity === 'high' 
+                          ? 'bg-red-100 text-red-700' 
+                          : item.sensitivity === 'medium'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {item.sensitivity === 'high' ? '高敏感' : item.sensitivity === 'medium' ? '中敏感' : '低敏感'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      影响: {item.impact.toFixed(2)} | {item.recommendation}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-lg border border-slate-200/80 shadow-sm overflow-hidden">
           <div className="px-3 py-2 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
             <Target className="w-3.5 h-3.5 text-indigo-500" />
             <span className="text-xs font-semibold text-slate-600">指标权重配置</span>
+            {activePreset === 'custom' && (
+              <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded">已手动调整</span>
+            )}
           </div>
           <div className="p-3">
             <div className="flex flex-wrap gap-2">
               {availableMetrics.map(metric => {
                 const weight = qorWeights[metric] || 0;
+                const sensitivity = sensitivityAnalysis.find(s => s.metric === metric);
                 
                 return (
                   <div key={metric} className="inline-flex items-center gap-2 bg-slate-50 rounded-md px-3 py-1.5 border border-slate-200">
@@ -214,6 +347,9 @@ const QoRSimulator = ({
                       className="w-16 px-2 py-1 text-xs font-semibold text-center border border-slate-300 rounded focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <span className="text-xs text-slate-500">%</span>
+                    {sensitivity && sensitivity.sensitivity === 'high' && (
+                      <span className="w-2 h-2 rounded-full bg-red-400" title="高敏感指标" />
+                    )}
                   </div>
                 );
               })}

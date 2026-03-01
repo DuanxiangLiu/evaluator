@@ -193,7 +193,7 @@ const AuxiliaryStatHelp = ({ label, value, std, meanImp }) => {
       ],
       example: `当前：${std?.toFixed(2) || '-'} / ${Math.abs(meanImp || 0).toFixed(2)} = ${value?.toFixed(2) || '-'}%`
     },
-    'IQR': {
+    '四分位距': {
       title: '四分位距',
       description: '中间 50% 数据的分布范围',
       formula: 'IQR = Q3(75%分位) - Q1(25%分位)',
@@ -295,7 +295,7 @@ const StatsCards = ({ stats }) => {
     { label: '中位数', value: stats.median, isPositive: stats.median > 0, helpId: 'median', description: '改进率的中位数值' },
     { label: '标准差', value: stats.std, isPositive: true, neutral: true, helpId: 'std', description: '数据离散程度的度量' },
     { label: '变异系数', value: cv, std: stats.std, meanImp: stats.meanImp, isPositive: true, neutral: true, format: 'cv', helpId: 'cv', description: '标准差/均值，衡量相对离散程度' },
-    { label: 'IQR', value: iqr, isPositive: iqr > 0, neutral: true, helpId: 'iqr', description: '四分位距 Q3-Q1，中间50%数据的范围' }
+    { label: '四分位距', value: iqr, isPositive: iqr > 0, neutral: true, helpId: 'iqr', description: 'Q3-Q1，中间50%数据的范围' }
   ];
 
   return (
@@ -338,7 +338,7 @@ const StatsCards = ({ stats }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
-        <span className="text-[10px] text-gray-400">中位数、标准差、变异系数、IQR</span>
+        <span className="text-[10px] text-gray-400">中位数、标准差、变异系数、四分位距</span>
       </div>
 
       {showAuxiliary && (
@@ -357,7 +357,7 @@ const StatsCards = ({ stats }) => {
                         <span className="text-xs font-normal text-gray-400">{card.std.toFixed(2)}/{Math.abs(card.meanImp).toFixed(2)}=</span>
                         {card.value.toFixed(2)}%
                       </span>)
-                  : card.label === 'IQR'
+                  : card.label === '四分位距'
                     ? `${Math.abs(card.value).toFixed(2)}%`
                     : typeof card.value === 'number'
                       ? card.neutral

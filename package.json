@@ -1,9 +1,9 @@
 {
   "name": "eda-evaluator",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
-  "description": "EDA Algorithm Evaluator v1.1",
+  "description": "EDA Algorithm Evaluator v1.2",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

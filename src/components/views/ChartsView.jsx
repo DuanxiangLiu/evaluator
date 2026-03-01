@@ -5,6 +5,7 @@ import CorrelationChart from '../charts/CorrelationChart';
 import ParetoChart from '../charts/ParetoChart';
 import RadarChart from '../charts/RadarChart';
 import QoRSimulator from '../charts/QoRSimulator';
+import HistoryView from '../charts/HistoryView';
 
 const ChartsView = ({
   activeTab,
@@ -115,6 +116,18 @@ const ChartsView = ({
           setQorWeights={setQorWeights}
           parsedData={parsedData}
           selectedCases={selectedCases}
+        />
+      )}
+
+      {activeTab === 'history' && (
+        <HistoryView
+          parsedData={parsedData}
+          selectedCases={selectedCases}
+          availableMetrics={availableMetrics}
+          availableAlgos={availableAlgos}
+          baseAlgo={baseAlgo}
+          compareAlgo={compareAlgo}
+          activeMetric={activeMetric}
         />
       )}
     </>

@@ -5,7 +5,7 @@
 | Property | Value |
 |----------|-------|
 | Name | EDA Algorithm Evaluator (eda-evaluator) |
-| Version | v1.1.0 |
+| Version | v1.2.0 |
 | Type | Pure frontend SPA |
 | Tech Stack | React 18 + Vite 5 + Tailwind CSS 3 + Lucide React |
 
@@ -39,8 +39,11 @@ npm run preview  # Preview build
 | `context/AppContext.jsx` | Global state (React Context) |
 | `services/dataService.js` | CSV parsing, statistics, export |
 | `services/aiService.jsx` | LLM integration (DeepSeek/Gemini/OpenAI) |
+| `services/statisticsService.js` | Data quality, statistics computation |
+| `services/weightRecommendation.js` | Smart weight recommendation |
 | `utils/statistics.js` | Wilcoxon test, improvement calculation |
 | `utils/formatters.js` | Number formatting |
+| `hooks/useChartInteraction.js` | Chart zoom/pan/selection hooks |
 
 ## Reusable Components
 
@@ -48,6 +51,7 @@ npm run preview  # Preview build
 - `StatusBadge` - Status badges
 - `EditableCell` - Editable table cells
 - `Toast` - Message notifications
+- `InteractiveChartWrapper` - Zoom/pan/box-select wrapper
 
 ## Data Format
 
@@ -70,8 +74,10 @@ CSV columns:
 - Common: `src/components/common/`
 - Layout: `src/components/layout/`
 - Modals: `src/components/modals/`
+- Views: `src/components/views/`
 - Utils: `src/utils/`
 - Services: `src/services/`
+- Hooks: `src/hooks/`
 
 ## Chart Features
 
@@ -92,6 +98,25 @@ CSV columns:
 - Import: `import { CHART_HEADER_STYLES } from '../../utils/constants'`
 
 ### Feature Panels (功能面板)
-- The application contains multiple feature panels: BoxPlot, Correlation, Pareto, Radar, AI Diagnosis
+- The application contains multiple feature panels: BoxPlot, Correlation, Pareto, Radar, QoR Simulator, Matrix, History, Data Quality, AI Diagnosis
 - Each panel uses unified components: `ChartContainer`, `ChartHeader`, `ChartArea`, `ChartLegend`
 - All panels follow consistent styling through shared constants and components
+
+## P1 Features (v1.2.0)
+
+### Smart Weight Recommendation
+- Service: `src/services/weightRecommendation.js`
+- Integrated in QoR Simulator
+- Presets: balanced, timing, power, area, runtime
+- Auto-recommendation based on improvement magnitude, significance, stability
+
+### Data Quality Dashboard
+- Component: `src/components/views/DataQualityDashboard.jsx`
+- Comprehensive quality score with factor breakdown
+- Issue diagnosis with severity levels
+- Improvement suggestions
+
+### Chart Interaction Enhancement
+- Hook: `src/hooks/useChartInteraction.js`
+- Wrapper: `src/components/common/InteractiveChartWrapper.jsx`
+- Features: zoom (Ctrl+wheel), pan (Shift+drag), box selection

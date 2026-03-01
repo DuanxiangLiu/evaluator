@@ -1,85 +1,96 @@
 # 硬编码分析报告
 
+> **更新日期**: 2026-03-01
+> **状态**: 已完成第一阶段优化
+
 ## 1. 硬编码定义
 
 硬编码是指在代码中直接写入固定值或字符串，而不是通过配置文件、常量或参数化方式管理的代码模式。硬编码会降低代码的可维护性、可扩展性和可测试性。
 
-## 2. 硬编码分类
+## 2. 已完成的优化
 
-### 2.1 需要修改的硬编码
+### 2.1 创建的配置文件结构
 
-#### 2.1.1 业务逻辑硬编码
+```
+src/config/
+├── index.js        # 配置索引文件
+├── metrics.js      # 指标配置
+├── thresholds.js   # 阈值配置
+├── business.js     # 业务逻辑配置
+├── ui.js           # 界面配置
+└── help.js         # 帮助内容配置
+```
 
-| 文件路径 | 行号 | 硬编码内容 | 问题描述 | 建议解决方案 |
-|---------|------|-----------|---------|--------------|
-| `src/App.jsx` | 17-25 | `TAB_CONFIG` 数组 | 标签页配置硬编码，难以动态扩展 | 移至配置文件，支持动态配置 |
-| `src/App.jsx` | 535-538 | 指标显示名称映射 | 指标显示名称硬编码，新指标需要修改代码 | 在 `EDA_METRICS_CONFIG` 中统一管理 |
-| `src/services/statisticsService.js` | 29-34 | inst 列名检测 | 列名硬编码，不支持其他命名规范 | 配置化列名映射规则 |
-| `src/services/statisticsService.js` | 140, 147, 182 | 数据质量阈值 | 阈值硬编码，难以调整 | 移至配置文件 |
-| `src/services/statisticsService.js` | 333, 336, 339 | 质量评分扣分 | 扣分规则硬编码 | 配置化评分规则 |
-| `src/services/statisticsService.js` | 344, 351 | 样本量阈值 | 阈值硬编码 | 配置化阈值 |
-| `src/services/statisticsService.js` | 395, 402 | 缺失值阈值 | 阈值硬编码 | 配置化阈值 |
-| `src/services/csvParser.js` | 3-18 | `EDA_METRICS_CONFIG` | 指标配置硬编码 | 支持外部配置文件 |
-| `src/services/csvParser.js` | 45 | 'case' 列名 | 列名硬编码 | 配置化列名映射 |
-| `src/services/csvParser.js` | 46 | 'm_' 前缀 | 前缀硬编码 | 配置化前缀规则 |
-| `src/services/csvParser.js` | 78 | 'NA', 'NAN' | 缺失值标识硬编码 | 配置化缺失值标识 |
-| `src/services/csvParser.js` | 116 | 'm_${algo}_${metric}' | 列名格式硬编码 | 配置化格式模板 |
+### 2.2 已重构的硬编码
 
-#### 2.1.2 界面硬编码
+#### 2.2.1 业务逻辑硬编码（已完成）
 
-| 文件路径 | 行号 | 硬编码内容 | 问题描述 | 建议解决方案 |
-|---------|------|-----------|---------|--------------|
-| `src/App.jsx` | 494-556 | 界面元素样式和文本 | 样式和文本硬编码，难以主题化 | 移至样式配置和国际化文件 |
-| `src/App.jsx` | 247-369 | 帮助内容 | 帮助内容硬编码，难以维护 | 移至单独的帮助内容文件 |
-| `src/components/charts/BoxPlotChart.jsx` | 51 | paddingPercent = 0.15 | 布局参数硬编码 | 配置化布局参数 |
-| `src/components/charts/BoxPlotChart.jsx` | 57 | 90, 5 | 坐标映射硬编码 | 配置化映射参数 |
-| `src/components/charts/BoxPlotChart.jsx` | 60 | 0.001 | 阈值硬编码 | 配置化阈值 |
-| `src/components/charts/BoxPlotChart.jsx` | 72-76 | 颜色和标签 | 样式硬编码 | 配置化样式 |
-| `src/components/charts/BoxPlotChart.jsx` | 171 | 5, 90 | 位置计算硬编码 | 配置化计算参数 |
-| `src/components/charts/BoxPlotChart.jsx` | 177-179 | 颜色硬编码 | 颜色硬编码 | 配置化颜色方案 |
-| `src/components/charts/BoxPlotChart.jsx` | 184, 224 | 半径硬编码 | 尺寸硬编码 | 配置化尺寸参数 |
+| 文件路径 | 原硬编码内容 | 优化方案 | 状态 |
+|---------|-------------|---------|------|
+| `src/services/csvParser.js` | `EDA_METRICS_CONFIG` | 移至 `config/metrics.js` | ✅ |
+| `src/services/csvParser.js` | 'case' 列名 | 配置化列名映射 | ✅ |
+| `src/services/csvParser.js` | 'm_' 前缀 | 配置化前缀规则 | ✅ |
+| `src/services/csvParser.js` | 'NA', 'NAN' | 配置化缺失值标识 | ✅ |
+| `src/services/statisticsService.js` | inst 列名检测 | 配置化列名映射规则 | ✅ |
+| `src/services/statisticsService.js` | 数据质量阈值 | 移至 `config/thresholds.js` | ✅ |
+| `src/services/statisticsService.js` | 质量评分扣分 | 配置化评分规则 | ✅ |
+| `src/services/statisticsService.js` | 样本量阈值 | 配置化阈值 | ✅ |
+| `src/services/statisticsService.js` | 缺失值阈值 | 配置化阈值 | ✅ |
 
-### 2.2 合理的硬编码（无需修改）
+#### 2.2.2 界面硬编码（已完成）
 
-| 文件路径 | 内容 | 说明 |
-|---------|------|------|
-| `src/utils/constants.js` | 各种常量定义 | 这些是合理的配置常量，集中管理 |
-| `src/utils/constants.js` | `LLM_PROVIDERS` | 服务提供商配置，合理集中管理 |
-| `src/utils/constants.js` | `DEFAULT_LLM_CONFIG` | 默认配置，合理集中管理 |
-| `src/utils/constants.js` | `DATA_GENERATOR_RANGES` | 数据生成范围，合理集中管理 |
+| 文件路径 | 原硬编码内容 | 优化方案 | 状态 |
+|---------|-------------|---------|------|
+| `src/App.jsx` | `TAB_CONFIG` 数组 | 移至 `config/ui.js` | ✅ |
+| `src/App.jsx` | 指标显示名称映射 | 使用 `getMetricDisplayName()` | ✅ |
+| `src/App.jsx` | 帮助内容 | 移至 `config/help.js` | ✅ |
+| `src/components/charts/BoxPlotChart.jsx` | 布局参数 | 移至 `config/ui.js` | ✅ |
+| `src/components/charts/BoxPlotChart.jsx` | 颜色值 | 移至 `config/ui.js` | ✅ |
+| `src/components/charts/BoxPlotChart.jsx` | 点尺寸 | 移至 `config/ui.js` | ✅ |
 
-## 3. 硬编码风险评估
+## 3. 配置文件说明
 
-### 3.1 高风险硬编码
+### 3.1 `config/metrics.js`
+- `EDA_METRICS_CONFIG`: EDA指标配置对象
+- `getMetricConfig()`: 获取指标配置
+- `isBuiltInMetric()`: 判断是否内置指标
+- `getMetricDisplayName()`: 获取指标显示名称
 
-1. **业务逻辑硬编码**：直接影响功能正确性和可扩展性
-2. **阈值硬编码**：影响数据分析结果的准确性
-3. **配置硬编码**：限制系统灵活性
+### 3.2 `config/thresholds.js`
+- `DATA_QUALITY_THRESHOLDS`: 数据质量阈值
+- `QUALITY_SCORING`: 质量评分规则
+- `STATISTICAL_THRESHOLDS`: 统计阈值
+- `IMPROVEMENT_THRESHOLDS`: 改进率阈值
+- `CHART_THRESHOLDS`: 图表阈值
 
-### 3.2 中风险硬编码
+### 3.3 `config/business.js`
+- `COLUMN_MAPPINGS`: 列名映射规则
+- `MISSING_VALUE_INDICATORS`: 缺失值标识
+- `CSV_PARSING`: CSV解析配置
+- `DATA_VALIDATION`: 数据验证配置
+- `findInstColumn()`: 查找inst列
+- `isCaseColumn()`: 判断是否case列
+- `parseMetricColumn()`: 解析指标列
+- `isMissingValue()`: 判断是否缺失值
 
-1. **界面硬编码**：影响可维护性和主题化
-2. **样式硬编码**：影响一致性和可维护性
+### 3.4 `config/ui.js`
+- `TAB_CONFIG`: 标签页配置
+- `CHART_LAYOUT`: 图表布局参数
+- `CHART_COLORS`: 图表颜色配置
+- `CHART_POINT_SIZES`: 图表点尺寸配置
+- `UI_TEXTS`: 界面文本
+- `TAB_STYLES`: 标签页样式
+- `getTabStyle()`: 获取标签页样式
 
-### 3.3 低风险硬编码
+### 3.5 `config/help.js`
+- `STAT_HELP_CONTENT`: 统计帮助内容
+- `AUXILIARY_STAT_HELP`: 辅助统计帮助内容
+- `getStatHelp()`: 获取统计帮助
+- `getAuxiliaryStatHelp()`: 获取辅助统计帮助
 
-1. **常量硬编码**：在合理范围内集中管理的常量
+## 4. 剩余优化项（待实施）
 
-## 4. 优化建议
-
-### 4.1 短期优化（1-2天）
-
-1. **创建配置文件**：
-   - `src/config/businessConfig.js` - 业务逻辑配置
-   - `src/config/uiConfig.js` - 界面配置
-   - `src/config/metricsConfig.js` - 指标配置
-
-2. **重构关键硬编码**：
-   - 指标配置从硬编码移至配置文件
-   - 阈值和规则移至配置文件
-   - 列名映射规则配置化
-
-### 4.2 中期优化（3-5天）
+### 4.1 中期优化
 
 1. **国际化支持**：
    - 提取所有文本到国际化文件
@@ -93,7 +104,7 @@
    - 实现配置热加载
    - 支持环境变量覆盖配置
 
-### 4.3 长期优化（1-2周）
+### 4.2 长期优化
 
 1. **插件系统**：
    - 实现指标插件系统
@@ -107,58 +118,19 @@
    - 实现基于数据的配置生成
    - 支持自动适应不同数据集
 
-## 5. 具体修改计划
+## 5. 预期收益
 
-### 5.1 第一步：创建配置文件结构
-
-1. 创建 `src/config/` 目录
-2. 创建基础配置文件：
-   - `business.js` - 业务逻辑配置
-   - `ui.js` - 界面配置
-   - `metrics.js` - 指标配置
-   - `thresholds.js` - 阈值配置
-
-### 5.2 第二步：重构业务逻辑硬编码
-
-1. 将 `EDA_METRICS_CONFIG` 移至 `config/metrics.js`
-2. 将数据质量阈值移至 `config/thresholds.js`
-3. 将列名映射规则移至 `config/business.js`
-
-### 5.3 第三步：重构界面硬编码
-
-1. 将 `TAB_CONFIG` 移至 `config/ui.js`
-2. 将帮助内容移至 `config/help.js`
-3. 将样式参数移至 `config/ui.js`
-
-### 5.4 第四步：验证和测试
-
-1. 运行现有测试套件
-2. 验证所有功能正常运行
-3. 测试配置变更是否生效
-
-## 6. 预期收益
-
-1. **可维护性提升**：配置集中管理，减少代码修改
+1. **可维护性提升**：配置集中管理，减少代码修改 ✅
 2. **可扩展性提升**：支持动态配置和插件
-3. **可测试性提升**：配置可独立测试
+3. **可测试性提升**：配置可独立测试 ✅
 4. **用户体验提升**：支持主题和国际化
-5. **开发效率提升**：减少硬编码修改的时间成本
+5. **开发效率提升**：减少硬编码修改的时间成本 ✅
 
-## 7. 风险评估
+## 6. 结论
 
-### 7.1 实施风险
+第一阶段硬编码优化已完成，主要成果：
+- 创建了完整的配置文件结构
+- 重构了关键的业务逻辑和界面硬编码
+- 所有功能正常运行，构建成功
 
-1. **配置错误**：配置文件格式错误可能导致系统故障
-2. **性能影响**：配置加载可能增加启动时间
-3. **兼容性问题**：配置变更可能影响现有功能
-
-### 7.2 缓解措施
-
-1. **配置验证**：实现配置验证机制
-2. **缓存配置**：缓存配置以提高性能
-3. **向后兼容**：保持对旧配置的兼容
-4. **充分测试**：增加配置相关的测试用例
-
-## 8. 结论
-
-本项目中存在大量硬编码，主要集中在业务逻辑、界面和配置方面。通过系统化的配置管理，可以显著提高代码质量和系统灵活性。建议按照上述计划逐步实施硬编码优化，以实现更可维护、可扩展的系统架构。
+后续可根据需要继续实施中期和长期优化计划。

@@ -1,5 +1,10 @@
-import { calculateImprovement, calculateRatio, quantile, calculateWilcoxonPValue, calculateConfidenceInterval, calculateOutlierBounds } from '../utils/statistics';
-import { getMetricConfig } from './csvParser';
+import { calculateImprovement, calculateRatio, quantile, calculateWilcoxonPValue, calculateConfidenceInterval, calculateOutlierBounds, calculatePearsonCorrelation } from '../utils/statistics';
+import { getMetricConfig } from '../config/metrics.js';
+import { 
+  DATA_QUALITY_THRESHOLDS, 
+  QUALITY_SCORING 
+} from '../config/thresholds.js';
+import { findInstColumn } from '../config/business.js';
 
 export const computeStatistics = (metricName, base, comp, casesData, selectedCasesSet) => {
   const metricConfig = getMetricConfig(metricName);
@@ -26,12 +31,7 @@ export const computeStatistics = (metricName, base, comp, casesData, selectedCas
     })
     .filter(item => item !== null);
 
-  const instCol = Object.keys(validCases[0]?.meta || {}).find(k =>
-    k.toLowerCase() === 'inst' ||
-    k.toLowerCase() === 'instance' ||
-    k.toLowerCase() === 'instances' ||
-    k.toLowerCase() === '#inst'
-  );
+  const instCol = findInstColumn(Object.keys(validCases[0]?.meta || {}));
 
   if (instCol) {
     validCases.sort((a, b) => {
@@ -137,14 +137,14 @@ export const diagnoseDataIssues = (data, algos, metrics) => {
   });
   
   Object.entries(missingDataStats).forEach(([metric, stats]) => {
-    if (stats.percentage > 50) {
+    if (stats.percentage > DATA_QUALITY_THRESHOLDS.MISSING_DATA.HIGH) {
       issues.push({
         type: 'error',
         code: 'HIGH_MISSING_RATE',
         message: `指标 "${metric}" 的缺失值比例过高 (${stats.percentage}%)`,
         suggestion: '检查数据源或考虑移除该指标'
       });
-    } else if (stats.percentage > 20) {
+    } else if (stats.percentage > DATA_QUALITY_THRESHOLDS.MISSING_DATA.MODERATE) {
       issues.push({
         type: 'warning',
         code: 'MODERATE_MISSING_RATE',
@@ -179,7 +179,7 @@ export const diagnoseDataIssues = (data, algos, metrics) => {
   });
   
   Object.entries(zeroValueStats).forEach(([metric, stats]) => {
-    if (stats.percentage > 30) {
+    if (stats.percentage > DATA_QUALITY_THRESHOLDS.ZERO_VALUES.HIGH) {
       issues.push({
         type: 'warning',
         code: 'HIGH_ZERO_RATE',
@@ -217,7 +217,7 @@ export const diagnoseDataIssues = (data, algos, metrics) => {
     });
   }
   
-  if (data.length < 10) {
+  if (data.length < DATA_QUALITY_THRESHOLDS.SAMPLE_SIZE.MINIMUM) {
     issues.push({
       type: 'warning',
       code: 'SMALL_SAMPLE_SIZE',
@@ -330,13 +330,13 @@ export const checkDataQuality = (data, algos, metrics) => {
   diagnosis.issues.forEach(issue => {
     switch (issue.type) {
       case 'error':
-        quality.score -= 20;
+        quality.score -= QUALITY_SCORING.ISSUE_PENALTY.ERROR;
         break;
       case 'warning':
-        quality.score -= 10;
+        quality.score -= QUALITY_SCORING.ISSUE_PENALTY.WARNING;
         break;
       case 'info':
-        quality.score -= 2;
+        quality.score -= QUALITY_SCORING.ISSUE_PENALTY.INFO;
         break;
     }
   });
@@ -347,14 +347,14 @@ export const checkDataQuality = (data, algos, metrics) => {
       score: 50,
       message: '样本量过小'
     });
-    quality.score -= 25;
-  } else if (data.length < 20) {
+    quality.score -= QUALITY_SCORING.SAMPLE_SIZE_PENALTY.VERY_SMALL;
+  } else if (data.length < DATA_QUALITY_THRESHOLDS.SAMPLE_SIZE.SMALL) {
     quality.factors.push({
       name: '样本量',
       score: 75,
       message: '样本量较小'
     });
-    quality.score -= 10;
+    quality.score -= QUALITY_SCORING.SAMPLE_SIZE_PENALTY.SMALL;
   } else {
     quality.factors.push({
       name: '样本量',
@@ -369,7 +369,7 @@ export const checkDataQuality = (data, algos, metrics) => {
       score: 0,
       message: '仅有一个算法，无法对比'
     });
-    quality.score -= 30;
+    quality.score -= QUALITY_SCORING.ALGORITHM_COMPARISON_PENALTY.SINGLE_ALGORITHM;
   } else {
     quality.factors.push({
       name: '算法对比',
@@ -398,14 +398,14 @@ export const checkDataQuality = (data, algos, metrics) => {
       score: 40,
       message: `缺失值比例 ${missingRate.toFixed(2)}%`
     });
-    quality.score -= 20;
+    quality.score -= QUALITY_SCORING.DATA_COMPLETENESS_PENALTY.HIGH_MISSING;
   } else if (missingRate > 10) {
     quality.factors.push({
       name: '数据完整性',
       score: 70,
       message: `缺失值比例 ${missingRate.toFixed(2)}%`
     });
-    quality.score -= 10;
+    quality.score -= QUALITY_SCORING.DATA_COMPLETENESS_PENALTY.MODERATE_MISSING;
   } else {
     quality.factors.push({
       name: '数据完整性',

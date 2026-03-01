@@ -1,34 +1,18 @@
 import { detectDelimiter } from '../utils/validationUtils';
+import { 
+  EDA_METRICS_CONFIG, 
+  getMetricConfig, 
+  isBuiltInMetric 
+} from '../config/metrics.js';
+import { 
+  COLUMN_MAPPINGS, 
+  MISSING_VALUE_INDICATORS, 
+  parseMetricColumn, 
+  isCaseColumn, 
+  isMissingValue 
+} from '../config/business.js';
 
-export const EDA_METRICS_CONFIG = {
-  HPWL: { name: '半周长线长', unit: 'um', better: 'lower', description: '布线总长度，值越小越好' },
-  TNS: { name: '时序负裕度总和', unit: 'ps', better: 'higher', description: '时序负裕度总和，值越大越好（越接近0或正值）' },
-  WNS: { name: '最差时序负裕度', unit: 'ps', better: 'higher', description: '最差的时序负裕度，值越大越好（越接近0或正值）' },
-  Congestion: { name: '拥塞', unit: '', better: 'lower', description: '布线拥塞程度，值越小越好' },
-  Runtime: { name: '运行时间', unit: 's', better: 'lower', description: '算法运行时间，值越小越好' },
-  HB: { name: 'hybrid bonding terminal', unit: '个', better: 'lower', description: '混合键合终端数量，值越小越好' },
-  Leakage: { name: '泄漏功耗', unit: 'mW', better: 'lower', description: '泄漏功耗，值越小越好' },
-  Cell_Area: { name: '单元面积', unit: 'um²', better: 'lower', description: '单元总面积，值越小越好' },
-  Metal_Layers: { name: '金属层数', unit: '层', better: 'lower', description: '金属层数，值越小越好' },
-  Frequency: { name: '工作频率', unit: 'MHz', better: 'higher', description: '芯片工作频率，值越大越好' },
-  Throughput: { name: '吞吐量', unit: 'GOPS', better: 'higher', description: '数据处理吞吐量，值越大越好' },
-  IPC: { name: '每周期指令数', unit: '', better: 'higher', description: '每周期执行的指令数，值越大越好' },
-  MTBF: { name: '平均无故障时间', unit: 'h', better: 'higher', description: '平均无故障时间，值越大越好' },
-  EDP: { name: '能量延迟积', unit: 'pJ', better: 'lower', description: '能量延迟积，值越小越好' },
-};
-
-export const getMetricConfig = (metricName) => {
-  return EDA_METRICS_CONFIG[metricName] || {
-    name: metricName,
-    unit: '',
-    better: 'lower',
-    description: '自定义指标'
-  };
-};
-
-export const isBuiltInMetric = (metricName) => {
-  return !!EDA_METRICS_CONFIG[metricName];
-};
+export { EDA_METRICS_CONFIG, getMetricConfig, isBuiltInMetric };
 
 export const parseCSV = (csvString) => {
   const lines = csvString.trim().split('\n');
@@ -42,14 +26,12 @@ export const parseCSV = (csvString) => {
   const metaCols = [];
   
   headers.forEach(h => {
-    if (h.toLowerCase() === 'case') return;
-    if (h.startsWith('m_')) {
-      const rest = h.substring(2);
-      const firstUnderscoreIdx = rest.indexOf('_');
-      if (firstUnderscoreIdx > 0) {
-        algosSet.add(rest.substring(0, firstUnderscoreIdx));
-        metricsSet.add(rest.substring(firstUnderscoreIdx + 1));
-      }
+    if (isCaseColumn(h)) return;
+    
+    const parsed = parseMetricColumn(h);
+    if (parsed) {
+      algosSet.add(parsed.algorithm);
+      metricsSet.add(parsed.metric);
     } else {
       metaCols.push(h);
     }
@@ -74,8 +56,10 @@ export const parseCSV = (csvString) => {
     metricsList.forEach(m => {
       row.raw[m] = {};
       algosList.forEach(a => {
-        const strVal = rowMap[`m_${a}_${m}`];
-        if (!strVal || strVal.toUpperCase() === 'NA' || strVal.toUpperCase() === 'NAN') {
+        const columnName = `${COLUMN_MAPPINGS.METRIC_PREFIX}${a}${COLUMN_MAPPINGS.METRIC_SEPARATOR}${m}`;
+        const strVal = rowMap[columnName];
+        
+        if (isMissingValue(strVal)) {
           row.raw[m][a] = null;
         } else {
           const parsed = parseFloat(strVal);
@@ -113,7 +97,7 @@ export const dataToCSVString = (data, algos, metrics, metaColumns) => {
   
   metrics.forEach(metric => {
     algos.forEach(algo => {
-      headers.push(`m_${algo}_${metric}`);
+      headers.push(`${COLUMN_MAPPINGS.METRIC_PREFIX}${algo}${COLUMN_MAPPINGS.METRIC_SEPARATOR}${metric}`);
     });
   });
   

@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { FileText, ChevronUp, ChevronDown, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import HelpIcon from '../common/HelpIcon';
 import ValidationResultPanel, { CompactValidationStatus } from '../common/ValidationResultPanel';
+import DataSourceStats from '../common/DataSourceStats';
 import SavedDataSelector from '../common/SavedDataSelector';
 import LogImporter from '../modals/LogImporter';
 import PreviewTable from './PreviewTable';
@@ -10,7 +11,16 @@ import { useCsvDataSource } from './useCsvDataSource';
 import { useToast } from '../common/Toast';
 import { getValidationSuggestions } from '../../utils/validationUtils';
 
-const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis, llmConfig }) => {
+const CsvDataSource = ({ 
+  csvInput, 
+  onCsvChange, 
+  onRunAnalysis, 
+  llmConfig,
+  parsedData,
+  availableMetrics,
+  availableAlgos,
+  metaColumns
+}) => {
   const [isVisible, setIsVisible] = useState(true);
   const [showValidationPanel, setShowValidationPanel] = useState(false);
   const [showLogImporter, setShowLogImporter] = useState(false);
@@ -146,17 +156,6 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis, llmConfig }) => {
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-white" />
           <span className="text-sm font-semibold text-white">数据源</span>
-          <span className="text-xs text-white/70 bg-white/15 px-1.5 py-0.5 rounded-full">{rows.length} 条</span>
-        </div>
-        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-          {validationTouched && (
-            <CompactValidationStatus 
-              errors={validationErrors} 
-              warnings={validationWarnings} 
-              isValid={isValidData} 
-              onClick={() => setShowValidationPanel(!showValidationPanel)} 
-            />
-          )}
           <HelpIcon 
             content={
               <div className="space-y-4">
@@ -173,7 +172,7 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis, llmConfig }) => {
                     <li>• <strong>第一列</strong>：Case 名称（测试用例标识）</li>
                     <li>• <strong>元数据列</strong>：如 #Inst、#Net 等设计属性</li>
                     <li>• <strong>指标列</strong>：格式为 <code className="bg-slate-700 px-1 rounded">m_算法名_指标名</code></li>
-                    <li>• <strong>缺失值</strong>：使用 NaN 或 NA 表示</li>
+                    <li>• <strong>缺失值</strong>：支持 NA、NAN、N/A、NULL、空格或留空</li>
                   </ul>
                 </div>
                 
@@ -196,6 +195,25 @@ const CsvDataSource = ({ csvInput, onCsvChange, onRunAnalysis, llmConfig }) => {
             position="left-center"
             className="w-4 h-4 text-white/70 hover:text-white"
           />
+          <span className="text-xs text-white/70 bg-white/15 px-1.5 py-0.5 rounded-full">{rows.length} 条</span>
+        </div>
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          {parsedData && parsedData.length > 0 && (
+            <DataSourceStats
+              parsedData={parsedData}
+              availableMetrics={availableMetrics}
+              availableAlgos={availableAlgos}
+              metaColumns={metaColumns}
+            />
+          )}
+          {validationTouched && !parsedData?.length && (
+            <CompactValidationStatus 
+              errors={validationErrors} 
+              warnings={validationWarnings} 
+              isValid={isValidData} 
+              onClick={() => setShowValidationPanel(!showValidationPanel)} 
+            />
+          )}
           {isVisible ? <ChevronUp className="w-4 h-4 text-white" /> : <ChevronDown className="w-4 h-4 text-white" />}
         </div>
       </div>
@@ -286,7 +304,11 @@ CsvDataSource.propTypes = {
   csvInput: PropTypes.string.isRequired,
   onCsvChange: PropTypes.func.isRequired,
   onRunAnalysis: PropTypes.func.isRequired,
-  llmConfig: PropTypes.object
+  llmConfig: PropTypes.object,
+  parsedData: PropTypes.array,
+  availableMetrics: PropTypes.array,
+  availableAlgos: PropTypes.array,
+  metaColumns: PropTypes.array
 };
 
 export default CsvDataSource;

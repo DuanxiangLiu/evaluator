@@ -116,7 +116,7 @@ case2,2000,800,250000,235000`}
                   <div className="bg-slate-800/50 rounded-lg p-3">
                     <h4 className="font-semibold text-cyan-300 text-sm mb-2">注意事项</h4>
                     <ul className="text-gray-300 text-xs space-y-1">
-                      <li>• <strong>缺失值</strong>：使用 NaN、NA 或留空表示</li>
+                      <li>• <strong>缺失值</strong>：支持 NA、NAN、N/A、NULL、空格或留空</li>
                       <li>• <strong>基线算法</strong>：通常命名为 Base，用于对比基准</li>
                       <li>• <strong>文件编码</strong>：建议使用 UTF-8 编码</li>
                     </ul>

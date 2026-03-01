@@ -4,20 +4,16 @@ import ChartHeader from '../common/ChartHeader';
 import ChartContainer, { ChartBody, ChartArea, ChartLegend, AreaLabel } from '../common/ChartContainer';
 import { ImprovementFormulaHelp } from '../common/HelpContents';
 import { calculateImprovementWithDirection } from '../../utils/statistics';
-import { getMetricConfig } from '../../services/csvParser';
+import { getMetricConfig } from '../../config/metrics.js';
 import { useChartWidth } from '../../hooks/useChartWidth';
+import { findInstColumn } from '../../config/business.js';
+import { CHART_LAYOUT, CHART_COLORS, CHART_POINT_SIZES } from '../../config/ui.js';
 
 const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, setHoveredCase, setTooltipState, onCaseClick, parsedData, metaColumns }) => {
   const chartWidth = useChartWidth();
   
   const instColumn = useMemo(() => {
-    if (!metaColumns || metaColumns.length === 0) return null;
-    return metaColumns.find(c => 
-      c.toLowerCase() === 'inst' || 
-      c.toLowerCase() === 'instance' || 
-      c.toLowerCase() === 'instances' ||
-      c.toLowerCase() === '#inst'
-    ) || metaColumns[0];
+    return findInstColumn(metaColumns);
   }, [metaColumns]);
 
   const sortedCases = useMemo(() => {
@@ -46,15 +42,14 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
 
   if (!stats) return null;
 
-  // Calculate Y-axis range based on actual data
   const dataRange = stats.maxImp - stats.minImp;
-  const paddingPercent = 0.15; // 15% padding
-  const dynamicPadding = Math.max(dataRange * paddingPercent, 1); // At least 1% padding
+  const paddingPercent = CHART_LAYOUT.PADDING_PERCENT;
+  const dynamicPadding = Math.max(dataRange * paddingPercent, CHART_LAYOUT.MIN_PADDING);
   
   const yMin = stats.minImp - dynamicPadding;
   const yMax = stats.maxImp + dynamicPadding;
-  const yRange = yMax - yMin || 1;
-  const mapY = (val) => ((yMax - val) / yRange) * 90 + 5;
+  const yRange = yMax - yMin || CHART_LAYOUT.Y_RANGE_MIN;
+  const mapY = (val) => ((yMax - val) / yRange) * CHART_LAYOUT.Y_SCALE + CHART_LAYOUT.Y_RANGE_OFFSET;
 
   const formatYTick = (val) => {
     if (Math.abs(val) < 0.001) return '0%';
@@ -157,26 +152,26 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
           <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-red-100/20 to-transparent pointer-events-none"></div>
           
           <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <line x1="0" y1={mapY(0)} x2="100" y2={mapY(0)} stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="2 2" />
+            <line x1="0" y1={mapY(0)} x2="100" y2={mapY(0)} stroke={CHART_COLORS.ZERO_LINE} strokeWidth="0.5" strokeDasharray="2 2" />
             
-            <rect x="0" y={mapY(stats.q3)} width="100" height={Math.max(0, mapY(stats.q1) - mapY(stats.q3))} fill="#c7d2fe" opacity="0.5" />
+            <rect x="0" y={mapY(stats.q3)} width="100" height={Math.max(0, mapY(stats.q1) - mapY(stats.q3))} fill={CHART_COLORS.BOX_FILL} opacity="0.5" />
             
-            <line x1="0" y1={mapY(stats.median)} x2="100" y2={mapY(stats.median)} stroke="#818cf8" strokeWidth="0.5" strokeDasharray="3 2" />
+            <line x1="0" y1={mapY(stats.median)} x2="100" y2={mapY(stats.median)} stroke={CHART_COLORS.MEDIAN_LINE} strokeWidth="0.5" strokeDasharray="3 2" />
             
-            <line x1="0" y1={mapY(stats.q1)} x2="100" y2={mapY(stats.q1)} stroke="#f59e0b" strokeWidth="0.5" strokeDasharray="1 2" />
-            <line x1="0" y1={mapY(stats.q3)} x2="100" y2={mapY(stats.q3)} stroke="#22c55e" strokeWidth="0.5" strokeDasharray="1 2" />
+            <line x1="0" y1={mapY(stats.q1)} x2="100" y2={mapY(stats.q1)} stroke={CHART_COLORS.Q1_LINE} strokeWidth="0.5" strokeDasharray="1 2" />
+            <line x1="0" y1={mapY(stats.q3)} x2="100" y2={mapY(stats.q3)} stroke={CHART_COLORS.Q3_LINE} strokeWidth="0.5" strokeDasharray="1 2" />
             
             {sortedCases.map((d, i) => {
               const imp = d.imp;
-              const cx = 5 + (i / (sortedCases.length - 1 || 1)) * 90;
+              const cx = CHART_LAYOUT.X_START_OFFSET + (i / (sortedCases.length - 1 || 1)) * CHART_LAYOUT.X_SCALE;
               const cy = mapY(imp);
               const isOutlier = imp > stats.outlierUpper || imp < stats.outlierLower;
               const isHovered = hoveredCase === d.Case;
               const instValue = getInstValue(d.Case);
               
-              let dotColor = "#6366f1";
-              if (imp > stats.outlierUpper) dotColor = "#10b981";
-              if (imp < stats.outlierLower) dotColor = "#dc2626";
+              let dotColor = CHART_COLORS.NORMAL_POINT;
+              if (imp > stats.outlierUpper) dotColor = CHART_COLORS.POSITIVE_OUTLIER;
+              if (imp < stats.outlierLower) dotColor = CHART_COLORS.NEGATIVE_OUTLIER;
               
               return (
                 <g key={d.Case} className="cursor-pointer" onMouseEnter={(e) => {
@@ -214,15 +209,15 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
                   }
                 }}>
                   <circle 
-                    cx={cx} cy={cy} r="6"
+                    cx={cx} cy={cy} r={CHART_POINT_SIZES.HOVER_AREA_RADIUS}
                     fill="transparent"
                   />
                   <circle 
                     cx={cx} cy={cy} 
-                    r={isOutlier ? "1.5" : "1"}
+                    r={isOutlier ? CHART_POINT_SIZES.OUTLIER_RADIUS : CHART_POINT_SIZES.NORMAL_RADIUS}
                     fill={dotColor} 
                     stroke={isHovered ? "#fff" : "none"} 
-                    strokeWidth={isHovered ? "0.3" : "0"}
+                    strokeWidth={isHovered ? CHART_POINT_SIZES.HOVER_STROKE_WIDTH : "0"}
                     className={`transition-all duration-200 pointer-events-none ${isHovered ? 'animate-pulse' : ''}`}
                   />
                 </g>

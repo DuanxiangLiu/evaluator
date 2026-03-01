@@ -1,5 +1,8 @@
 import { API_TIMEOUT_MS, DEFAULT_LLM_CONFIG, CORRELATION_ANALYSIS_PROMPT } from '../utils/constants';
 
+const MAX_RETRY_ATTEMPTS = 3;
+const RETRY_DELAY_BASE = 1000;
+
 export const fetchWithTimeout = async (url, options, timeout = API_TIMEOUT_MS) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -10,6 +13,12 @@ export const fetchWithTimeout = async (url, options, timeout = API_TIMEOUT_MS) =
       signal: controller.signal
     });
     clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`API Error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+    
     return response;
   } catch (error) {
     clearTimeout(timeoutId);
@@ -18,6 +27,141 @@ export const fetchWithTimeout = async (url, options, timeout = API_TIMEOUT_MS) =
     }
     throw error;
   }
+};
+
+export const callLLMAPIWithRetry = async (config, promptPayload, retryCount = 0) => {
+  try {
+    let text = '';
+    
+    if (config.provider === 'gemini') {
+      const response = await fetchWithTimeout(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${config.apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptPayload }] }],
+            systemInstruction: { parts: [{ text: config.systemPrompt }] }
+          })
+        }
+      );
+      
+      const result = await response.json();
+      text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    } else {
+      const url = `${config.baseUrl.replace(/\/$/, '')}/chat/completions`;
+      const response = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages: [
+            { role: 'system', content: config.systemPrompt },
+            { role: 'user', content: promptPayload }
+          ],
+          temperature: 0.7
+        })
+      });
+      
+      const result = await response.json();
+      text = result.choices?.[0]?.message?.content;
+    }
+    
+    if (!text) {
+      throw new Error('API 未返回有效的文本内容。');
+    }
+    
+    return text;
+  } catch (error) {
+    const isRetryable = error.message.includes('timeout') || 
+                        error.message.includes('network') ||
+                        error.message.includes('429') ||
+                        error.message.includes('503');
+    
+    if (retryCount < MAX_RETRY_ATTEMPTS && isRetryable) {
+      const delay = RETRY_DELAY_BASE * Math.pow(2, retryCount);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return callLLMAPIWithRetry(config, promptPayload, retryCount + 1);
+    }
+    
+    throw error;
+  }
+};
+
+export const getFallbackAnalysis = (stats, allMetricsStats, baseAlgo, compareAlgo) => {
+  const significantMetrics = allMetricsStats.filter(m => m.stats?.pValue < 0.05);
+  const improvedMetrics = allMetricsStats.filter(m => m.stats?.geomeanImp > 0);
+  const degradedMetrics = allMetricsStats.filter(m => m.stats?.geomeanImp < 0);
+  
+  return `## 📊 算法评估报告 (离线分析)
+
+### 🎯 1. 最终判定结论
+- **推荐结论**：${stats.geomeanImp > 0 ? `【推荐采用 ${compareAlgo}】` : `【建议保持 ${baseAlgo}】`}
+- **核心依据**：几何平均改进率 ${stats.geomeanImp.toFixed(2)}%，P值 ${stats.pValue.toFixed(4)}
+
+### 📊 2. 统计分析摘要
+- **几何平均改进率**：${stats.geomeanImp.toFixed(2)}%
+- **算术平均改进率**：${stats.meanImp.toFixed(2)}%
+- **P值**：${stats.pValue.toFixed(4)} ${stats.pValue < 0.05 ? '✓ 统计显著' : '✗ 不显著'}
+- **95%置信区间**：[${stats.ciLower.toFixed(2)}%, ${stats.ciUpper.toFixed(2)}%]
+- **有效样本数**：${stats.nValid} / ${stats.nTotalChecked}
+- **退化案例数**：${stats.degradedCount}
+
+### 📈 3. 多指标综合分析
+- **改进指标**：${improvedMetrics.length} 个
+- **退化指标**：${degradedMetrics.length} 个
+- **显著指标**：${significantMetrics.length} 个
+
+### ⚠️ 4. 注意事项
+- 此为离线分析报告，AI服务暂时不可用
+- 建议检查API配置后重新生成完整分析
+- 数据仅供参考，请结合实际情况判断`;
+};
+
+export const generateHistoricalComparison = (currentStats, historicalData) => {
+  if (!historicalData || historicalData.length === 0) {
+    return null;
+  }
+  
+  const latestHistorical = historicalData[historicalData.length - 1];
+  const improvementTrend = currentStats.geomeanImp - (latestHistorical.geomeanImp || 0);
+  const pValueChange = currentStats.pValue - (latestHistorical.pValue || 1);
+  
+  return {
+    previousGeomeanImp: latestHistorical.geomeanImp,
+    currentGeomeanImp: currentStats.geomeanImp,
+    improvementTrend,
+    pValueChange,
+    trendDirection: improvementTrend > 0 ? 'improving' : improvementTrend < 0 ? 'declining' : 'stable',
+    dataPoints: historicalData.length
+  };
+};
+
+export const analyzePerformanceTrend = (historicalData) => {
+  if (!historicalData || historicalData.length < 2) {
+    return null;
+  }
+  
+  const improvements = historicalData.map(d => d.geomeanImp).filter(v => v != null);
+  if (improvements.length < 2) return null;
+  
+  const firstHalf = improvements.slice(0, Math.floor(improvements.length / 2));
+  const secondHalf = improvements.slice(Math.floor(improvements.length / 2));
+  
+  const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+  const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+  
+  const trend = secondAvg - firstAvg;
+  
+  return {
+    trend,
+    trendDirection: trend > 0 ? 'improving' : trend < 0 ? 'declining' : 'stable',
+    volatility: Math.sqrt(improvements.reduce((sum, v) => sum + Math.pow(v - (firstAvg + secondAvg) / 2, 2), 0) / improvements.length),
+    dataPoints: improvements.length
+  };
 };
 
 export const generateAIInsights = async (config, baseAlgo, compareAlgo, activeMetric, stats, allMetricsStats, parsedData, selectedCases, metaColumns) => {

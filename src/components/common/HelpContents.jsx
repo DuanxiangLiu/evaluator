@@ -71,7 +71,7 @@ export const StatusHelpContent = () => (
 export const TableHelpContent = () => (
   <div className="space-y-3">
     <div>
-      <h3 className="font-bold text-indigo-400 text-sm mb-2">明细数据表格</h3>
+      <h3 className="font-bold text-indigo-400 text-sm mb-2">数据明细表格</h3>
       <p className="text-gray-300 text-xs mb-2">
         展示所有测试用例的详细数据，包括基准算法和对比算法的原始指标值及计算得出的改进率。
       </p>

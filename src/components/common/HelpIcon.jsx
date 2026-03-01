@@ -77,7 +77,12 @@ const HelpIcon = ({
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (iconRef.current && !iconRef.current.contains(e.target)) {
+      if (
+        iconRef.current && 
+        !iconRef.current.contains(e.target) &&
+        tooltipRef.current &&
+        !tooltipRef.current.contains(e.target)
+      ) {
         setShowTooltip(false);
       }
     };

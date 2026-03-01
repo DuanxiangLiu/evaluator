@@ -11,7 +11,7 @@ export {
   computeStatistics, 
   diagnoseDataIssues, 
   generateDataSummary, 
-  checkDataQuality 
+  checkDataQuality
 } from './statisticsService';
 
 export { 
@@ -68,3 +68,23 @@ export {
   createEmptyRuleSet,
   getRuleSetStats
 } from './ruleStorage';
+
+export { default as aiManager } from './aiManager.js';
+
+export {
+  detectStatisticalAnomalies,
+  detectOutlierPatterns,
+  assessDataQualityWithAI,
+  generateAnomalyReport
+} from './anomalyDetection.js';
+
+export {
+  generateReportSummary,
+  generateStatisticsSection,
+  generateCasesSection,
+  generateAIReport,
+  exportReportToJSON,
+  exportReportToHTML,
+  downloadReport,
+  REPORT_TEMPLATES
+} from './reportExport.js';

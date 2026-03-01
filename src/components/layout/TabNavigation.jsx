@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { BarChart2, Box, ScatterChart, GitMerge, Radar, Scale, Bot } from 'lucide-react';
 
 export const TAB_CONFIG = [
-  { id: 'table', label: '详细数据', icon: BarChart2 },
+  { id: 'table', label: '数据明细', icon: BarChart2 },
   { id: 'single', label: '箱线图', icon: Box },
   { id: 'correlation', label: '特征相关性', icon: ScatterChart },
   { id: 'multi', label: '帕累托投影', icon: GitMerge },
