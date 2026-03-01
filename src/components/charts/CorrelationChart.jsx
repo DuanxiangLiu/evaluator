@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Sparkles, Loader2, TrendingUp, TrendingDown, Minus, HelpCircle, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import ChartHeader from '../common/ChartHeader';
@@ -306,10 +306,12 @@ const CorrelationChart = ({
   useEffect(() => {
     if (correlations.length > 0 && !userHasSelectedRef.current) {
       const firstCorrelation = correlations[0];
-      setCorrX(firstCorrelation.xKey);
-      setCorrY(firstCorrelation.yKey);
+      if (corrX !== firstCorrelation.xKey || corrY !== firstCorrelation.yKey) {
+        setCorrX(firstCorrelation.xKey);
+        setCorrY(firstCorrelation.yKey);
+      }
     }
-  }, [correlations, setCorrX, setCorrY]);
+  }, [correlations, corrX, corrY, setCorrX, setCorrY]);
 
   const isMetricX = availableMetrics.includes(corrX);
   const isMetricY = availableMetrics.includes(corrY);

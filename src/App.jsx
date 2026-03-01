@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, Suspense, lazy } from 'react';
 import { createPortal } from 'react-dom';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { AIProvider } from './context/AIContext';
@@ -10,26 +10,26 @@ import DeepDiveModal from './components/modals/DeepDiveModal';
 import AiConfigModal from './components/modals/AiConfigModal';
 import ReportGenerator from './components/modals/ReportGenerator';
 import ReportExportModal from './components/modals/ReportExportModal';
-import TableView from './components/views/TableView';
-import ChartsView from './components/views/ChartsView';
-import AIAnalysisView from './components/views/AIAnalysisView';
 import { ToastProvider, useToast } from './components/common/Toast';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import { generateAIInsights, getFallbackAnalysis } from './services/aiService.jsx';
 import { generateReportByMode, downloadReport } from './services/reportExportEnhanced.js';
-import { AlertTriangle, TrendingUp } from 'lucide-react';
-import { getTabStyle } from './config/ui.js';
-import { BarChart2, Box, ScatterChart, GitMerge, Radar, Scale, Bot, History, FileText } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Loader2 } from 'lucide-react';
+import { getTabStyle, TAB_CONFIG } from './config/ui.js';
 
-const TAB_CONFIG = [
-  { id: 'table', label: '数据明细', icon: BarChart2 },
-  { id: 'single', label: '箱线图', icon: Box },
-  { id: 'correlation', label: '特征相关性', icon: ScatterChart },
-  { id: 'multi', label: '帕累托投影', icon: GitMerge },
-  { id: 'all_metrics', label: '全局多维雷达', icon: Radar },
-  { id: 'qor_simulator', label: 'QoR 模拟器', icon: Scale },
-  { id: 'history', label: '历史趋势', icon: History },
-  { id: 'ai_analysis', label: 'AI 智能诊断', icon: Bot }
-];
+const TableView = lazy(() => import('./components/views/TableView'));
+const ChartsView = lazy(() => import('./components/views/ChartsView'));
+const AIAnalysisView = lazy(() => import('./components/views/AIAnalysisView'));
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="flex flex-col items-center gap-3">
+      <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+      <span className="text-sm text-gray-500">加载中...</span>
+    </div>
+  </div>
+);
+
 import { getMetricDisplayName } from './config/metrics.js';
 import { getStatHelp, getAuxiliaryStatHelp } from './config/help.js';
 
@@ -446,99 +446,101 @@ const AppContent = () => {
           </div>
 
           <div className="bg-white flex-1 overflow-y-auto custom-scrollbar relative z-0">
-            {activeTab === 'table' && (
-            <TableView
-              activeMetric={activeMetric}
-              baseAlgo={baseAlgo}
-              compareAlgo={compareAlgo}
-              metaColumns={metaColumns}
-              tableFilter={tableFilter}
-              setTableFilter={setTableFilter}
-              parsedData={parsedData}
-              filteredTableData={filteredTableData}
-              selectedCases={selectedCases}
-              setSelectedCases={setSelectedCases}
-              sortConfig={sortConfig}
-              handleSort={handleSort}
-              toggleCase={toggleCase}
-              toggleAll={toggleAll}
-              hoveredCase={hoveredCase}
-              setHoveredCase={setHoveredCase}
-              validCasesMap={validCasesMap}
-              setDeepDiveCase={setDeepDiveCase}
-              stats={stats}
-              allMetricsStats={allMetricsStats}
-              tableSearchTerm={tableSearchTerm}
-              setTableSearchTerm={setTableSearchTerm}
-            />
-          )}
+            <Suspense fallback={<LoadingFallback />}>
+              {activeTab === 'table' && (
+                <TableView
+                  activeMetric={activeMetric}
+                  baseAlgo={baseAlgo}
+                  compareAlgo={compareAlgo}
+                  metaColumns={metaColumns}
+                  tableFilter={tableFilter}
+                  setTableFilter={setTableFilter}
+                  parsedData={parsedData}
+                  filteredTableData={filteredTableData}
+                  selectedCases={selectedCases}
+                  setSelectedCases={setSelectedCases}
+                  sortConfig={sortConfig}
+                  handleSort={handleSort}
+                  toggleCase={toggleCase}
+                  toggleAll={toggleAll}
+                  hoveredCase={hoveredCase}
+                  setHoveredCase={setHoveredCase}
+                  validCasesMap={validCasesMap}
+                  setDeepDiveCase={setDeepDiveCase}
+                  stats={stats}
+                  allMetricsStats={allMetricsStats}
+                  tableSearchTerm={tableSearchTerm}
+                  setTableSearchTerm={setTableSearchTerm}
+                />
+              )}
 
-            {activeTab !== 'table' && activeTab !== 'ai_analysis' && (
-              <ChartsView
-                activeTab={activeTab}
-                stats={stats}
-                activeMetric={activeMetric}
-                handleChartMouseMove={handleChartMouseMove}
-                hoveredCase={hoveredCase}
-                setHoveredCase={setHoveredCase}
-                setTooltipState={setTooltipState}
-                setDeepDiveCase={setDeepDiveCase}
-                parsedData={parsedData}
-                selectedCases={selectedCases}
-                metaColumns={metaColumns}
-                availableMetrics={availableMetrics}
-                availableAlgos={availableAlgos}
-                baseAlgo={baseAlgo}
-                compareAlgo={compareAlgo}
-                corrX={corrX}
-                setCorrX={setCorrX}
-                corrY={corrY}
-                setCorrY={setCorrY}
-                paretoX={paretoX}
-                setParetoX={setParetoX}
-                paretoY={paretoY}
-                setParetoY={setParetoY}
-                paretoZ={paretoZ}
-                setParetoZ={setParetoZ}
-                allMetricsStats={allMetricsStats}
-                qorWeights={qorWeights}
-                setQorWeights={setQorWeights}
-              />
-            )}
+              {activeTab !== 'table' && activeTab !== 'ai_analysis' && (
+                <ChartsView
+                  activeTab={activeTab}
+                  stats={stats}
+                  activeMetric={activeMetric}
+                  handleChartMouseMove={handleChartMouseMove}
+                  hoveredCase={hoveredCase}
+                  setHoveredCase={setHoveredCase}
+                  setTooltipState={setTooltipState}
+                  setDeepDiveCase={setDeepDiveCase}
+                  parsedData={parsedData}
+                  selectedCases={selectedCases}
+                  metaColumns={metaColumns}
+                  availableMetrics={availableMetrics}
+                  availableAlgos={availableAlgos}
+                  baseAlgo={baseAlgo}
+                  compareAlgo={compareAlgo}
+                  corrX={corrX}
+                  setCorrX={setCorrX}
+                  corrY={corrY}
+                  setCorrY={setCorrY}
+                  paretoX={paretoX}
+                  setParetoX={setParetoX}
+                  paretoY={paretoY}
+                  setParetoY={setParetoY}
+                  paretoZ={paretoZ}
+                  setParetoZ={setParetoZ}
+                  allMetricsStats={allMetricsStats}
+                  qorWeights={qorWeights}
+                  setQorWeights={setQorWeights}
+                />
+              )}
 
-            {activeTab === 'ai_analysis' && (
-              <AIAnalysisView
-                baseAlgo={baseAlgo}
-                compareAlgo={compareAlgo}
-                isAnalyzing={isAnalyzing}
-                aiInsights={aiInsights}
-                displayInsights={displayInsights}
-                aiError={aiError}
-                setShowAiConfig={setShowAiConfig}
-                handleGenerateAIInsights={handleGenerateAIInsights}
-                handleExport={(format) => {
-                  const reportData = generateReportByMode('detailed', {
-                    stats,
-                    allMetricsStats,
-                    baseAlgo,
-                    compareAlgo,
-                    activeMetric,
-                    parsedData,
-                    selectedCases,
-                    metaColumns,
-                    aiInsights: displayInsights || aiInsights
-                  });
-                  if (reportData) {
-                    downloadReport(reportData, format);
-                  }
-                }}
-                isOutdated={isInsightsOutdated(baseAlgo, compareAlgo)}
-                savedTimestamp={getSavedAiInsights(baseAlgo, compareAlgo)?.timestamp}
-                hasData={parsedData.length > 0 && !!stats}
-                aiConfig={llmConfig}
-                onAiConfigChange={setLlmConfig}
-              />
-            )}
+              {activeTab === 'ai_analysis' && (
+                <AIAnalysisView
+                  baseAlgo={baseAlgo}
+                  compareAlgo={compareAlgo}
+                  isAnalyzing={isAnalyzing}
+                  aiInsights={aiInsights}
+                  displayInsights={displayInsights}
+                  aiError={aiError}
+                  setShowAiConfig={setShowAiConfig}
+                  handleGenerateAIInsights={handleGenerateAIInsights}
+                  handleExport={(format) => {
+                    const reportData = generateReportByMode('detailed', {
+                      stats,
+                      allMetricsStats,
+                      baseAlgo,
+                      compareAlgo,
+                      activeMetric,
+                      parsedData,
+                      selectedCases,
+                      metaColumns,
+                      aiInsights: displayInsights || aiInsights
+                    });
+                    if (reportData) {
+                      downloadReport(reportData, format);
+                    }
+                  }}
+                  isOutdated={isInsightsOutdated(baseAlgo, compareAlgo)}
+                  savedTimestamp={getSavedAiInsights(baseAlgo, compareAlgo)?.timestamp}
+                  hasData={parsedData.length > 0 && !!stats}
+                  aiConfig={llmConfig}
+                  onAiConfigChange={setLlmConfig}
+                />
+              )}
+            </Suspense>
           </div>
         </div>
       </div>
@@ -547,13 +549,15 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <AppProvider>
-    <AIProvider>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
-    </AIProvider>
-  </AppProvider>
+  <ErrorBoundary>
+    <AppProvider>
+      <AIProvider>
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
+      </AIProvider>
+    </AppProvider>
+  </ErrorBoundary>
 );
 
 export default App;

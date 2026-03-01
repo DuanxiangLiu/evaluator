@@ -1,4 +1,5 @@
 import { API_TIMEOUT_MS, DEFAULT_LLM_CONFIG, CORRELATION_ANALYSIS_PROMPT } from '../utils/constants';
+import DOMPurify from 'dompurify';
 
 const MAX_RETRY_ATTEMPTS = 3;
 const RETRY_DELAY_BASE = 1000;
@@ -427,15 +428,17 @@ export const renderMarkdownText = (text) => {
     
     if (line.startsWith('- ')) {
       const content = line.replace('- ', '').replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-900 font-bold">$1</strong>');
+      const sanitizedContent = DOMPurify.sanitize(content);
       return (
-        <li key={i} className="ml-4 list-disc mb-1 marker:text-indigo-400" dangerouslySetInnerHTML={{ __html: content }} />
+        <li key={i} className="ml-4 list-disc mb-1 marker:text-indigo-400" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
       );
     }
     
     if (line.trim() === '---') return null;
     
     const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-indigo-900 font-bold">$1</strong>');
-    return <p key={i} className="mb-2 text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: formattedLine }} />;
+    const sanitizedLine = DOMPurify.sanitize(formattedLine);
+    return <p key={i} className="mb-2 text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizedLine }} />;
   }).filter(Boolean);
 };
 

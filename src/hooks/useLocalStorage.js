@@ -1,7 +1,30 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { logger } from '../utils/logger';
 
-export const useLocalStorage = (key, initialValue) => {
+const DEBOUNCE_DELAY = 300;
+
+const debounceMap = new Map();
+
+const debouncedSetItem = (key, value, delay = DEBOUNCE_DELAY) => {
+  if (debounceMap.has(key)) {
+    clearTimeout(debounceMap.get(key));
+  }
+  
+  const timeoutId = setTimeout(() => {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+      debounceMap.delete(key);
+    } catch (error) {
+      logger.warn(`设置 localStorage 键 "${key}" 失败:`, error);
+    }
+  }, delay);
+  
+  debounceMap.set(key, timeoutId);
+};
+
+export const useLocalStorage = (key, initialValue, options = {}) => {
+  const { debounce = true, debounceDelay = DEBOUNCE_DELAY } = options;
+  
   const [storedValue, setStoredValue] = useState(() => {
     if (typeof window === 'undefined') return initialValue;
     try {
@@ -13,18 +36,48 @@ export const useLocalStorage = (key, initialValue) => {
     }
   });
 
+  const valueRef = useRef(storedValue);
+
+  useEffect(() => {
+    return () => {
+      if (debounceMap.has(key)) {
+        clearTimeout(debounceMap.get(key));
+        debounceMap.delete(key);
+      }
+    };
+  }, [key]);
+
   const setValue = useCallback((value) => {
     try {
-      setStoredValue(value);
+      const newValue = value instanceof Function ? value(valueRef.current) : value;
+      valueRef.current = newValue;
+      setStoredValue(newValue);
+      
       if (typeof window !== 'undefined') {
-        window.localStorage.setItem(key, JSON.stringify(value));
+        if (debounce) {
+          debouncedSetItem(key, newValue, debounceDelay);
+        } else {
+          window.localStorage.setItem(key, JSON.stringify(newValue));
+        }
       }
     } catch (error) {
       logger.warn(`设置 localStorage 键 "${key}" 失败:`, error);
     }
+  }, [key, debounce, debounceDelay]);
+
+  const flushValue = useCallback(() => {
+    if (debounceMap.has(key)) {
+      clearTimeout(debounceMap.get(key));
+      debounceMap.delete(key);
+      try {
+        window.localStorage.setItem(key, JSON.stringify(valueRef.current));
+      } catch (error) {
+        logger.warn(`刷新 localStorage 键 "${key}" 失败:`, error);
+      }
+    }
   }, [key]);
 
-  return [storedValue, setValue];
+  return [storedValue, setValue, flushValue];
 };
 
 export const useDebounce = (value, delay) => {

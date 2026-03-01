@@ -1,4 +1,4 @@
-import { BarChart2, Box, ScatterChart, GitMerge, Radar, Scale, Bot } from 'lucide-react';
+import { BarChart2, Box, ScatterChart, GitMerge, Radar, Scale, Bot, History } from 'lucide-react';
 
 export const TAB_CONFIG = [
   { id: 'table', label: '数据明细', icon: BarChart2 },
@@ -7,6 +7,7 @@ export const TAB_CONFIG = [
   { id: 'multi', label: '帕累托投影', icon: GitMerge },
   { id: 'all_metrics', label: '全局多维雷达', icon: Radar },
   { id: 'qor_simulator', label: 'QoR 模拟器', icon: Scale },
+  { id: 'history', label: '历史趋势', icon: History },
   { id: 'ai_analysis', label: 'AI 智能诊断', icon: Bot }
 ];
 
