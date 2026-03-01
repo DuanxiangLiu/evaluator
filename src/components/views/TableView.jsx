@@ -342,7 +342,7 @@ const TableView = ({
         <table className={TABLE_STYLES.table}>
           <thead className={TABLE_STYLES.thead}>
             <tr>
-              <th className="px-4 py-2.5 w-10 text-center cursor-pointer hover:bg-gray-200" onClick={toggleAll} title="全选/反选">
+              <th className="px-3 py-2.5 w-10 text-center cursor-pointer hover:bg-gray-200" onClick={toggleAll} title="全选/反选">
                 {selectedCases.size === parsedData.length ? <CheckSquare className="w-4 h-4 text-indigo-600 mx-auto" /> : <Square className="w-4 h-4 text-gray-400 mx-auto" />}
               </th>
               <th className={TABLE_STYLES.theadCell} onClick={() => handleSort('Case')}><div className="flex items-center justify-between">Case Name <SortIcon config={sortConfig} columnKey="Case" /></div></th>
@@ -351,9 +351,9 @@ const TableView = ({
                   <div className="flex items-center justify-end">{mc} <SortIcon config={sortConfig} columnKey={mc} /></div>
                 </th>
               ))}
-              <th className="px-4 py-2.5 font-medium text-right border-l border-gray-300 cursor-pointer hover:bg-gray-200 bg-gray-50" onClick={() => handleSort(baseAlgo)}><div className="flex justify-end items-center">{baseAlgo} <SortIcon config={sortConfig} columnKey={baseAlgo} /></div></th>
-              <th className="px-4 py-2.5 font-medium text-right cursor-pointer hover:bg-gray-200 bg-gray-50" onClick={() => handleSort(compareAlgo)}><div className="flex justify-end items-center">{compareAlgo} <SortIcon config={sortConfig} columnKey={compareAlgo} /></div></th>
-              <th className="px-4 py-2.5 font-medium text-right border-l border-gray-300 cursor-pointer hover:bg-indigo-100 bg-indigo-50/60" onClick={() => handleSort('imp')}>
+              <th className="px-3 py-2.5 font-medium text-right border-l border-gray-300 cursor-pointer hover:bg-gray-200 bg-gray-50 whitespace-nowrap" onClick={() => handleSort(baseAlgo)}><div className="flex justify-end items-center">{baseAlgo} <SortIcon config={sortConfig} columnKey={baseAlgo} /></div></th>
+              <th className="px-3 py-2.5 font-medium text-right cursor-pointer hover:bg-gray-200 bg-gray-50 whitespace-nowrap" onClick={() => handleSort(compareAlgo)}><div className="flex justify-end items-center">{compareAlgo} <SortIcon config={sortConfig} columnKey={compareAlgo} /></div></th>
+              <th className="px-3 py-2.5 font-medium text-right border-l border-gray-300 cursor-pointer hover:bg-indigo-100 bg-indigo-50/60 whitespace-nowrap" onClick={() => handleSort('imp')}>
                 <div className="flex justify-end items-center text-indigo-900">
                   改进率 %
                   <HelpIcon 
@@ -363,7 +363,7 @@ const TableView = ({
                   <SortIcon config={sortConfig} columnKey="imp" />
                 </div>
               </th>
-              <th className="px-4 py-2.5 font-medium text-center w-36 bg-indigo-50/60 border-l border-indigo-100">
+              <th className="px-3 py-2.5 font-medium text-center bg-indigo-50/60 border-l border-indigo-100 whitespace-nowrap">
                 <div className="flex justify-center items-center gap-1">
                   状态与透视
                   <HelpIcon 
@@ -406,19 +406,19 @@ const TableView = ({
 
               return (
                 <tr key={d.Case} className={rowBg} onMouseEnter={() => { if (isChecked && !isNull) setHoveredCase(d.Case); }} onMouseLeave={() => setHoveredCase(null)}>
-                  <td className="px-4 py-2 text-center cursor-pointer" onClick={() => toggleCase(d.Case)}><input type="checkbox" checked={isChecked} onChange={() => { }} className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer w-4 h-4" /></td>
-                  <td className={`${TABLE_STYLES.cell} font-medium max-w-[200px] truncate`} title={d.Case}>{d.Case}</td>
+                  <td className="px-3 py-2 text-center cursor-pointer" onClick={() => toggleCase(d.Case)}><input type="checkbox" checked={isChecked} onChange={() => { }} className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer w-4 h-4" /></td>
+                  <td className={`${TABLE_STYLES.cell} font-medium`} title={d.Case}>{d.Case}</td>
                   {metaColumns.map(mc => (
                     <td key={mc} className={TABLE_STYLES.cellRight} title={d.meta[mc]}>{formatIndustrialNumber(d.meta[mc]) || '-'}</td>
                   ))}
-                  <td className="px-4 py-2 text-right font-mono text-sm text-gray-600 border-l border-gray-200 bg-gray-50/50">
+                  <td className="px-3 py-2 text-right font-mono text-sm text-gray-600 border-l border-gray-200 bg-gray-50/50 whitespace-nowrap">
                     {bVal == null ? <span className="text-gray-300">NaN</span> : bVal}
                   </td>
-                  <td className="px-4 py-2 text-right font-mono text-sm text-gray-600 bg-gray-50/50">
+                  <td className="px-3 py-2 text-right font-mono text-sm text-gray-600 bg-gray-50/50 whitespace-nowrap">
                     {cVal == null ? <span className="text-gray-300">NaN</span> : cVal}
                   </td>
-                  <td className={`px-4 py-2 text-right font-mono text-sm tracking-tight border-l border-gray-200 ${impColor} bg-indigo-50/40`}>{isNull ? '-' : (imp != null ? `${imp > 0 ? '+' : ''}${imp.toFixed(2)}%` : '-')}</td>
-                  <td className="px-4 py-2 text-center bg-indigo-50/40 border-l border-indigo-100/50">
+                  <td className={`px-3 py-2 text-right font-mono text-sm tracking-tight border-l border-gray-200 ${impColor} bg-indigo-50/40 whitespace-nowrap`}>{isNull ? '-' : (imp != null ? `${imp > 0 ? '+' : ''}${imp.toFixed(2)}%` : '-')}</td>
+                  <td className="px-3 py-2 text-center bg-indigo-50/40 border-l border-indigo-100/50 whitespace-nowrap">
                     <div className="flex justify-center items-center gap-2">
                       <StatusBadge type={statusType} />
                       {isChecked && !isNull && (

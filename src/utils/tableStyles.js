@@ -1,16 +1,16 @@
 export const TABLE_STYLES = {
   wrapper: 'overflow-x-auto overflow-y-auto flex-1 custom-scrollbar max-h-[calc(100vh-300px)]',
-  table: 'min-w-full text-sm text-left relative',
+  table: 'w-full text-sm text-left relative border-collapse table-auto',
   thead: 'bg-gray-100 text-gray-700 text-sm sticky top-0 z-20 shadow-sm border-b border-gray-200',
-  theadCell: 'px-4 py-2.5 font-medium cursor-pointer hover:bg-gray-200 transition-colors',
-  theadCellRight: 'px-4 py-2.5 font-medium text-right border-l border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors text-gray-600',
+  theadCell: 'px-3 py-2.5 font-medium cursor-pointer hover:bg-gray-200 transition-colors whitespace-nowrap',
+  theadCellRight: 'px-3 py-2.5 font-medium text-right border-l border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors text-gray-600 whitespace-nowrap',
   tbody: 'divide-y divide-gray-100',
   row: 'transition-all duration-150 hover:bg-indigo-50/30',
   rowHovered: 'bg-indigo-100/50 outline outline-2 outline-indigo-400 z-10 relative',
   rowDisabled: 'bg-gray-50/50 opacity-40 grayscale',
-  cell: 'px-4 py-2 text-gray-800',
-  cellRight: 'px-4 py-2 text-right font-mono text-sm text-gray-600 border-l border-gray-100',
-  cellMono: 'px-4 py-2 font-mono text-sm text-gray-600',
+  cell: 'px-3 py-2 text-gray-800 whitespace-nowrap',
+  cellRight: 'px-3 py-2 text-right font-mono text-sm text-gray-600 border-l border-gray-100 whitespace-nowrap',
+  cellMono: 'px-3 py-2 font-mono text-sm text-gray-600 whitespace-nowrap',
 };
 
 export const PREVIEW_TABLE_STYLES = {
