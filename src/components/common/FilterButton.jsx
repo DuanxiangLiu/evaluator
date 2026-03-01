@@ -346,7 +346,7 @@ const FilterButton = ({
             <div className="border-t border-gray-100 pt-4">
               <div className="flex items-center gap-1.5 mb-2">
                 <Layers className="w-4 h-4 text-indigo-500" />
-                <span className="text-sm font-semibold text-gray-600">规模过滤</span>
+                <span className="text-sm font-semibold text-gray-600">Instance 规模过滤</span>
                 {!instCol && (
                   <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded ml-auto">
                     未检测到 Inst 列
