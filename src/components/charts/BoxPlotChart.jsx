@@ -166,12 +166,20 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
               const cx = CHART_LAYOUT.X_START_OFFSET + (i / (sortedCases.length - 1 || 1)) * CHART_LAYOUT.X_SCALE;
               const cy = mapY(imp);
               const isOutlier = imp > stats.outlierUpper || imp < stats.outlierLower;
+              const isHighOutlier = imp > stats.outlierUpper;
+              const isLowOutlier = imp < stats.outlierLower;
               const isHovered = hoveredCase === d.Case;
               const instValue = getInstValue(d.Case);
               
               let dotColor = CHART_COLORS.NORMAL_POINT;
-              if (imp > stats.outlierUpper) dotColor = CHART_COLORS.POSITIVE_OUTLIER;
-              if (imp < stats.outlierLower) dotColor = CHART_COLORS.NEGATIVE_OUTLIER;
+              if (isHighOutlier) dotColor = imp >= 0 ? CHART_COLORS.POSITIVE_OUTLIER : '#f97316';
+              if (isLowOutlier) dotColor = imp >= 0 ? '#3b82f6' : CHART_COLORS.NEGATIVE_OUTLIER;
+              
+              const getStatusLabel = () => {
+                if (!isOutlier) return imp >= 0 ? '优化' : '退化';
+                if (isHighOutlier) return imp >= 0 ? '异常高优化' : '异常高退化';
+                return imp >= 0 ? '异常低优化' : '异常低退化';
+              };
               
               return (
                 <g key={d.Case} className="cursor-pointer" onMouseEnter={(e) => {
@@ -184,7 +192,7 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
                     title: d.Case, 
                     lines: [
                       `#Inst: ${instValue.toLocaleString()}`,
-                      `状态: ${isOutlier ? (imp >= 0 ? '显著优化' : '严重退化') : (imp >= 0 ? '优化' : '退化')}`, 
+                      `状态: ${getStatusLabel()}`, 
                       imp >= 0 ? { text: `改进: +${imp.toFixed(2)}%`, color: 'text-green-400' } : 
                       { text: `改进: ${imp.toFixed(2)}%`, color: 'text-red-400' }
                     ] 

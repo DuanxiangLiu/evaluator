@@ -209,13 +209,20 @@ const generateCasesAnalysisSection = (stats, parsedData, baseAlgo, compareAlgo, 
               <tr><th>用例名称</th><th>改进率</th><th>类型</th></tr>
             </thead>
             <tbody>
-              ${outlierCases.map(c => `
+              ${outlierCases.map(c => {
+                let statusLabel = '正常';
+                if (c.outlierType === 'positive') {
+                  statusLabel = c.imp >= 0 ? '异常高优化' : '异常高退化';
+                } else if (c.outlierType === 'negative') {
+                  statusLabel = c.imp >= 0 ? '异常低优化' : '异常低退化';
+                }
+                return `
                 <tr class="${c.imp >= 0 ? 'positive' : 'negative'}">
                   <td>${c.Case}</td>
                   <td>${c.imp >= 0 ? '+' : ''}${c.imp.toFixed(2)}%</td>
-                  <td>${c.imp >= 0 ? '显著优化' : '严重退化'}</td>
+                  <td>${statusLabel}</td>
                 </tr>
-              `).join('')}
+              `}).join('')}
             </tbody>
           </table>
         ` : ''}
@@ -376,7 +383,11 @@ const generateRawDataSection = (stats, parsedData, baseAlgo, compareAlgo, active
       <td>${formatIndustrialNumber(c.bVal)}</td>
       <td>${formatIndustrialNumber(c.cVal)}</td>
       <td class="${c.imp >= 0 ? 'positive' : 'negative'}">${c.imp >= 0 ? '+' : ''}${c.imp.toFixed(2)}%</td>
-      <td>${c.outlierType === 'normal' ? '正常' : (c.imp >= 0 ? '显著优化' : '严重退化')}</td>
+      <td>${(() => {
+        if (c.outlierType === 'normal') return '正常';
+        if (c.outlierType === 'positive') return c.imp >= 0 ? '异常高优化' : '异常高退化';
+        return c.imp >= 0 ? '异常低优化' : '异常低退化';
+      })()}</td>
     </tr>
   `).join('');
   

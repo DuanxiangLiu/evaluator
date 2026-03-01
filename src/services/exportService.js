@@ -17,8 +17,10 @@ export const exportToCSV = (filteredData, activeMetric, baseAlgo, compareAlgo, m
       imp = calculateImprovement(bVal, cVal);
       const validMatch = stats?.validCases.find(v => v.Case === d.Case);
       if (validMatch) {
-        if (validMatch.outlierType === 'positive' || validMatch.outlierType === 'negative') {
-          status = imp >= 0 ? 'Significant_Opt' : 'Severe_Degrade';
+        if (validMatch.outlierType === 'positive') {
+          status = imp >= 0 ? 'Outlier_High_Opt' : 'Outlier_High_Deg';
+        } else if (validMatch.outlierType === 'negative') {
+          status = imp >= 0 ? 'Outlier_Low_Opt' : 'Outlier_Low_Deg';
         } else {
           status = imp > 0 ? 'Optimized' : (imp < 0 ? 'Degraded' : 'Neutral');
         }
@@ -104,8 +106,10 @@ export const exportToExcel = (data, algos, metrics, metaColumns, activeMetric, b
       imp = calculateImprovement(bVal, cVal);
       const validMatch = stats?.validCases.find(v => v.Case === row.Case);
       if (validMatch) {
-        if (validMatch.outlierType === 'positive' || validMatch.outlierType === 'negative') {
-          status = imp >= 0 ? 'Significant_Opt' : 'Severe_Degrade';
+        if (validMatch.outlierType === 'positive') {
+          status = imp >= 0 ? 'Outlier_High_Opt' : 'Outlier_High_Deg';
+        } else if (validMatch.outlierType === 'negative') {
+          status = imp >= 0 ? 'Outlier_Low_Opt' : 'Outlier_Low_Deg';
         } else {
           status = imp > 0 ? 'Optimized' : (imp < 0 ? 'Degraded' : 'Neutral');
         }

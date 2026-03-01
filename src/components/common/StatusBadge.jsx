@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Square, Zap, AlertTriangle, ArrowUp, ArrowDown } from 'lucide-react';
+import { Square, Zap, AlertTriangle, ArrowUp, ArrowDown, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 const STATUS_CONFIG = {
   filtered: {
@@ -8,15 +8,25 @@ const STATUS_CONFIG = {
     className: 'bg-gray-200 text-gray-500',
     label: '已过滤'
   },
-  significant_opt: {
+  outlier_opt_high: {
     icon: Zap,
     className: 'bg-purple-100 text-purple-800 border border-purple-300 shadow-sm',
-    label: '显著优化'
+    label: '异常高优化'
   },
-  severe_degrade: {
+  outlier_opt_low: {
+    icon: TrendingUp,
+    className: 'bg-blue-100 text-blue-800 border border-blue-300 shadow-sm',
+    label: '异常低优化'
+  },
+  outlier_deg_high: {
+    icon: TrendingDown,
+    className: 'bg-orange-100 text-orange-800 border border-orange-300 shadow-sm',
+    label: '异常高退化'
+  },
+  outlier_deg_low: {
     icon: AlertTriangle,
     className: 'bg-red-100 text-red-800 border border-red-300 shadow-sm',
-    label: '严重退化'
+    label: '异常低退化'
   },
   optimized: {
     icon: ArrowUp,
@@ -29,7 +39,7 @@ const STATUS_CONFIG = {
     label: '退化'
   },
   neutral: {
-    icon: null,
+    icon: Minus,
     className: 'bg-gray-100 text-gray-600 border border-gray-200',
     label: '持平'
   }
@@ -48,18 +58,28 @@ const StatusBadge = ({ type, className = '' }) => {
 };
 
 StatusBadge.propTypes = {
-  type: PropTypes.oneOf(['filtered', 'significant_opt', 'severe_degrade', 'optimized', 'degraded', 'neutral']).isRequired,
+  type: PropTypes.oneOf([
+    'filtered', 
+    'outlier_opt_high', 'outlier_opt_low', 
+    'outlier_deg_high', 'outlier_deg_low',
+    'optimized', 'degraded', 'neutral'
+  ]).isRequired,
   className: PropTypes.string
 };
 
 export const getStatusType = (isChecked, isNull, outlierType, improvement) => {
   if (!isChecked || isNull) return 'filtered';
-  if (outlierType === 'positive' || outlierType === 'negative') {
-    return improvement >= 0 ? 'significant_opt' : 'severe_degrade';
+  
+  if (improvement === 0) return 'neutral';
+  
+  if (outlierType === 'positive') {
+    return improvement > 0 ? 'outlier_opt_high' : 'outlier_deg_high';
   }
-  if (improvement > 0) return 'optimized';
-  if (improvement < 0) return 'degraded';
-  return 'neutral';
+  if (outlierType === 'negative') {
+    return improvement > 0 ? 'outlier_opt_low' : 'outlier_deg_low';
+  }
+  
+  return improvement > 0 ? 'optimized' : 'degraded';
 };
 
 export default StatusBadge;
