@@ -54,8 +54,9 @@ StatusBadge.propTypes = {
 
 export const getStatusType = (isChecked, isNull, outlierType, improvement) => {
   if (!isChecked || isNull) return 'filtered';
-  if (outlierType === 'positive') return 'significant_opt';
-  if (outlierType === 'negative') return 'severe_degrade';
+  if (outlierType === 'positive' || outlierType === 'negative') {
+    return improvement >= 0 ? 'significant_opt' : 'severe_degrade';
+  }
   if (improvement > 0) return 'optimized';
   if (improvement < 0) return 'degraded';
   return 'neutral';

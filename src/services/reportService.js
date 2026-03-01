@@ -210,10 +210,10 @@ const generateCasesAnalysisSection = (stats, parsedData, baseAlgo, compareAlgo, 
             </thead>
             <tbody>
               ${outlierCases.map(c => `
-                <tr class="${c.outlierType === 'positive' ? 'positive' : 'negative'}">
+                <tr class="${c.imp >= 0 ? 'positive' : 'negative'}">
                   <td>${c.Case}</td>
                   <td>${c.imp >= 0 ? '+' : ''}${c.imp.toFixed(2)}%</td>
-                  <td>${c.outlierType === 'positive' ? '显著优化' : '严重退化'}</td>
+                  <td>${c.imp >= 0 ? '显著优化' : '严重退化'}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -376,7 +376,7 @@ const generateRawDataSection = (stats, parsedData, baseAlgo, compareAlgo, active
       <td>${formatIndustrialNumber(c.bVal)}</td>
       <td>${formatIndustrialNumber(c.cVal)}</td>
       <td class="${c.imp >= 0 ? 'positive' : 'negative'}">${c.imp >= 0 ? '+' : ''}${c.imp.toFixed(2)}%</td>
-      <td>${c.outlierType === 'normal' ? '正常' : c.outlierType === 'positive' ? '显著优化' : '严重退化'}</td>
+      <td>${c.outlierType === 'normal' ? '正常' : (c.imp >= 0 ? '显著优化' : '严重退化')}</td>
     </tr>
   `).join('');
   

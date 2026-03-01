@@ -184,10 +184,9 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
                     title: d.Case, 
                     lines: [
                       `#Inst: ${instValue.toLocaleString()}`,
-                      `状态: ${isOutlier ? (imp > 0 ? '显著优化' : '严重退化') : (imp > 0 ? '优化' : '退化')}`, 
-                      imp > 0 ? { text: `改进: +${imp.toFixed(2)}%`, color: 'text-green-400' } : 
-                      imp < 0 ? { text: `改进: ${imp.toFixed(2)}%`, color: 'text-red-400' } : 
-                      '改进: 0.00%'
+                      `状态: ${isOutlier ? (imp >= 0 ? '显著优化' : '严重退化') : (imp >= 0 ? '优化' : '退化')}`, 
+                      imp >= 0 ? { text: `改进: +${imp.toFixed(2)}%`, color: 'text-green-400' } : 
+                      { text: `改进: ${imp.toFixed(2)}%`, color: 'text-red-400' }
                     ] 
                   });
                 }}

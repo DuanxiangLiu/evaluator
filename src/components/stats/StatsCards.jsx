@@ -313,9 +313,9 @@ const StatsCards = ({ stats }) => {
                 ? card.value.toFixed(3) 
                 : card.format === 'range'
                   ? <span className="flex items-center gap-1 text-lg">
-                      <span className="text-red-600">{card.minImp.toFixed(2)}%</span>
+                      <span className={card.minImp >= 0 ? 'text-emerald-600' : 'text-red-600'}>{card.minImp >= 0 ? '+' : ''}{card.minImp.toFixed(2)}%</span>
                       <span className="text-gray-400 text-sm">~</span>
-                      <span className="text-emerald-600">+{card.value.toFixed(2)}%</span>
+                      <span className={card.value >= 0 ? 'text-emerald-600' : 'text-red-600'}>{card.value >= 0 ? '+' : ''}{card.value.toFixed(2)}%</span>
                     </span>
                   : card.format === 'integer'
                     ? <span>{card.value}{card.suffix || ''} <span className="text-sm font-medium">{card.subValue}</span></span>
