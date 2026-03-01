@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 const AllMetricsOverview = ({ allMetricsStats, baseAlgo, compareAlgo }) => {
   if (!allMetricsStats || allMetricsStats.length === 0) {
@@ -17,12 +16,6 @@ const AllMetricsOverview = ({ allMetricsStats, baseAlgo, compareAlgo }) => {
       return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
     }
     return value.toFixed(3);
-  };
-
-  const getTrendIcon = (value) => {
-    if (value > 0) return <TrendingUp className="w-4 h-4 text-emerald-600" />;
-    if (value < 0) return <TrendingDown className="w-4 h-4 text-red-600" />;
-    return <Minus className="w-4 h-4 text-gray-500" />;
   };
 
   const getValueColor = (value) => {
@@ -84,20 +77,14 @@ const AllMetricsOverview = ({ allMetricsStats, baseAlgo, compareAlgo }) => {
                     {item.metric}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {getTrendIcon(stats.geomeanImp)}
-                      <span className={getValueColor(stats.geomeanImp)}>
-                        {formatValue(stats.geomeanImp)}
-                      </span>
-                    </div>
+                    <span className={getValueColor(stats.geomeanImp)}>
+                      {formatValue(stats.geomeanImp)}
+                    </span>
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {getTrendIcon(stats.meanImp)}
-                      <span className={getValueColor(stats.meanImp)}>
-                        {formatValue(stats.meanImp)}
-                      </span>
-                    </div>
+                    <span className={getValueColor(stats.meanImp)}>
+                      {formatValue(stats.meanImp)}
+                    </span>
                   </td>
                   <td className={`px-3 py-2 whitespace-nowrap text-sm text-right ${getPValueColor(stats.pValue)}`}>
                     {formatValue(stats.pValue, false)}
@@ -110,12 +97,14 @@ const AllMetricsOverview = ({ allMetricsStats, baseAlgo, compareAlgo }) => {
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-right">
                     <span className={stats.degradedCount === 0 ? 'text-emerald-600' : 'text-red-600'}>
                       {stats.degradedCount}/{stats.nValid}
-                      <span className="text-xs text-gray-500 ml-1">({degradedRate.toFixed(2)}%)</span>
+                      <span className="text-xs ml-1">({degradedRate.toFixed(2)}%)</span>
                     </span>
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-right">
-                    <span className="text-gray-600">
-                      {formatValue(stats.minImp)} ~ {formatValue(stats.maxImp)}
+                    <span className="flex items-center justify-end gap-1 text-lg">
+                      <span className={getValueColor(stats.minImp)}>{formatValue(stats.minImp)}</span>
+                      <span className="text-gray-400 text-sm">~</span>
+                      <span className={getValueColor(stats.maxImp)}>{formatValue(stats.maxImp)}</span>
                     </span>
                   </td>
                 </tr>

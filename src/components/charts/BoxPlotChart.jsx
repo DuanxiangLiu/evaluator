@@ -64,12 +64,12 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
       }
     };
     
-    addTick(stats.maxImp, <>最大<br/>{stats.maxImp > 0 ? '+' : ''}{stats.maxImp.toFixed(2)}%</>, 'text-green-600', 1);
-    addTick(stats.q3, <>Q3<br/>{stats.q3 > 0 ? '+' : ''}{stats.q3.toFixed(2)}%</>, 'text-emerald-600', 2);
-    addTick(stats.median, <>中位<br/>{stats.median > 0 ? '+' : ''}{stats.median.toFixed(2)}%</>, 'text-indigo-600 font-bold', 3);
-    addTick(stats.q1, <>Q1<br/>{stats.q1 > 0 ? '+' : ''}{stats.q1.toFixed(2)}%</>, 'text-amber-600', 4);
-    addTick(stats.minImp, <>最小<br/>{stats.minImp > 0 ? '+' : ''}{stats.minImp.toFixed(2)}%</>, 'text-red-500', 5);
-    addTick(0, '0%', 'text-gray-400', 6);
+    addTick(stats.maxImp, <>最大 {stats.maxImp > 0 ? '+' : ''}{stats.maxImp.toFixed(2)}%</>, 'text-green-600', 1);
+    addTick(stats.q3, <>Q3 {stats.q3 > 0 ? '+' : ''}{stats.q3.toFixed(2)}%</>, 'text-emerald-600', 2);
+    addTick(stats.median, <>中位 {stats.median > 0 ? '+' : ''}{stats.median.toFixed(2)}%</>, 'text-indigo-600 font-bold', 3);
+    addTick(0, <>零点 0%</>, 'text-gray-400', 4);
+    addTick(stats.q1, <>Q1 {stats.q1 > 0 ? '+' : ''}{stats.q1.toFixed(2)}%</>, 'text-amber-600', 5);
+    addTick(stats.minImp, <>最小 {stats.minImp > 0 ? '+' : ''}{stats.minImp.toFixed(2)}%</>, 'text-red-500', 6);
     
     const uniqueTicks = [];
     const seenVals = new Set();
@@ -134,12 +134,11 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
       />
       
       <ChartBody className={`${chartWidth} mx-auto w-full`}>
-        <div className="flex flex-col justify-between text-right pr-2 py-1 text-xs font-semibold text-gray-500 w-14 flex-shrink-0 relative">
-          <span className="text-gray-400 text-xs -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">改进率</span>
+        <div className="flex flex-col justify-between text-right pr-4 py-1 text-xs font-semibold text-gray-500 w-20 flex-shrink-0 relative">
           {specialTicks.map((tick, i) => (
             <span 
               key={i} 
-              className={tick.colorClass}
+              className={`whitespace-nowrap ${tick.colorClass}`}
               style={{ position: 'absolute', top: `${mapY(tick.val)}%`, transform: 'translateY(-50%)' }}
             >
               {tick.label}
@@ -238,7 +237,7 @@ const BoxPlotChart = ({ stats, activeMetric, handleChartMouseMove, hoveredCase, 
       </ChartBody>
       
       <div className={`${chartWidth} mx-auto w-full flex justify-between items-center py-1 text-xs text-gray-500 font-medium`}>
-        <div className="w-12 flex-shrink-0"></div>
+        <div className="w-20 flex-shrink-0"></div>
         <div className="flex-1 flex justify-between items-center">
           <span className="flex items-center gap-1">
             <span className="text-gray-400">#Inst:</span>

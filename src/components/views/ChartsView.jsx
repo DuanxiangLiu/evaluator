@@ -35,7 +35,8 @@ const ChartsView = ({
   setParetoZ,
   allMetricsStats,
   qorWeights,
-  setQorWeights
+  setQorWeights,
+  savedQorWeights
 }) => {
   return (
     <>
@@ -116,6 +117,7 @@ const ChartsView = ({
           setQorWeights={setQorWeights}
           parsedData={parsedData}
           selectedCases={selectedCases}
+          savedQorWeights={savedQorWeights}
         />
       )}
 
@@ -162,7 +164,8 @@ ChartsView.propTypes = {
   setParetoZ: PropTypes.func.isRequired,
   allMetricsStats: PropTypes.array.isRequired,
   qorWeights: PropTypes.object.isRequired,
-  setQorWeights: PropTypes.func.isRequired
+  setQorWeights: PropTypes.func.isRequired,
+  savedQorWeights: PropTypes.object
 };
 
 export default ChartsView;

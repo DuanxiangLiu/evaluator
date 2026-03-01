@@ -510,29 +510,29 @@ const CorrelationChart = ({
     }
   }, [llmConfig, stats, corrX, corrY, minX, maxX, minY, maxY, points.length, toast, setShowAiConfig]);
 
+  const formatXTick = (val) => {
+    if (isMetricX) {
+      return `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
+    }
+    return formatIndustrialNumber(val);
+  };
+
+  const formatYTick = (val) => {
+    if (isMetricY) {
+      return `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
+    }
+    return formatIndustrialNumber(val);
+  };
+
   const renderContent = () => {
     if (!corrX || !corrY || points.length === 0) {
       return <EmptyState message="请选择 X 轴与 Y 轴进行分析" />;
     }
 
-    const formatXTick = (val) => {
-      if (isMetricX) {
-        return `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
-      }
-      return formatIndustrialNumber(val);
-    };
-
-    const formatYTick = (val) => {
-      if (isMetricY) {
-        return `${val > 0 ? '+' : ''}${val.toFixed(2)}%`;
-      }
-      return formatIndustrialNumber(val);
-    };
-
     return (
       <ChartBody className={`${chartWidth} mx-auto w-full`}>
         <div className="flex flex-col justify-between text-right pr-2 py-1 text-xs font-semibold text-gray-500 w-12 flex-shrink-0 relative">
-          <span className="text-gray-500 text-[10px] -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2 leading-tight">{corrY || 'Y'}</span>
+          <span className="text-gray-500 text-xs -rotate-90 origin-center whitespace-nowrap absolute left-1 top-1/2 -translate-y-1/2 leading-tight">{corrY || 'Y'}</span>
           {yTicks.filter(tick => {
             const topPercent = mapY(tick.val);
             return topPercent >= 0 && topPercent <= 100;
@@ -540,7 +540,7 @@ const CorrelationChart = ({
             <span 
               key={i} 
               className={`
-                absolute right-2 text-[10px] font-medium tabular-nums leading-tight
+                absolute right-2 text-xs font-medium tabular-nums leading-tight
                 ${isMetricY && tick.val > 0 ? 'text-green-600' : ''} 
                 ${isMetricY && tick.val < 0 ? 'text-red-500' : ''}
                 ${isMetricY && tick.val === 0 ? 'text-gray-600 font-bold' : ''}
@@ -552,149 +552,118 @@ const CorrelationChart = ({
           ))}
         </div>
         
-        <div className="flex-1 flex flex-col">
-          <ChartArea className={`border-l-2 border-b-2 border-gray-300 flex-1 ${isMetricY ? 'bg-gradient-to-b from-green-50/30 via-white to-red-50/30' : 'bg-gradient-to-b from-indigo-50/30 via-white to-purple-50/30'}`}>
-            {isMetricY && (
-              <>
-                <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-green-100/20 to-transparent pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-red-100/20 to-transparent pointer-events-none"></div>
-              </>
-            )}
-            
-            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-              {yTicks.map((tick, i) => (
-                <line 
-                  key={`ytick-${i}`}
-                  x1="0" 
-                  y1={mapY(tick.val)} 
-                  x2="100" 
-                  y2={mapY(tick.val)} 
-                  stroke={tick.val === 0 ? "#9ca3af" : "#e5e7eb"} 
-                  strokeWidth={tick.val === 0 ? "0.5" : "0.3"} 
-                  strokeDasharray={tick.val === 0 ? "2 2" : "1 2"}
-                />
-              ))}
-              
-              {stats && stats.slope != null && !isInstX && !isInstY && (
-                <line 
-                  x1={mapX(xMin)} 
-                  y1={mapY(stats.slope * xMin + stats.intercept)} 
-                  x2={mapX(xMax)} 
-                  y2={mapY(stats.slope * xMax + stats.intercept)} 
-                  stroke="#4f46e5" 
-                  strokeWidth="0.8" 
-                  strokeDasharray="2 1"
-                  opacity="0.9"
-                />
-              )}
-              
-              {points.map((p, i) => {
-                const isHovered = hoveredCase === p.case;
-                const cx = isInstX ? (5 + (i / (points.length - 1 || 1)) * 90) : mapX(p.xVal);
-                const cy = isInstY ? (5 + (i / (points.length - 1 || 1)) * 90) : mapY(p.yVal);
-                
-                let color = '#6366f1';
-                if (isMetricY) {
-                  if (p.yVal > 0) color = '#059669';
-                  if (p.yVal < 0) color = '#dc2626';
-                }
-
-                const formatTooltipValue = (val, isMetric) => {
-                  if (isMetric) {
-                    if (val > 0) {
-                      return { text: `+${val.toFixed(2)}%`, color: 'text-green-400' };
-                    } else if (val < 0) {
-                      return { text: `${val.toFixed(2)}%`, color: 'text-red-400' };
-                    } else {
-                      return '0.00%';
-                    }
-                  }
-                  return formatIndustrialNumber(val);
-                };
-
-                return (
-                  <g key={`corr-${p.case}`}>
-                    <circle
-                      cx={cx} cy={cy} r="6"
-                      fill="transparent"
-                      className="cursor-pointer"
-                      onMouseEnter={(e) => {
-                        setHoveredCase(p.case);
-                        const xValue = formatTooltipValue(p.xVal, isMetricX);
-                        const yValue = formatTooltipValue(p.yVal, isMetricY);
-                        const lines = [
-                          typeof xValue === 'string' ? `${corrX}: ${xValue}` : { text: `${corrX}: ${xValue.text}`, color: xValue.color },
-                          typeof yValue === 'string' ? `${corrY}: ${yValue}` : { text: `${corrY}: ${yValue.text}`, color: yValue.color }
-                        ];
-                        setTooltipState({ visible: true, x: e.clientX, y: e.clientY, title: p.case, lines });
-                      }}
-                      onMouseMove={(e) => {
-                        setTooltipState(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
-                      }}
-                      onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setHoveredCase(null);
-                        setTooltipState(prev => ({...prev, visible: false}));
-                        if (onCaseClick) onCaseClick(p.case);
-                      }}
-                    />
-                    <circle
-                      cx={cx} cy={cy} 
-                      r={isHovered ? "2" : "1"} 
-                      fill={color} 
-                      stroke={isHovered ? "#fff" : "none"} 
-                      strokeWidth="0.3"
-                      className={`transition-all duration-200 pointer-events-none ${isHovered ? 'animate-pulse' : ''}`}
-                    />
-                  </g>
-                );
-              })}
-            </svg>
-            
-            {isMetricY ? (
-              <>
-                <AreaLabel position="top-left" variant="success">优化 ↑</AreaLabel>
-                <AreaLabel position="bottom-left" variant="danger">退化 ↓</AreaLabel>
-              </>
-            ) : (
-              <>
-                <AreaLabel position="top-left" variant="info">大 ↑</AreaLabel>
-                <AreaLabel position="bottom-left" variant="info">小 ↓</AreaLabel>
-              </>
-            )}
-          </ChartArea>
+        <ChartArea className={`border-l-2 border-b-2 border-gray-300 flex-1 ${isMetricY ? 'bg-gradient-to-b from-green-50/30 via-white to-red-50/30' : 'bg-gradient-to-b from-indigo-50/30 via-white to-purple-50/30'}`}>
+          {isMetricY && (
+            <>
+              <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-green-100/20 to-transparent pointer-events-none"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-red-100/20 to-transparent pointer-events-none"></div>
+            </>
+          )}
           
-          <div className="text-center py-1 text-xs font-semibold text-gray-500 relative h-6">
-            {!isInstX && xTicks.length > 0 ? (
-              <>
-                <div className="absolute inset-0 flex justify-between px-0">
-                  {xTicks.map((tick, i) => (
-                    <span 
-                      key={i}
-                      className={`
-                        text-xs 
-                        ${isMetricX && tick.val > 0 ? 'text-green-600' : ''} 
-                        ${isMetricX && tick.val < 0 ? 'text-red-500' : ''}
-                      `}
-                      style={{ 
-                        position: 'absolute', 
-                        left: `${mapX(tick.val)}%`, 
-                        transform: 'translateX(-50%)' 
-                      }}
-                    >
-                      {formatXTick(tick.val)}
-                    </span>
-                  ))}
-                </div>
-                <span className="text-gray-400 text-xs mt-3 block">{corrX || 'X'}</span>
-              </>
-            ) : (
-              <span className="text-gray-400">{corrX || 'X'}</span>
+          <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+            {yTicks.map((tick, i) => (
+              <line 
+                key={`ytick-${i}`}
+                x1="0" 
+                y1={mapY(tick.val)} 
+                x2="100" 
+                y2={mapY(tick.val)} 
+                stroke={tick.val === 0 ? "#9ca3af" : "#e5e7eb"} 
+                strokeWidth={tick.val === 0 ? "0.5" : "0.3"} 
+                strokeDasharray={tick.val === 0 ? "2 2" : "1 2"}
+              />
+            ))}
+            
+            {stats && stats.slope != null && !isInstX && !isInstY && (
+              <line 
+                x1={Math.max(0, Math.min(100, mapX(xMin)))} 
+                y1={Math.max(0, Math.min(100, mapY(stats.slope * xMin + stats.intercept)))} 
+                x2={Math.max(0, Math.min(100, mapX(xMax)))} 
+                y2={Math.max(0, Math.min(100, mapY(stats.slope * xMax + stats.intercept)))} 
+                stroke="#4f46e5" 
+                strokeWidth="0.8" 
+                strokeDasharray="2 1"
+                opacity="0.9"
+              />
             )}
-          </div>
-        </div>
+            
+            {points.map((p, i) => {
+              const isHovered = hoveredCase === p.case;
+              const cx = isInstX ? (5 + (i / (points.length - 1 || 1)) * 90) : mapX(p.xVal);
+              const cy = isInstY ? (5 + (i / (points.length - 1 || 1)) * 90) : mapY(p.yVal);
+              
+              let color = '#6366f1';
+              if (isMetricY) {
+                if (p.yVal > 0) color = '#059669';
+                if (p.yVal < 0) color = '#dc2626';
+              }
+
+              const formatTooltipValue = (val, isMetric) => {
+                if (isMetric) {
+                  if (val > 0) {
+                    return { text: `+${val.toFixed(2)}%`, color: 'text-green-400' };
+                  } else if (val < 0) {
+                    return { text: `${val.toFixed(2)}%`, color: 'text-red-400' };
+                  } else {
+                    return '0.00%';
+                  }
+                }
+                return formatIndustrialNumber(val);
+              };
+
+              return (
+                <g key={`corr-${p.case}`}>
+                  <circle
+                    cx={cx} cy={cy} r="6"
+                    fill="transparent"
+                    className="cursor-pointer"
+                    onMouseEnter={(e) => {
+                      setHoveredCase(p.case);
+                      const xValue = formatTooltipValue(p.xVal, isMetricX);
+                      const yValue = formatTooltipValue(p.yVal, isMetricY);
+                      const lines = [
+                        typeof xValue === 'string' ? `${corrX}: ${xValue}` : { text: `${corrX}: ${xValue.text}`, color: xValue.color },
+                        typeof yValue === 'string' ? `${corrY}: ${yValue}` : { text: `${corrY}: ${yValue.text}`, color: yValue.color }
+                      ];
+                      setTooltipState({ visible: true, x: e.clientX, y: e.clientY, title: p.case, lines });
+                    }}
+                    onMouseMove={(e) => {
+                      setTooltipState(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
+                    }}
+                    onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setHoveredCase(null);
+                      setTooltipState(prev => ({...prev, visible: false}));
+                      if (onCaseClick) onCaseClick(p.case);
+                    }}
+                  />
+                  <circle
+                    cx={cx} cy={cy} 
+                    r={isHovered ? "2" : "1"} 
+                    fill={color} 
+                    stroke={isHovered ? "#fff" : "none"} 
+                    strokeWidth="0.3"
+                    className={`transition-all duration-200 pointer-events-none ${isHovered ? 'animate-pulse' : ''}`}
+                  />
+                </g>
+              );
+            })}
+          </svg>
+          
+          {isMetricY ? (
+            <>
+              <AreaLabel position="top-left" variant="success">优化 ↑</AreaLabel>
+              <AreaLabel position="bottom-left" variant="danger">退化 ↓</AreaLabel>
+            </>
+          ) : (
+            <>
+              <AreaLabel position="top-left" variant="info">大 ↑</AreaLabel>
+              <AreaLabel position="bottom-left" variant="info">小 ↓</AreaLabel>
+            </>
+          )}
+        </ChartArea>
       </ChartBody>
     );
   };
@@ -894,6 +863,35 @@ const CorrelationChart = ({
       />
       
       {renderContent()}
+
+      <div className={`${chartWidth} mx-auto w-full flex justify-between items-center py-1 text-xs text-gray-500 font-medium`}>
+        <div className="w-12 flex-shrink-0"></div>
+        <div className="flex-1 relative h-6">
+          {!isInstX && xTicks.length > 0 ? (
+            <>
+              {xTicks.map((tick, i) => (
+                <span 
+                  key={i}
+                  className={`
+                    absolute text-xs
+                    ${isMetricX && tick.val > 0 ? 'text-green-600' : ''} 
+                    ${isMetricX && tick.val < 0 ? 'text-red-500' : ''}
+                  `}
+                  style={{ 
+                    left: `${mapX(tick.val)}%`, 
+                    transform: 'translateX(-50%)' 
+                  }}
+                >
+                  {formatXTick(tick.val)}
+                </span>
+              ))}
+              <span className="text-gray-400 text-xs mt-3 block text-center">{corrX || 'X'}</span>
+            </>
+          ) : (
+            <span className="text-gray-400 text-center block">{corrX || 'X'}</span>
+          )}
+        </div>
+      </div>
 
       <ChartLegend items={[
         { color: '#059669', label: '优化', shape: 'circle' },

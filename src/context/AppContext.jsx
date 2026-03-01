@@ -31,6 +31,7 @@ export const AppProvider = ({ children }) => {
   const [llmConfig, setLlmConfig] = useLocalStorage('eda_llm_config', DEFAULT_LLM_CONFIG);
   const [savedAiInsights, setSavedAiInsights] = useLocalStorage('eda_ai_insights', {});
   const [chartSize, setChartSize] = useLocalStorage('eda_chart_size', DEFAULT_CHART_SIZE);
+  const [savedQorWeights, setSavedQorWeights] = useLocalStorage('eda_qor_weights', {});
   
   const [state, dispatch] = useReducer(appReducer, initialState);
   const actions = useMemo(() => createActions(dispatch), []);
@@ -219,7 +220,19 @@ export const AppProvider = ({ children }) => {
     const avg = +(100 / state.availableMetrics.length).toFixed(2);
     state.availableMetrics.forEach(m => newWeights[m] = avg);
     actions.setQorWeights(newWeights);
-  }, [state.availableMetrics, actions]);
+    setSavedQorWeights(newWeights);
+  }, [state.availableMetrics, actions, setSavedQorWeights]);
+
+  const handleSetQorWeights = useCallback((weightsOrUpdater) => {
+    if (typeof weightsOrUpdater === 'function') {
+      const newWeights = weightsOrUpdater(state.qorWeights);
+      actions.setQorWeights(newWeights);
+      setSavedQorWeights(newWeights);
+    } else {
+      actions.setQorWeights(weightsOrUpdater);
+      setSavedQorWeights(weightsOrUpdater);
+    }
+  }, [actions, setSavedQorWeights, state.qorWeights]);
 
   const handleChartMouseMove = useCallback((e) => {
     if (!state.tooltipState.visible) return;
@@ -272,7 +285,8 @@ export const AppProvider = ({ children }) => {
     paretoZ: state.paretoZ,
     setParetoZ: (v) => actions.setChartAxis('paretoZ', v),
     qorWeights: state.qorWeights,
-    setQorWeights: actions.setQorWeights,
+    setQorWeights: handleSetQorWeights,
+    savedQorWeights,
     selectedCases: state.selectedCases,
     setSelectedCases: actions.setSelectedCases,
     sortConfig: state.sortConfig,
@@ -318,7 +332,8 @@ export const AppProvider = ({ children }) => {
     stats, allMetricsStats, sortedTableData, filteredTableData, validCasesMap,
     runAnalysis, handleSort, toggleAll, equalizeWeights, handleChartMouseMove, handleEditDataValue,
     saveAiInsights, getSavedAiInsights, isInsightsOutdated,
-    chartSize, setChartSize
+    chartSize, setChartSize,
+    handleSetQorWeights, savedQorWeights
   ]);
 
   return (

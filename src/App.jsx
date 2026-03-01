@@ -248,7 +248,7 @@ const AppContent = () => {
     activeTab, setActiveTab, baseAlgo, setBaseAlgo, compareAlgo, setCompareAlgo,
     tableFilter, setTableFilter, corrX, setCorrX, corrY, setCorrY,
     paretoX, setParetoX, paretoY, setParetoY, paretoZ, setParetoZ,
-    qorWeights, setQorWeights,
+    qorWeights, setQorWeights, savedQorWeights,
     selectedCases, setSelectedCases, sortConfig, tooltipState, setTooltipState,
     deepDiveCase, setDeepDiveCase, hoveredCase, setHoveredCase,
     isAnalyzing, setIsAnalyzing, aiInsights, setAiInsights,
@@ -504,6 +504,7 @@ const AppContent = () => {
                   allMetricsStats={allMetricsStats}
                   qorWeights={qorWeights}
                   setQorWeights={setQorWeights}
+                  savedQorWeights={savedQorWeights}
                 />
               )}
 

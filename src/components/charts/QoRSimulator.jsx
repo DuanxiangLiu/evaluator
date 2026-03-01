@@ -17,11 +17,38 @@ const QoRSimulator = ({
   qorWeights,
   setQorWeights,
   parsedData,
-  selectedCases
+  selectedCases,
+  savedQorWeights
 }) => {
   const [showWeightHelp, setShowWeightHelp] = useState(false);
-  const [activePreset, setActivePreset] = useState('balanced');
+  const [activePreset, setActivePreset] = useState('custom');
+  const [editingMetric, setEditingMetric] = useState(null);
+  const [editValue, setEditValue] = useState('');
   const initializedRef = useRef(false);
+
+  const detectPreset = useCallback((weights) => {
+    const tolerance = 0.01;
+    
+    for (const [presetId, preset] of Object.entries(WEIGHT_PRESETS)) {
+      const presetWeights = preset.getWeights(availableMetrics);
+      let matches = true;
+      
+      for (const metric of availableMetrics) {
+        const currentWeight = weights[metric] || 0;
+        const presetWeight = presetWeights[metric] || 0;
+        if (Math.abs(currentWeight - presetWeight) > tolerance) {
+          matches = false;
+          break;
+        }
+      }
+      
+      if (matches) {
+        return presetId;
+      }
+    }
+    
+    return 'custom';
+  }, [availableMetrics]);
 
   const applyPreset = useCallback((presetId) => {
     if (WEIGHT_PRESETS[presetId]) {
@@ -34,12 +61,24 @@ const QoRSimulator = ({
   useEffect(() => {
     if (availableMetrics.length > 0 && !initializedRef.current) {
       initializedRef.current = true;
-      const hasWeights = availableMetrics.some(m => qorWeights[m] > 0);
-      if (!hasWeights) {
+      
+      const savedWeightsForMetrics = {};
+      let hasSavedWeights = false;
+      availableMetrics.forEach(m => {
+        if (savedQorWeights[m] !== undefined && savedQorWeights[m] > 0) {
+          savedWeightsForMetrics[m] = savedQorWeights[m];
+          hasSavedWeights = true;
+        }
+      });
+      
+      if (hasSavedWeights) {
+        setQorWeights(savedWeightsForMetrics);
+        setActivePreset(detectPreset(savedWeightsForMetrics));
+      } else {
         applyPreset('balanced');
       }
     }
-  }, [availableMetrics, qorWeights, applyPreset]);
+  }, [availableMetrics, savedQorWeights, applyPreset, setQorWeights, detectPreset]);
 
   const algoMetricsStats = useMemo(() => {
     if (!parsedData || parsedData.length === 0 || !baseAlgo) return {};
@@ -102,10 +141,39 @@ const QoRSimulator = ({
     return scores;
   }, [algoMetricsStats, qorWeights, availableAlgos, baseAlgo, availableMetrics]);
 
+  const handleWeightFocus = (metric) => {
+    setEditingMetric(metric);
+    setEditValue(String(qorWeights[metric] || 0));
+  };
+
   const handleWeightChange = (metric, value) => {
+    setEditValue(value);
+  };
+
+  const handleWeightBlur = (metric, value) => {
     const numValue = Math.max(0, Math.min(100, parseFloat(value) || 0));
-    setQorWeights(prev => ({ ...prev, [metric]: numValue }));
-    setActivePreset('custom');
+    const newWeights = { ...qorWeights, [metric]: numValue };
+    setQorWeights(newWeights);
+    setEditingMetric(null);
+    setEditValue('');
+    setActivePreset(detectPreset(newWeights));
+  };
+
+  const handleWeightKeyDown = (e, metric) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const numValue = Math.max(0, Math.min(100, parseFloat(e.target.value) || 0));
+      const newWeights = { ...qorWeights, [metric]: numValue };
+      setQorWeights(newWeights);
+      setEditingMetric(null);
+      setEditValue('');
+      setActivePreset(detectPreset(newWeights));
+      e.target.blur();
+    } else if (e.key === 'Escape') {
+      setEditingMetric(null);
+      setEditValue('');
+      e.target.blur();
+    }
   };
 
   if (!parsedData || parsedData.length === 0 || Object.keys(algoMetricsStats).length === 0) {
@@ -225,17 +293,21 @@ const QoRSimulator = ({
             <div className="flex flex-wrap gap-2">
               {availableMetrics.map(metric => {
                 const weight = qorWeights[metric] || 0;
+                const isEditing = editingMetric === metric;
+                const displayValue = isEditing ? editValue : weight.toFixed(2);
                 
                 return (
                   <div key={metric} className="inline-flex items-center gap-2 bg-slate-50 rounded-md px-3 py-1.5 border border-slate-200">
                     <span className="text-xs font-semibold text-slate-700">{metric}</span>
                     <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={weight.toFixed(2)}
+                      type="text"
+                      inputMode="decimal"
+                      value={displayValue}
                       onChange={(e) => handleWeightChange(metric, e.target.value)}
-                      className="w-16 px-2 py-1 text-xs font-semibold text-center border border-slate-300 rounded focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      onFocus={() => handleWeightFocus(metric)}
+                      onBlur={(e) => handleWeightBlur(metric, e.target.value)}
+                      onKeyDown={(e) => handleWeightKeyDown(e, metric)}
+                      className="w-16 px-2 py-1 text-xs font-semibold text-center border border-slate-300 rounded focus:ring-1 focus:ring-indigo-400 focus:border-indigo-400 bg-white"
                     />
                     <span className="text-xs text-slate-500">%</span>
                   </div>
@@ -345,7 +417,8 @@ QoRSimulator.propTypes = {
   qorWeights: PropTypes.objectOf(PropTypes.number).isRequired,
   setQorWeights: PropTypes.func.isRequired,
   parsedData: PropTypes.arrayOf(PropTypes.object).isRequired,
-  selectedCases: PropTypes.object.isRequired
+  selectedCases: PropTypes.object.isRequired,
+  savedQorWeights: PropTypes.objectOf(PropTypes.number)
 };
 
 export default QoRSimulator;

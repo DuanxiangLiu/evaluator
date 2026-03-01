@@ -83,7 +83,6 @@ const ParetoChart = ({
     return (
       <ChartBody className={`${chartWidth} mx-auto w-full`}>
         <div className="flex flex-col justify-between text-right pr-2 py-1 text-xs font-semibold text-gray-500 w-14 flex-shrink-0 relative">
-          <span className="text-gray-400 text-xs -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">{paretoY || 'Y'}</span>
           {yTicks.slice().reverse().map((tick, i) => (
             <span 
               key={i} 
@@ -97,138 +96,124 @@ const ParetoChart = ({
               {formatTickValue(tick.val)}
             </span>
           ))}
+          {yTicks.find(tick => tick.val === 0) && (
+            <span 
+              className="absolute right-2 text-xs font-medium tabular-nums text-gray-400"
+              style={{ top: `${yTicks.find(tick => tick.val === 0).yPos - 5}%`, transform: 'translateY(-50%)' }}
+            >
+              {paretoY || 'Y'}
+            </span>
+          )}
         </div>
         
-        <div className="flex-1 flex flex-col">
-          <ChartArea className="border-l-2 border-b-2 border-gray-300 flex-1 bg-gradient-to-br from-green-50/30 via-white to-red-50/30">
-            <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-bl from-green-100/20 to-transparent pointer-events-none"></div>
-            <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-red-100/20 to-transparent pointer-events-none"></div>
-              
-              <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
-                {yTicks.map((tick, i) => (
-                  <line 
-                    key={`ytick-${i}`}
-                    x1="0" 
-                    y1={tick.yPos} 
-                    x2="100" 
-                    y2={tick.yPos} 
-                    stroke={tick.val === 0 ? "#9ca3af" : "#e5e7eb"} 
-                    strokeWidth={tick.val === 0 ? "0.5" : "0.3"} 
-                    strokeDasharray={tick.val === 0 ? "2 2" : "1 2"}
-                  />
-                ))}
-                {xTicks.map((tick, i) => (
-                  <line 
-                    key={`xtick-${i}`}
-                    x1={tick.pos} 
-                    y1="0" 
-                    x2={tick.pos} 
-                    y2="100" 
-                    stroke={tick.val === 0 ? "#9ca3af" : "#e5e7eb"} 
-                    strokeWidth={tick.val === 0 ? "0.5" : "0.3"} 
-                    strokeDasharray={tick.val === 0 ? "2 2" : "1 2"}
-                  />
-                ))}
-                
-                {sortedPoints.map((p) => {
-                  const isHovered = hoveredCase === p.case;
-                  const scx = Math.max(5, Math.min(95, mapX(p.impX)));
-                  const scy = Math.max(5, Math.min(95, mapY(p.impY)));
-                  
-                  let color = '#6366f1';
-                  if (p.impX > 0 && p.impY > 0) color = '#059669';
-                  else if (p.impX < 0 && p.impY < 0) color = '#dc2626';
-
-                  let radius = 1;
-                  if (paretoZ) {
-                    const zAbs = Math.abs(p.impZ);
-                    const maxZAbs = Math.max(Math.abs(minZ), Math.abs(maxZ)) || 1;
-                    radius = 0.6 + (zAbs / maxZAbs) * 2;
-                  }
-                  
-                  const tooltipLines = [];
-                  if (p.impX > 0) {
-                    tooltipLines.push({ text: `${paretoX}: +${p.impX.toFixed(2)}%`, color: 'text-green-400' });
-                  } else if (p.impX < 0) {
-                    tooltipLines.push({ text: `${paretoX}: ${p.impX.toFixed(2)}%`, color: 'text-red-400' });
-                  } else {
-                    tooltipLines.push(`${paretoX}: 0.00%`);
-                  }
-                  if (p.impY > 0) {
-                    tooltipLines.push({ text: `${paretoY}: +${p.impY.toFixed(2)}%`, color: 'text-green-400' });
-                  } else if (p.impY < 0) {
-                    tooltipLines.push({ text: `${paretoY}: ${p.impY.toFixed(2)}%`, color: 'text-red-400' });
-                  } else {
-                    tooltipLines.push(`${paretoY}: 0.00%`);
-                  }
-                  if (paretoZ) {
-                    if (p.impZ > 0) {
-                      tooltipLines.push({ text: `${paretoZ}: +${p.impZ.toFixed(2)}%`, color: 'text-green-400' });
-                    } else if (p.impZ < 0) {
-                      tooltipLines.push({ text: `${paretoZ}: ${p.impZ.toFixed(2)}%`, color: 'text-red-400' });
-                    } else {
-                      tooltipLines.push(`${paretoZ}: 0.00%`);
-                    }
-                  }
-
-                  return (
-                    <g key={`pareto-${p.case}`} className="cursor-pointer" onMouseEnter={(e) => {
-                      setHoveredCase(p.case);
-                      setTooltipState({ visible: true, x: e.clientX, y: e.clientY, title: p.case, lines: tooltipLines });
-                    }}
-                    onMouseMove={(e) => {
-                      setTooltipState(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
-                    }}
-                    onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setHoveredCase(null);
-                      setTooltipState(prev => ({...prev, visible: false}));
-                      if (onCaseClick) onCaseClick(p.case);
-                    }}>
-                      <circle
-                        cx={scx} cy={scy} r="6"
-                        fill="transparent"
-                      />
-                      <circle
-                        cx={scx} cy={scy} 
-                        r={radius} 
-                        fill={color} 
-                        stroke={isHovered ? "#fff" : "none"} 
-                        strokeWidth="0.3"
-                        fillOpacity={paretoZ ? 0.7 : 1}
-                        className={`transition-all duration-200 pointer-events-none ${isHovered ? 'animate-pulse' : ''}`}
-                      />
-                    </g>
-                  );
-                })}
-              </svg>
-              
-              <AreaLabel position="top-right" variant="success">双赢 ↑</AreaLabel>
-              <AreaLabel position="bottom-left" variant="danger">双输 ↓</AreaLabel>
-            </ChartArea>
+        <ChartArea className="border-l-2 border-b-2 border-gray-300 flex-1 bg-gradient-to-br from-green-50/30 via-white to-red-50/30">
+          <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-gradient-to-bl from-green-100/20 to-transparent pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-red-100/20 to-transparent pointer-events-none"></div>
             
-            <div className="relative h-6 text-center text-xs font-semibold text-gray-500">
-              {xTicks.map((tick, i) => (
-                <span 
-                  key={i} 
-                  className={`
-                    absolute text-xs
-                    ${tick.val > 0 ? 'text-green-600' : ''} 
-                    ${tick.val < 0 ? 'text-red-500' : ''}
-                  `}
-                  style={{ 
-                    left: `${tick.pos}%`, 
-                    transform: 'translateX(-50%)' 
-                  }}
-                >
-                  {formatTickValue(tick.val)}
-                </span>
+            <svg className="w-full h-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none">
+              {yTicks.map((tick, i) => (
+                <line 
+                  key={`ytick-${i}`}
+                  x1="0" 
+                  y1={tick.yPos} 
+                  x2="100" 
+                  y2={tick.yPos} 
+                  stroke={tick.val === 0 ? "#9ca3af" : "#e5e7eb"} 
+                  strokeWidth={tick.val === 0 ? "0.5" : "0.3"} 
+                  strokeDasharray={tick.val === 0 ? "2 2" : "1 2"}
+                />
               ))}
-              <div className="mt-3 text-gray-400">{paretoX || 'X'}</div>
-            </div>
-          </div>
+              {xTicks.map((tick, i) => (
+                <line 
+                  key={`xtick-${i}`}
+                  x1={tick.pos} 
+                  y1="0" 
+                  x2={tick.pos} 
+                  y2="100" 
+                  stroke={tick.val === 0 ? "#9ca3af" : "#e5e7eb"} 
+                  strokeWidth={tick.val === 0 ? "0.5" : "0.3"} 
+                  strokeDasharray={tick.val === 0 ? "2 2" : "1 2"}
+                />
+              ))}
+              
+              {sortedPoints.map((p) => {
+                const isHovered = hoveredCase === p.case;
+                const scx = Math.max(5, Math.min(95, mapX(p.impX)));
+                const scy = Math.max(5, Math.min(95, mapY(p.impY)));
+                
+                let color = '#6366f1';
+                if (p.impX > 0 && p.impY > 0) color = '#059669';
+                else if (p.impX < 0 && p.impY < 0) color = '#dc2626';
+
+                let radius = 1;
+                if (paretoZ) {
+                  const zAbs = Math.abs(p.impZ);
+                  const maxZAbs = Math.max(Math.abs(minZ), Math.abs(maxZ)) || 1;
+                  radius = 0.6 + (zAbs / maxZAbs) * 2;
+                }
+                
+                const tooltipLines = [];
+                if (p.impX > 0) {
+                  tooltipLines.push({ text: `${paretoX}: +${p.impX.toFixed(2)}%`, color: 'text-green-400' });
+                } else if (p.impX < 0) {
+                  tooltipLines.push({ text: `${paretoX}: ${p.impX.toFixed(2)}%`, color: 'text-red-400' });
+                } else {
+                  tooltipLines.push(`${paretoX}: 0.00%`);
+                }
+                if (p.impY > 0) {
+                  tooltipLines.push({ text: `${paretoY}: +${p.impY.toFixed(2)}%`, color: 'text-green-400' });
+                } else if (p.impY < 0) {
+                  tooltipLines.push({ text: `${paretoY}: ${p.impY.toFixed(2)}%`, color: 'text-red-400' });
+                } else {
+                  tooltipLines.push(`${paretoY}: 0.00%`);
+                }
+                if (paretoZ) {
+                  if (p.impZ > 0) {
+                    tooltipLines.push({ text: `${paretoZ}: +${p.impZ.toFixed(2)}%`, color: 'text-green-400' });
+                  } else if (p.impZ < 0) {
+                    tooltipLines.push({ text: `${paretoZ}: ${p.impZ.toFixed(2)}%`, color: 'text-red-400' });
+                  } else {
+                    tooltipLines.push(`${paretoZ}: 0.00%`);
+                  }
+                }
+
+                return (
+                  <g key={`pareto-${p.case}`} className="cursor-pointer" onMouseEnter={(e) => {
+                    setHoveredCase(p.case);
+                    setTooltipState({ visible: true, x: e.clientX, y: e.clientY, title: p.case, lines: tooltipLines });
+                  }}
+                  onMouseMove={(e) => {
+                    setTooltipState(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
+                  }}
+                  onMouseLeave={() => { setHoveredCase(null); setTooltipState(prev => ({...prev, visible: false})); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setHoveredCase(null);
+                    setTooltipState(prev => ({...prev, visible: false}));
+                    if (onCaseClick) onCaseClick(p.case);
+                  }}>
+                    <circle
+                      cx={scx} cy={scy} r="6"
+                      fill="transparent"
+                    />
+                    <circle
+                      cx={scx} cy={scy} 
+                      r={radius} 
+                      fill={color} 
+                      stroke={isHovered ? "#fff" : "none"} 
+                      strokeWidth="0.3"
+                      fillOpacity={paretoZ ? 0.7 : 1}
+                      className={`transition-all duration-200 pointer-events-none ${isHovered ? 'animate-pulse' : ''}`}
+                    />
+                  </g>
+                );
+              })}
+            </svg>
+            
+            <AreaLabel position="top-right" variant="success">双赢 ↑</AreaLabel>
+            <AreaLabel position="bottom-left" variant="danger">双输 ↓</AreaLabel>
+          </ChartArea>
       </ChartBody>
     );
   };
@@ -395,6 +380,29 @@ const ParetoChart = ({
       })()}
 
       {renderContent()}
+
+      <div className={`${chartWidth} mx-auto w-full flex justify-between items-center py-1 text-xs text-gray-500 font-medium`}>
+        <div className="w-14 flex-shrink-0"></div>
+        <div className="flex-1 relative h-6">
+          {xTicks.map((tick, i) => (
+            <span 
+              key={i} 
+              className={`
+                absolute text-xs
+                ${tick.val > 0 ? 'text-green-600' : ''} 
+                ${tick.val < 0 ? 'text-red-500' : ''}
+              `}
+              style={{ 
+                left: `${tick.pos}%`, 
+                transform: 'translateX(-50%)' 
+              }}
+            >
+              {formatTickValue(tick.val)}
+            </span>
+          ))}
+          <div className="text-center mt-3 text-gray-400">{paretoX || 'X'}</div>
+        </div>
+      </div>
 
       <ChartLegend items={[
         { color: '#059669', label: '双赢', shape: 'circle' },
