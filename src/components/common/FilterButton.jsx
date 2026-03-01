@@ -251,7 +251,7 @@ const FilterButton = ({
     <div className="relative" ref={buttonRef}>
       <button
         onClick={handleButtonClick}
-        className={`h-7 px-2.5 rounded text-[11px] font-medium flex items-center gap-1.5 transition-all ${
+        className={`h-7 px-2.5 rounded text-xs font-medium flex items-center gap-1.5 transition-all ${
           activeFilterCount > 0 || currentFilteredCount > 0
             ? 'bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200'
             : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
@@ -260,7 +260,7 @@ const FilterButton = ({
         <Filter className="w-3 h-3" />
         <span>过滤</span>
         {(activeFilterCount > 0 || currentFilteredCount > 0) && (
-          <span className="bg-amber-500 text-white text-[9px] font-bold px-1 py-0.5 rounded-full min-w-[16px] text-center">
+          <span className="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-tight">
             {currentFilteredCount > 0 ? currentFilteredCount : activeFilterCount}
           </span>
         )}
@@ -356,18 +356,18 @@ const FilterButton = ({
               
               <div className="flex flex-wrap gap-2 mb-3">
                 {[
-                  { key: 'excludeSmall', label: '小型', count: sizeDistribution.small, color: 'blue' },
-                  { key: 'excludeMedium', label: '中型', count: sizeDistribution.medium, color: 'gray' },
-                  { key: 'excludeLarge', label: '大型', count: sizeDistribution.large, color: 'purple' }
-                ].map(({ key, label, count, color }) => (
+                  { key: 'excludeSmall', label: '小型', count: sizeDistribution.small, inactiveClass: 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100' },
+                  { key: 'excludeMedium', label: '中型', count: sizeDistribution.medium, inactiveClass: 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100' },
+                  { key: 'excludeLarge', label: '大型', count: sizeDistribution.large, inactiveClass: 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100' }
+                ].map(({ key, label, count, inactiveClass }) => (
                   <button
                     key={key}
                     onClick={() => handleConfigChange(key, !tempConfig[key])}
                     disabled={!instCol}
-                    className={`px-3 py-1.5 rounded text-sm font-medium transition-all flex items-center gap-1 ${
+                    className={`px-3 py-1.5 rounded text-sm font-medium transition-all flex items-center gap-1 border ${
                       tempConfig[key]
-                        ? 'bg-red-100 text-red-700 border border-red-200 shadow-sm'
-                        : `bg-${color}-50 text-${color}-600 border border-${color}-200 hover:bg-${color}-100`
+                        ? 'bg-red-100 text-red-700 border-red-200 shadow-sm'
+                        : inactiveClass
                     } ${!instCol ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {tempConfig[key] && <X className="w-3 h-3" />}

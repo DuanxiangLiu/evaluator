@@ -1,15 +1,13 @@
 # New Component Template
 
-When creating new components, follow this structure:
-
-## File Location
+## Location
 
 - Charts: `src/components/charts/`
 - Common: `src/components/common/`
 - Layout: `src/components/layout/`
 - Modals: `src/components/modals/`
 
-## Component Template
+## Template
 
 ```jsx
 import React, { useState, useMemo } from 'react';

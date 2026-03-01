@@ -686,17 +686,132 @@ const formatAIAnalysisHTML = (aiAnalysis) => {
     .join('\n');
 };
 
+export const exportReportToMarkdown = (reportData) => {
+  const { metadata, summary, statistics, executiveSummary, businessImpact, riskAssessment, cases, aiAnalysis, recommendations } = reportData;
+  
+  const conclusionLabels = {
+    recommended: '✅ 推荐采用',
+    not_recommended: '❌ 不建议采用',
+    tentatively_recommended: '⚠️ 谨慎推荐',
+    inconclusive: '❓ 结论不确定'
+  };
+  
+  let markdown = `# ${metadata.title}\n\n`;
+  markdown += `> 生成时间: ${new Date(metadata.generatedAt).toLocaleString('zh-CN')}\n\n`;
+  markdown += `**对比**: ${metadata.baseAlgo} vs ${metadata.compareAlgo}\n\n`;
+  
+  if (executiveSummary) {
+    markdown += `## 📋 执行摘要\n\n`;
+    markdown += `**${executiveSummary.headline}**\n\n`;
+    executiveSummary.keyFindings.forEach(f => {
+      markdown += `- ${f}\n`;
+    });
+    markdown += '\n';
+  } else if (summary) {
+    markdown += `## 📊 执行摘要\n\n`;
+    markdown += `**结论**: ${conclusionLabels[summary.conclusion] || '未知'}\n\n`;
+    markdown += `| 指标 | 数值 |\n|------|------|\n`;
+    markdown += `| 几何平均改进率 | ${summary.geomeanImp?.toFixed(2) || 'N/A'}% |\n`;
+    markdown += `| P值 | ${summary.pValue?.toFixed(4) || 'N/A'} |\n`;
+    markdown += `| 有效样本数 | ${summary.nValid || 0} |\n`;
+    markdown += `| 退化案例数 | ${summary.degradedCount || 0} |\n\n`;
+  }
+  
+  if (businessImpact) {
+    markdown += `## 💰 业务影响评估\n\n`;
+    markdown += `| 指标 | 数值 |\n|------|------|\n`;
+    markdown += `| 整体改进 | ${businessImpact.overallImprovement?.toFixed(2)}% |\n`;
+    markdown += `| 置信度 | ${businessImpact.confidence} |\n`;
+    markdown += `| 风险等级 | ${businessImpact.riskLevel} |\n\n`;
+  }
+  
+  if (riskAssessment) {
+    markdown += `## ⚠️ 风险评估\n\n`;
+    markdown += `- **统计风险**: ${riskAssessment.statisticalRisk}\n`;
+    markdown += `- **运营风险**: ${riskAssessment.operationalRisk}\n`;
+    markdown += `- **数据质量风险**: ${riskAssessment.dataQualityRisk}\n\n`;
+  }
+  
+  if (statistics?.allMetrics) {
+    markdown += `## 📈 统计分析\n\n`;
+    markdown += `| 指标 | Geomean改进 | P值 | 样本数 | 显著性 |\n`;
+    markdown += `|------|-------------|-----|--------|--------|\n`;
+    markdown += `| **${statistics.primary.name}** | ${statistics.primary.geomeanImp?.toFixed(2) || 'N/A'}% | ${statistics.primary.pValue?.toFixed(4) || 'N/A'} | ${statistics.primary.nValid || 0} | ${statistics.primary.isSignificant ? '✓' : '-'} |\n`;
+    statistics.allMetrics.filter(m => m.name !== metadata.activeMetric).forEach(m => {
+      const sig = m.isSignificant ? '✓' : '-';
+      markdown += `| ${m.name} | ${m.geomeanImp?.toFixed(2) || 'N/A'}% | ${m.pValue?.toFixed(4) || 'N/A'} | ${m.nValid || 0} | ${sig} |\n`;
+    });
+    markdown += '\n';
+  }
+  
+  if (cases) {
+    markdown += `## 🔍 案例分析\n\n`;
+    
+    if (cases.topImprovements.length > 0) {
+      markdown += `### Top 10 改进案例\n\n`;
+      markdown += `| 案例 | ${metadata.baseAlgo} | ${metadata.compareAlgo} | 改进 |\n`;
+      markdown += `|------|------|------|------|\n`;
+      cases.topImprovements.forEach(c => {
+        markdown += `| ${c.case} | ${formatIndustrialNumber(c.baseValue)} | ${formatIndustrialNumber(c.compareValue)} | ${c.improvement?.toFixed(2)}% |\n`;
+      });
+      markdown += '\n';
+    }
+    
+    if (cases.topDegradations.length > 0) {
+      markdown += `### Top 10 退化案例\n\n`;
+      markdown += `| 案例 | ${metadata.baseAlgo} | ${metadata.compareAlgo} | 改进 |\n`;
+      markdown += `|------|------|------|------|\n`;
+      cases.topDegradations.forEach(c => {
+        markdown += `| ${c.case} | ${formatIndustrialNumber(c.baseValue)} | ${formatIndustrialNumber(c.compareValue)} | ${c.improvement?.toFixed(2)}% |\n`;
+      });
+      markdown += '\n';
+    }
+  }
+  
+  if (aiAnalysis) {
+    markdown += `## 🤖 AI分析报告\n\n`;
+    markdown += `${aiAnalysis}\n\n`;
+  }
+  
+  if (recommendations?.length > 0) {
+    markdown += `## 💡 建议\n\n`;
+    recommendations.forEach(rec => {
+      const priorityIcon = rec.priority === 'high' ? '🔴' : rec.priority === 'medium' ? '🟡' : '🔵';
+      markdown += `- ${priorityIcon} **${rec.message}**`;
+      if (rec.details) {
+        markdown += ` - ${rec.details}`;
+      }
+      markdown += '\n';
+    });
+    markdown += '\n';
+  }
+  
+  markdown += `---\n\n`;
+  markdown += `*本报告由 EDA Algorithm Evaluator 自动生成*\n`;
+  
+  return markdown;
+};
+
 export const downloadReport = (reportData, format = 'json') => {
   let content, filename, mimeType;
   
-  if (format === 'json') {
-    content = exportReportToJSON(reportData);
-    filename = `eda_report_${reportData.metadata.mode}_${Date.now()}.json`;
-    mimeType = 'application/json';
-  } else {
-    content = exportReportToHTML(reportData);
-    filename = `eda_report_${reportData.metadata.mode}_${Date.now()}.html`;
-    mimeType = 'text/html';
+  switch (format) {
+    case 'markdown':
+    case 'md':
+      content = exportReportToMarkdown(reportData);
+      filename = `eda_report_${reportData.metadata.mode}_${Date.now()}.md`;
+      mimeType = 'text/markdown';
+      break;
+    case 'json':
+      content = exportReportToJSON(reportData);
+      filename = `eda_report_${reportData.metadata.mode}_${Date.now()}.json`;
+      mimeType = 'application/json';
+      break;
+    case 'html':
+    default:
+      content = exportReportToHTML(reportData);
+      filename = `eda_report_${reportData.metadata.mode}_${Date.now()}.html`;
+      mimeType = 'text/html';
   }
   
   const blob = new Blob([content], { type: mimeType });

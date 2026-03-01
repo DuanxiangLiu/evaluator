@@ -122,14 +122,14 @@ const TableView = ({
           </button>
         )}
       </div>
-      <div className="flex items-center h-7 gap-0.5 bg-gray-50 p-0.5 rounded border border-gray-200 text-[11px]">
+      <div className="flex items-center h-7 gap-0.5 bg-gray-50 p-0.5 rounded border border-gray-200 text-xs">
         <button onClick={() => setTableFilter('all')} className={`px-2 py-0.5 rounded transition-colors ${tableFilter === 'all' ? 'bg-white text-indigo-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>全部</button>
         <button onClick={() => setTableFilter('degraded')} className={`px-2 py-0.5 rounded transition-colors flex items-center gap-0.5 ${tableFilter === 'degraded' ? 'bg-white text-red-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><ArrowDown className="w-2.5 h-2.5" />退化</button>
         <button onClick={() => setTableFilter('outlier')} className={`px-2 py-0.5 rounded transition-colors flex items-center gap-0.5 ${tableFilter === 'outlier' ? 'bg-white text-purple-700 font-medium shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}><AlertTriangle className="w-2.5 h-2.5" />异常</button>
         <button onClick={() => setTableFilter('filtered')} className={`px-2 py-0.5 rounded transition-colors flex items-center gap-0.5 ${tableFilter === 'filtered' ? 'bg-white text-amber-700 font-medium shadow-sm' : filteredCases ? 'text-amber-600 hover:text-amber-700' : 'text-gray-500 hover:text-gray-700'}`}>
           <Square className="w-2.5 h-2.5" />
           已过滤
-          {filteredCases && <span className="text-[9px] font-bold">({filteredCases.size})</span>}
+          {filteredCases && <span className="text-[10px] font-bold leading-tight">({filteredCases.size})</span>}
         </button>
       </div>
       <FilterButton
@@ -143,7 +143,7 @@ const TableView = ({
       />
       <button 
         onClick={() => setShowAllMetricsOverview(!showAllMetricsOverview)}
-        className="h-7 text-[11px] font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200 px-2 py-1 rounded flex items-center gap-1 transition-all"
+        className="h-7 text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200 px-2 py-1 rounded flex items-center gap-1 transition-all"
       >
         <Table className="w-3 h-3" />
         {showAllMetricsOverview ? '收起' : '展开'}所有指标概览
@@ -174,7 +174,7 @@ const TableView = ({
           }
           setShowExportMenu(!showExportMenu);
         }} 
-        className="text-[11px] font-medium bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 border border-indigo-200/80 px-2 py-1 rounded-lg flex items-center gap-1 transition-all duration-200 shadow-sm hover:shadow-md"
+        className="text-xs font-medium bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-700 hover:from-indigo-100 hover:to-violet-100 border border-indigo-200/80 px-2 py-1 rounded-lg flex items-center gap-1 transition-all duration-200 shadow-sm hover:shadow-md"
       >
         <Download className="w-3 h-3" />导出
         <MoreVertical className="w-2.5 h-2.5" />

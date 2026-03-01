@@ -262,7 +262,8 @@ const StatsCards = ({ stats }) => {
   const improvedCount = stats.nValid - stats.degradedCount;
   const improvedRate = stats.nValid > 0 ? (improvedCount / stats.nValid * 100) : 0;
   const degradedRate = stats.nValid > 0 ? (stats.degradedCount / stats.nValid * 100) : 0;
-  const cv = (stats.meanImp !== 0 && !isNaN(stats.std) && stats.meanImp !== null) 
+  const CV_MEAN_THRESHOLD = 0.01;
+  const cv = (Math.abs(stats.meanImp) > CV_MEAN_THRESHOLD && !isNaN(stats.std) && stats.meanImp !== null) 
     ? (stats.std / Math.abs(stats.meanImp)) 
     : null;
 
@@ -338,14 +339,14 @@ const StatsCards = ({ stats }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
-        <span className="text-[10px] text-gray-400">中位数、标准差、变异系数、四分位距</span>
+        <span className="text-xs text-gray-500">中位数、标准差、变异系数、四分位距</span>
       </div>
 
       {showAuxiliary && (
         <div className="flex flex-wrap gap-1.5 animate-in slide-in-from-top-2 duration-200">
           {auxiliaryCards.map((card, i) => (
             <div key={i} className={`px-2.5 py-1.5 rounded border ${card.neutral ? 'bg-gray-50 border-gray-200' : card.isPositive ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
-              <div className={`text-[10px] font-bold flex items-center ${card.neutral ? 'text-gray-600' : card.isPositive ? 'text-emerald-700' : 'text-red-700'}`}>
+              <div className={`text-xs font-bold flex items-center ${card.neutral ? 'text-gray-600' : card.isPositive ? 'text-emerald-700' : 'text-red-700'}`}>
                 {card.label}
                 <HelpIcon content={<AuxiliaryStatHelp label={card.label} value={card.value} std={card.std} meanImp={card.meanImp} />} position="bottom-right" className="w-4 h-4 ml-0.5" />
               </div>

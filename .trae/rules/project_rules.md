@@ -1,13 +1,14 @@
-# EDA Algorithm Evaluator - Project Rules
+# Algorithm Comparator - Project Rules
 
 ## Project Overview
 
 | Property | Value |
 |----------|-------|
-| Name | EDA Algorithm Evaluator (eda-evaluator) |
+| Name | Algorithm Comparator (algo-comparator) |
 | Version | v1.2.0 |
 | Type | Pure frontend SPA |
 | Tech Stack | React 18 + Vite 5 + Tailwind CSS 3 + Lucide React |
+| Domain | EDA (Electronic Design Automation) - preset domain, extensible |
 
 ## Development Commands
 

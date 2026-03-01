@@ -31,6 +31,27 @@ export default {
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
         'noto-sans': ['Noto Sans SC', 'sans-serif'],
+        sans: ['Inter', 'Noto Sans SC', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+      },
+      fontSize: {
+        '2xs': ['0.625rem', { lineHeight: '0.875rem', letterSpacing: '0.025em' }],
+        'xs': ['0.75rem', { lineHeight: '1rem', letterSpacing: '0.01em' }],
+        'sm': ['0.875rem', { lineHeight: '1.375rem' }],
+        'base': ['1rem', { lineHeight: '1.5rem' }],
+        'lg': ['1.125rem', { lineHeight: '1.5rem' }],
+        'xl': ['1.25rem', { lineHeight: '1.625rem' }],
+        '2xl': ['1.5rem', { lineHeight: '1.875rem' }],
+      },
+      lineHeight: {
+        '11': '2.75rem',
+        '12': '3rem',
+        '13': '3.25rem',
+        '14': '3.5rem',
+      },
+      letterSpacing: {
+        'tighter-': '-0.025em',
+        'wide-': '0.025em',
+        'wider-': '0.05em',
       },
       animation: {
         'slide-in-right': 'slideInRight 0.3s ease-out',

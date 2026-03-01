@@ -31,7 +31,10 @@ export const computeStatistics = (metricName, base, comp, casesData, selectedCas
     })
     .filter(item => item !== null);
 
-  const instCol = findInstColumn(Object.keys(validCases[0]?.meta || {}));
+  const n = validCases.length;
+  if (n === 0) return null;
+
+  const instCol = findInstColumn(validCases.length > 0 ? Object.keys(validCases[0]?.meta || {}) : []);
 
   if (instCol) {
     validCases.sort((a, b) => {
@@ -41,24 +44,28 @@ export const computeStatistics = (metricName, base, comp, casesData, selectedCas
     });
   }
 
-  const n = validCases.length;
-  if (n === 0) return null;
-
   const improvements = validCases.map(d => d.imp);
-  const ratios = validCases.map(d => d.ratio).filter(r => r > 0);
+  const positiveRatios = validCases.filter(d => d.ratio > 0).map(d => d.ratio);
+  const negativeRatioCount = validCases.filter(d => d.ratio < 0).length;
   const diffs = validCases.map(d => d.bVal - d.cVal);
 
   let geomeanRatio = 1;
-  if (ratios.length > 0) {
-    const sumLog = ratios.reduce((acc, val) => acc + Math.log(val), 0);
-    geomeanRatio = Math.exp(sumLog / ratios.length);
+  if (positiveRatios.length > 0) {
+    const sumLog = positiveRatios.reduce((acc, val) => acc + Math.log(val), 0);
+    geomeanRatio = Math.exp(sumLog / positiveRatios.length);
   }
   
-  const geomeanImp = (1 - geomeanRatio) * 100;
+  let geomeanImp = (1 - geomeanRatio) * 100;
+  if (negativeRatioCount > validCases.length / 2) {
+    geomeanImp = -Math.abs(geomeanImp);
+  }
+  
   const meanImp = improvements.reduce((a, b) => a + b, 0) / n;
   const pValue = calculateWilcoxonPValue(diffs);
 
-  const variance = improvements.reduce((a, b) => a + Math.pow(b - meanImp, 2), 0) / (n - 1 || 1);
+  const variance = n > 1 
+    ? improvements.reduce((a, b) => a + Math.pow(b - meanImp, 2), 0) / (n - 1)
+    : 0;
   const std = Math.sqrt(variance);
   const { lower: ciLower, upper: ciUpper } = calculateConfidenceInterval(meanImp, variance, n);
 

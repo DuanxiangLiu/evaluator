@@ -206,6 +206,61 @@ export const exportReportToJSON = (reportData) => {
   return JSON.stringify(reportData, null, 2);
 };
 
+export const exportReportToMarkdown = (reportData) => {
+  const { metadata, summary, statistics, aiAnalysis, recommendations } = reportData;
+  
+  const conclusionLabels = {
+    recommended: '✅ 推荐采用',
+    not_recommended: '❌ 不建议采用',
+    tentatively_recommended: '⚠️ 谨慎推荐',
+    inconclusive: '❓ 结论不确定'
+  };
+  
+  let markdown = `# ${metadata.title}\n\n`;
+  markdown += `> 生成时间: ${new Date(metadata.generatedAt).toLocaleString('zh-CN')}\n\n`;
+  markdown += `**对比**: ${metadata.baseAlgo} vs ${metadata.compareAlgo}\n\n`;
+  
+  if (summary) {
+    markdown += `## 📊 执行摘要\n\n`;
+    markdown += `**结论**: ${conclusionLabels[summary.conclusion] || '未知'}\n\n`;
+    markdown += `| 指标 | 数值 |\n|------|------|\n`;
+    markdown += `| 几何平均改进率 | ${summary.geomeanImp?.toFixed(2) || 'N/A'}% |\n`;
+    markdown += `| P值 | ${summary.pValue?.toFixed(4) || 'N/A'} |\n`;
+    markdown += `| 有效样本数 | ${summary.nValid || 0} |\n`;
+    markdown += `| 退化案例数 | ${summary.degradedCount || 0} |\n\n`;
+  }
+  
+  if (statistics?.allMetrics) {
+    markdown += `## 📈 统计分析\n\n`;
+    markdown += `| 指标 | Geomean改进 | P值 | 样本数 | 显著性 |\n`;
+    markdown += `|------|-------------|-----|--------|--------|\n`;
+    statistics.allMetrics.forEach(m => {
+      const sig = m.isSignificant ? '✓' : '-';
+      markdown += `| ${m.name} | ${m.geomeanImp?.toFixed(2) || 'N/A'}% | ${m.pValue?.toFixed(4) || 'N/A'} | ${m.nValid || 0} | ${sig} |\n`;
+    });
+    markdown += '\n';
+  }
+  
+  if (aiAnalysis) {
+    markdown += `## 🤖 AI分析报告\n\n`;
+    markdown += `${aiAnalysis}\n\n`;
+  }
+  
+  if (recommendations?.length > 0) {
+    markdown += `## 💡 建议\n\n`;
+    recommendations.forEach(rec => {
+      const priorityIcon = rec.priority === 'high' ? '🔴' : rec.priority === 'medium' ? '🟡' : '🔵';
+      markdown += `- ${priorityIcon} ${rec.message}\n`;
+    });
+    markdown += '\n';
+  }
+  
+  markdown += `---\n\n`;
+  markdown += `*本报告由 EDA Algorithm Evaluator 自动生成*\n`;
+  
+  return markdown;
+};
+
 export const exportReportToHTML = (reportData) => {
   const { metadata, summary, statistics, aiAnalysis, recommendations } = reportData;
   
@@ -232,6 +287,10 @@ export const exportReportToHTML = (reportData) => {
     .prose p { margin-bottom: 0.5rem; }
     .prose ul { list-style-type: disc; padding-left: 1.5rem; }
     .prose li { margin-bottom: 0.25rem; }
+    @media print {
+      body { background: white; }
+      .no-print { display: none; }
+    }
   </style>
 </head>
 <body class="bg-gray-50 p-8">
@@ -370,14 +429,22 @@ const formatAIAnalysisHTML = (aiAnalysis) => {
 export const downloadReport = (reportData, format = 'json') => {
   let content, filename, mimeType;
   
-  if (format === 'json') {
-    content = exportReportToJSON(reportData);
-    filename = `eda_report_${Date.now()}.json`;
-    mimeType = 'application/json';
-  } else {
-    content = exportReportToHTML(reportData);
-    filename = `eda_report_${Date.now()}.html`;
-    mimeType = 'text/html';
+  switch (format) {
+    case 'markdown':
+      content = exportReportToMarkdown(reportData);
+      filename = `eda_report_${Date.now()}.md`;
+      mimeType = 'text/markdown';
+      break;
+    case 'json':
+      content = exportReportToJSON(reportData);
+      filename = `eda_report_${Date.now()}.json`;
+      mimeType = 'application/json';
+      break;
+    case 'html':
+    default:
+      content = exportReportToHTML(reportData);
+      filename = `eda_report_${Date.now()}.html`;
+      mimeType = 'text/html';
   }
   
   const blob = new Blob([content], { type: mimeType });
@@ -391,6 +458,20 @@ export const downloadReport = (reportData, format = 'json') => {
   URL.revokeObjectURL(url);
 };
 
+export const downloadAIInsights = (insights, baseAlgo, compareAlgo, format = 'markdown') => {
+  const reportData = {
+    metadata: {
+      title: `EDA算法评估报告 - ${baseAlgo} vs ${compareAlgo}`,
+      generatedAt: new Date().toISOString(),
+      baseAlgo,
+      compareAlgo
+    },
+    aiAnalysis: insights
+  };
+  
+  downloadReport(reportData, format);
+};
+
 export { REPORT_TEMPLATES };
 export default {
   generateReportSummary,
@@ -398,7 +479,9 @@ export default {
   generateCasesSection,
   generateAIReport,
   exportReportToJSON,
+  exportReportToMarkdown,
   exportReportToHTML,
   downloadReport,
+  downloadAIInsights,
   REPORT_TEMPLATES
 };

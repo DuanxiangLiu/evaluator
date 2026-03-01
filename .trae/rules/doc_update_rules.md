@@ -1,37 +1,23 @@
 # Documentation Update Rules
 
-## When to Update Docs
+## When to Update
 
-After completing significant work, update relevant documentation:
+| File | Update When |
+|------|-------------|
+| `project_rules.md` | New components, conventions, modules |
+| `project_context.md` | Architecture changes, new functions |
+| `README.md` | Feature changes, new commands |
 
-### Update `project_rules.md` when:
-- Adding new reusable components
-- Changing code conventions
-- Adding new key modules or services
-- Modifying data format requirements
+## Format
 
-### Update `project_context.md` when:
-- Architecture changes
-- New key functions added
-- Constants modified
-
-### Update `AI_DEVELOPER_GUIDE.md` when:
-- Major feature additions
-- New extension guides needed
-- Workflow changes
-
-## Update Format
-
-Keep updates concise:
-- Use bullet points
-- Maximum 2-3 sentences per item
+- Bullet points, max 2-3 sentences per item
 - Include file paths and function names
+- Add date prefix for changelog entries
 
-## Example Update
+## Example
 
 ```markdown
-## 2026-02-28: Added new chart component
-- Added `TrendChart.jsx` in `src/components/charts/`
-- Uses `ChartHeader` for consistency
-- Depends on `calculateTrend()` from `utils/statistics.js`
+## 2026-03-01: Renamed project
+- Changed name from "EDA 算法评估器" to "算法对比器"
+- Updated package.json, appConfig.js, index.html
 ```

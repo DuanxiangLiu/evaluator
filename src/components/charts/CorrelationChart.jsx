@@ -222,6 +222,7 @@ const CorrelationChart = ({
   const chartWidth = useChartWidth();
   const [aiInsight, setAiInsight] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const userHasSelectedRef = useRef(false);
   
   if (parsedData.length === 0) return null;
   
@@ -303,7 +304,7 @@ const CorrelationChart = ({
   
   // 当强相关性发现存在时，自动设置默认的 XY
   useEffect(() => {
-    if (correlations.length > 0) {
+    if (correlations.length > 0 && !userHasSelectedRef.current) {
       const firstCorrelation = correlations[0];
       setCorrX(firstCorrelation.xKey);
       setCorrY(firstCorrelation.yKey);
@@ -528,8 +529,8 @@ const CorrelationChart = ({
 
     return (
       <ChartBody className={`${chartWidth} mx-auto w-full`}>
-        <div className="flex flex-col justify-between text-right pr-2 py-1 text-[10px] font-semibold text-gray-500 w-12 flex-shrink-0 relative">
-          <span className="text-gray-400 text-[9px] -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2">{corrY || 'Y'}</span>
+        <div className="flex flex-col justify-between text-right pr-2 py-1 text-xs font-semibold text-gray-500 w-12 flex-shrink-0 relative">
+          <span className="text-gray-500 text-[10px] -rotate-90 origin-center whitespace-nowrap absolute left-3 top-1/2 -translate-y-1/2 leading-tight">{corrY || 'Y'}</span>
           {yTicks.filter(tick => {
             const topPercent = mapY(tick.val);
             return topPercent >= 0 && topPercent <= 100;
@@ -537,7 +538,7 @@ const CorrelationChart = ({
             <span 
               key={i} 
               className={`
-                absolute right-2 text-[9px] font-medium tabular-nums
+                absolute right-2 text-[10px] font-medium tabular-nums leading-tight
                 ${isMetricY && tick.val > 0 ? 'text-green-600' : ''} 
                 ${isMetricY && tick.val < 0 ? 'text-red-500' : ''}
                 ${isMetricY && tick.val === 0 ? 'text-gray-600 font-bold' : ''}
@@ -831,7 +832,7 @@ const CorrelationChart = ({
       >
         <div className="flex items-center gap-2 text-xs">
           <span className={CHART_HEADER_STYLES.LABEL}>X:</span>
-          <select value={corrX} onChange={(e) => { setCorrX(e.target.value); setAiInsight(''); }} className={CHART_HEADER_STYLES.SELECT}>
+          <select value={corrX} onChange={(e) => { userHasSelectedRef.current = true; setCorrX(e.target.value); setAiInsight(''); }} className={CHART_HEADER_STYLES.SELECT}>
             <optgroup label="属性">
               {metaColumns.map(m => <option key={`mx-${m}`} value={m}>{m}</option>)}
             </optgroup>
@@ -840,7 +841,7 @@ const CorrelationChart = ({
             </optgroup>
           </select>
           <span className={`${CHART_HEADER_STYLES.LABEL} ml-1`}>Y:</span>
-          <select value={corrY} onChange={(e) => { setCorrY(e.target.value); setAiInsight(''); }} className={CHART_HEADER_STYLES.SELECT}>
+          <select value={corrY} onChange={(e) => { userHasSelectedRef.current = true; setCorrY(e.target.value); setAiInsight(''); }} className={CHART_HEADER_STYLES.SELECT}>
             <optgroup label="属性">
               {metaColumns.map(m => <option key={`my-${m}`} value={m}>{m}</option>)}
             </optgroup>

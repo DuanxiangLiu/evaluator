@@ -39,7 +39,7 @@ export const CHART_POINT_SIZES = {
 };
 
 export const UI_TEXTS = {
-  MAIN_TITLE: 'EDA 算法评估器',
+  MAIN_TITLE: '算法对比器',
   KEY_METRICS_OVERVIEW: '关键指标概览',
   METRIC_LABEL: '指标:',
   BASELINE_LABEL: '基线:',

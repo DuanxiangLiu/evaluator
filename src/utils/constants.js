@@ -30,6 +30,35 @@ export const CHART_HEADER_STYLES = {
   BUTTON_UNSELECTED: 'opacity-60 hover:opacity-100'
 };
 
+export const TYPOGRAPHY_STYLES = {
+  MICRO: 'text-[10px] leading-tight tracking-wide',
+  CAPTION: 'text-xs leading-normal tracking-wide',
+  BODY_SM: 'text-[13px] leading-relaxed',
+  BODY: 'text-sm leading-relaxed',
+  BODY_LG: 'text-base leading-relaxed',
+  HEADING_SM: 'text-lg font-semibold leading-snug',
+  HEADING: 'text-xl font-semibold leading-snug',
+  HEADING_LG: 'text-2xl font-bold leading-snug'
+};
+
+export const TEXT_COLORS = {
+  PRIMARY: 'text-gray-900',
+  SECONDARY: 'text-gray-700',
+  MUTED: 'text-gray-500',
+  MUTED_LIGHT: 'text-gray-400',
+  SUCCESS: 'text-emerald-700',
+  WARNING: 'text-amber-700',
+  DANGER: 'text-red-700',
+  INFO: 'text-blue-700'
+};
+
+export const ACCESSIBLE_TEXT_COLORS = {
+  SUCCESS: 'text-emerald-800',
+  WARNING: 'text-amber-800',
+  DANGER: 'text-red-800',
+  INFO: 'text-blue-800'
+};
+
 export const MAX_SAVED_DATASETS = 20;
 export const MAX_FILE_SIZE_MB = 10;
 
@@ -74,12 +103,12 @@ export const DEFAULT_LLM_CONFIG = {
   apiKey: '',
   baseUrl: 'https://api.deepseek.com/v1',
   model: 'deepseek-chat',
-  systemPrompt: `你是一位资深的EDA物理设计算法评估专家，拥有丰富的芯片设计流程经验。你的职责是基于完整的统计数据为算法优化提供专业、可操作的诊断建议。
+  systemPrompt: `你是一位资深的算法评估专家，当前专注于EDA物理设计算法评估领域，拥有丰富的芯片设计流程经验。你的职责是基于完整的统计数据为算法优化提供专业、可操作的诊断建议。
 
 **输出要求：**
 1. 使用Markdown格式排版，结构清晰
 2. 结论先行，数据支撑，避免空泛描述
-3. 针对EDA领域使用专业术语（如时序收敛、绕线拥塞、功耗优化等）
+3. 针对当前领域使用专业术语（如时序收敛、绕线拥塞、功耗优化等）
 4. 给出具体可执行的优化建议
 5. 综合考虑所有指标，不要过度关注单一指标`,
   userPrompt: `## 算法综合评估任务
@@ -87,7 +116,6 @@ export const DEFAULT_LLM_CONFIG = {
 **对比配置：**
 - 基线算法：{{baseAlgo}}
 - 对比算法：{{compareAlgo}}
-- 评估指标：{{allMetrics}}
 
 ---
 
@@ -141,12 +169,12 @@ export const DEFAULT_LLM_CONFIG = {
 };
 
 export const CORRELATION_ANALYSIS_PROMPT = {
-  systemPrompt: `你是一位数据分析专家，专注于EDA（电子设计自动化）领域的数据关系分析。你的任务是基于相关性分析结果，为用户提供专业、易懂的解读和洞察。
+  systemPrompt: `你是一位数据分析专家，当前专注于EDA（电子设计自动化）领域的数据关系分析。你的任务是基于相关性分析结果，为用户提供专业、易懂的解读和洞察。
 
 **输出要求：**
 1. 使用Markdown格式排版，简洁清晰
 2. 用通俗语言解释统计概念
-3. 结合EDA领域背景给出专业解读
+3. 结合当前领域背景给出专业解读
 4. 提供可操作的建议
 5. 控制在300字以内`,
   userPrompt: `## 相关性分析解读任务

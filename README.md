@@ -1,20 +1,18 @@
-# EDA 算法评估器
+# 算法对比器
 
-专业的 EDA 算法性能评估工具，提供数据可视化和智能分析功能。
+算法性能对比分析工具，支持多维度统计分析、可视化和 AI 智能诊断。
 
-> **⚠️ 重要声明**：本项目完全由 AI 生成代码构建，尚未经过全面的功能测试和兼容性验证。使用前请谨慎评估，欢迎提交问题和改进建议。
+> **⚠️ 声明**：本项目由 AI 辅助构建，仅供学习参考。
 
-## 功能特点
+## 功能
 
-- 数据上传与解析（CSV 格式）
-- 统计分析（几何平均改进率、P-Value、置信区间等）
-- 数据可视化（箱线图、相关性分析、帕累托图、雷达图）
-- AI 智能分析（支持 DeepSeek、Gemini、OpenAI）
-- 多算法对比与 QoR 综合评估
+- **数据导入**：CSV 文件上传或直接粘贴
+- **统计分析**：改进率、P-Value、置信区间
+- **可视化**：箱线图、相关性分析、帕累托图、雷达图
+- **AI 诊断**：支持 DeepSeek、Gemini、OpenAI
+- **QoR 模拟器**：多指标权重综合评估
 
 ## 快速开始
-
-### 本地开发
 
 ```bash
 npm install
@@ -23,22 +21,16 @@ npm run dev
 
 访问 http://localhost:3000
 
-### 在线使用
-
-https://duanxiangliu.github.io/evaluator/
-
-## 技术栈
-
-- React 18 + Vite
-- Tailwind CSS
-- Lucide React
-
 ## 数据格式
 
 CSV 文件要求：
 - 第一列：Case 名称
-- 元数据列：Instances、Nets 等设计属性
-- 指标列格式：m_算法名_指标名（如 m_Base_HPWL、m_Algo1_HPWL）
+- 元数据列：`#Inst`、`#Net` 等
+- 指标列：`m_{算法}_{指标}`（如 `m_Base_HPWL`）
+
+## 技术栈
+
+React 18 + Vite 5 + Tailwind CSS 3 + Lucide React
 
 ## 许可证
 

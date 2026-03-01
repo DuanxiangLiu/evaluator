@@ -8,9 +8,9 @@ import { CHART_SIZE_OPTIONS } from '../../utils/constants';
 const helpContent = (
   <div className="space-y-4">
     <div>
-      <h3 className="font-bold text-indigo-300 mb-2 text-base">欢迎使用 EDA 算法评估器</h3>
+      <h3 className="font-bold text-indigo-300 mb-2 text-base">欢迎使用算法对比器</h3>
       <p className="text-gray-300 text-sm leading-relaxed">
-        本工具帮助您快速分析和比较不同 EDA（电子设计自动化）算法的性能表现。
+        本工具帮助您快速分析和比较不同算法的性能表现，当前预设支持 EDA（电子设计自动化）领域指标。
       </p>
     </div>
     

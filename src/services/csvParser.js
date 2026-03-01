@@ -15,7 +15,7 @@ import {
 export { EDA_METRICS_CONFIG, getMetricConfig, isBuiltInMetric };
 
 export const parseCSV = (csvString) => {
-  const lines = csvString.trim().split('\n');
+  const lines = csvString.trim().split(/\r?\n/);
   if (lines.length < 2) return { data: [], algos: [], metrics: [], metaColumns: [] };
   
   const delimiter = detectDelimiter(csvString);

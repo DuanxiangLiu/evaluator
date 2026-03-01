@@ -1,7 +1,7 @@
 const APP_CONFIG = {
-  name: 'EDA 算法评估器',
-  version: '1.1.0',
-  description: 'EDA 算法性能评估工具',
+  name: '算法对比器',
+  version: '1.2.0',
+  description: '算法性能对比分析工具',
   author: 'DuanxiangLiu',
   repository: 'https://github.com/DuanxiangLiu/evaluator',
 };

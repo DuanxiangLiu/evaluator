@@ -1,38 +1,25 @@
-# Code Review Prompt
+# Code Review Checklist
 
-After completing significant code changes, perform a code review:
+## Style
 
-## Checklist
+- [ ] Naming conventions (PascalCase components, camelCase utils)
+- [ ] Component structure (imports → constants → component → propTypes → export)
+- [ ] No unnecessary comments
 
-1. **Code Style**
-   - Follows naming conventions
-   - Proper component structure
-   - No unnecessary comments
+## Best Practices
 
-2. **Best Practices**
-   - Uses existing utilities (calculateImprovement, formatIndustrialNumber)
-   - Reuses common components (ChartHeader, StatusBadge)
-   - Proper error handling
+- [ ] Uses `calculateImprovement()` from `utils/statistics.js`
+- [ ] Uses `formatIndustrialNumber()` from `utils/formatters.js`
+- [ ] Uses `ChartHeader` for chart titles
+- [ ] Uses `fetchWithTimeout()` for API calls
 
-3. **Performance**
-   - No unnecessary re-renders
-   - Proper use of useMemo/useCallback
-   - Efficient data structures
+## Performance
 
-4. **Security**
-   - No exposed secrets
-   - Input validation
-   - Safe localStorage usage
+- [ ] Proper `useMemo`/`useCallback` usage
+- [ ] No unnecessary re-renders
 
-## Output Format
+## Security
 
-```
-## Code Review Summary
-- [✓/✗] Style compliance
-- [✓/✗] Best practices
-- [✓/✗] Performance
-- [✓/✗] Security
-
-## Issues Found (if any)
-1. [Issue description and fix suggestion]
-```
+- [ ] No exposed secrets
+- [ ] Input validation
+- [ ] Safe localStorage usage

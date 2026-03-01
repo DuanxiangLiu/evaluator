@@ -152,8 +152,8 @@ export const recommendWeights = (metrics, allMetricsStats, baseAlgo, strategy = 
     else if (degradedRate > 0.2) score -= 0.5;
     
     const std = stat.stats.std || 0;
-    const meanImp = Math.abs(stat.stats.meanImp || 1);
-    const cv = std / meanImp;
+    const meanImp = Math.abs(stat.stats.meanImp || 0);
+    const cv = meanImp > 0.01 ? std / meanImp : 0;
     if (cv < 0.5) score += 0.5;
     else if (cv > 1.5) score -= 0.5;
     
@@ -192,7 +192,7 @@ export const analyzeWeightSensitivity = (metrics, allMetricsStats, baseAlgo, cur
     
     const impactScore = Math.abs(geomeanImp) * (pValue < 0.05 ? 1.5 : 1);
     
-    const variability = std > 0 ? std / Math.abs(geomeanImp || 1) : 0;
+    const variability = Math.abs(geomeanImp) > 0.01 ? std / Math.abs(geomeanImp) : 0;
     
     let sensitivityLevel;
     if (impactScore > 5 && variability < 1) {

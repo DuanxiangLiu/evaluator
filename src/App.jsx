@@ -143,7 +143,7 @@ const StatsCards = ({ stats }) => {
         <div className="flex flex-wrap gap-1.5 animate-in slide-in-from-top-2 duration-200">
           {auxiliaryCards.map((card, i) => (
             <div key={i} className={`px-2.5 py-1.5 rounded border ${card.neutral ? 'bg-gray-50 border-gray-200' : card.isPositive ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
-              <div className={`text-[10px] font-bold flex items-center ${card.neutral ? 'text-gray-600' : card.isPositive ? 'text-emerald-700' : 'text-red-700'}`}>
+              <div className={`text-xs font-bold flex items-center ${card.neutral ? 'text-gray-600' : card.isPositive ? 'text-emerald-700' : 'text-red-700'}`}>
                 {card.label}
                 <HelpIcon content={<AuxiliaryStatHelp label={card.label} value={card.value} std={card.std} meanImp={card.meanImp} />} position="bottom-right" className="w-4 h-4 ml-0.5" />
               </div>
@@ -516,8 +516,8 @@ const AppContent = () => {
                 aiError={aiError}
                 setShowAiConfig={setShowAiConfig}
                 handleGenerateAIInsights={handleGenerateAIInsights}
-                handleExport={(format, mode = 'detailed') => {
-                  const reportData = generateReportByMode(mode, {
+                handleExport={(format) => {
+                  const reportData = generateReportByMode('detailed', {
                     stats,
                     allMetricsStats,
                     baseAlgo,
@@ -526,10 +526,10 @@ const AppContent = () => {
                     parsedData,
                     selectedCases,
                     metaColumns,
-                    aiInsights
+                    aiInsights: displayInsights || aiInsights
                   });
                   if (reportData) {
-                    downloadReport(reportData, format === 'pdf' ? 'html' : format);
+                    downloadReport(reportData, format);
                   }
                 }}
                 isOutdated={isInsightsOutdated(baseAlgo, compareAlgo)}

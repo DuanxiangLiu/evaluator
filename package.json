@@ -1,9 +1,9 @@
 {
-  "name": "eda-evaluator",
+  "name": "algo-comparator",
   "private": true,
   "version": "1.2.0",
   "type": "module",
-  "description": "EDA Algorithm Evaluator v1.2",
+  "description": "算法对比器 - 算法性能对比分析工具 v1.2",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

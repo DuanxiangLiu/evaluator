@@ -25,6 +25,12 @@ const RadarChart = ({ allMetricsStats, availableAlgos, baseAlgo, compareAlgo, pa
   const dropdownRef = useRef(null);
 
   useEffect(() => {
+    if (availableAlgos.length > 0 && selectedAlgos.size === 0) {
+      setSelectedAlgos(new Set(availableAlgos));
+    }
+  }, [availableAlgos, selectedAlgos.size]);
+
+  useEffect(() => {
     const handleClickOutside = (e) => {
       if (isMetricDropdownOpen && metricButtonRef.current && dropdownRef.current) {
         if (!metricButtonRef.current.contains(e.target) && !dropdownRef.current.contains(e.target)) {

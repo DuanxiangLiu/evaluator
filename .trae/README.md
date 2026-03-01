@@ -1,34 +1,27 @@
-# .trae Configuration Directory
+# .trae Configuration
 
-This directory contains AI assistant configuration for the EDA Algorithm Evaluator project.
+AI assistant configuration for Algorithm Comparator project.
 
 ## Structure
 
 ```
 .trae/
-├── rules/                    # Project rules and guidelines
-│   ├── project_rules.md      # Core project conventions
+├── rules/
+│   ├── project_rules.md      # Core conventions (auto-loaded)
 │   └── doc_update_rules.md   # Documentation update rules
-├── prompts/                  # Custom prompt templates
+├── prompts/
 │   ├── code_review.md        # Code review checklist
 │   └── new_component.md      # New component template
-└── context/                  # Project context files
-    └── project_context.md    # Architecture and key functions
+└── context/
+    └── project_context.md    # Architecture & key functions
 ```
-
-## Usage
-
-- **project_rules.md**: Loaded automatically by Trae IDE as project rules
-- **project_context.md**: Context information for AI assistant
-- **prompts/**: Reusable prompt templates for common tasks
-- **doc_update_rules.md**: Guidelines for updating documentation
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `project_rules.md` | Code conventions, naming, key modules |
+| `project_rules.md` | Naming, structure, key modules, data format |
 | `project_context.md` | Architecture, data flow, key functions |
-| `doc_update_rules.md` | When and how to update docs |
+| `doc_update_rules.md` | When/how to update docs |
 | `code_review.md` | Code review checklist |
-| `new_component.md` | Template for new components |
+| `new_component.md` | Component template |

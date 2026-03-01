@@ -58,7 +58,6 @@ export const AppProvider = ({ children }) => {
   const [displayInsights, setDisplayInsights] = useState('');
   const [aiError, setAiError] = useState('');
   const [showAiConfig, setShowAiConfig] = useState(false);
-  const [showPromptConfig, setShowPromptConfig] = useState(false);
   
   const dataVersionRef = useRef(0);
 
@@ -365,7 +364,6 @@ export const AppProvider = ({ children }) => {
     displayInsights, setDisplayInsights,
     aiError, setAiError,
     showAiConfig, setShowAiConfig,
-    showPromptConfig, setShowPromptConfig,
     stats,
     allMetricsStats,
     sortedTableData,

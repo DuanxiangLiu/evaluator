@@ -38,7 +38,7 @@ const SavedDataSelector = ({
 
   const defaultDataset = {
     id: DEFAULT_DATASET_ID,
-    name: '默认示例数据集',
+    name: '随机数据(布局示例)',
     csvData: generateDefaultDataset(),
     stats: { rows: 30, size: '2.1 KB' },
     isDefault: true
